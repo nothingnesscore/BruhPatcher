@@ -575,10 +575,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _savedLogPath = MutableStateFlow<String?>(null)
+    val savedLogPath: StateFlow<String?> = _savedLogPath.asStateFlow()
+
     fun resetState() {
         _patchingState.value = PatchingState.Idle
         _logs.value = emptyList()
         _downloadedModulePath.value = null
+        _savedLogPath.value = null
     }
 
     private fun addLog(tag: LogTag, message: String) {
@@ -586,46 +590,74 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Save logs to Downloads folder
+     * Formats all log entries with device info and timestamps
+     */
+    fun formatLogs(): String {
+        val info = _deviceInfo.value
+        return buildString {
+            appendLine("=== BRUH PATCHER DIAGNOSTIC & PATCH LOGS ===")
+            appendLine("Generated: ${java.util.Date()}")
+            appendLine("App Version: v2.0.4 (Universal Edition)")
+            appendLine("Device: ${info.deviceName} (${info.deviceCodename})")
+            appendLine("Brand/Model: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            appendLine("Android: ${info.androidVersion} (API ${info.apiLevel})")
+            appendLine("OS Badge: ${info.osBadgeText} (${info.versionName})")
+            appendLine("NoMount Metamodule Installed: ${RootManager.isNoMountInstalled()}")
+            appendLine("NoMount Bootloop Guard Tripped: ${_isNoMountGuardTripped.value}")
+            appendLine("=" .repeat(60))
+            appendLine()
+            
+            _logs.value.forEach { entry ->
+                val timeFormat = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault())
+                val time = timeFormat.format(java.util.Date(entry.timestamp))
+                appendLine("$time [${entry.tag.displayName}] ${entry.message}")
+            }
+        }
+    }
+
+    /**
+     * Internal implementation of saveLogs that writes both timestamped and latest logs to Downloads
+     */
+    suspend fun saveLogsInternal(customName: String? = null): Result<File> = withContext(Dispatchers.IO) {
+        try {
+            val context = getApplication<Application>()
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+            val fileName = customName ?: "BruhPatcher_logs_$timestamp.txt"
+            
+            val logContent = formatLogs()
+            
+            val tempFile = File(context.cacheDir, fileName)
+            tempFile.writeText(logContent)
+            
+            val result = RootManager.moveToDownloads(tempFile, fileName)
+            
+            // Also write / update fixed "BruhPatcher_latest.log" in Downloads
+            try {
+                val latestTemp = File(context.cacheDir, "BruhPatcher_latest.log")
+                latestTemp.writeText(logContent)
+                RootManager.moveToDownloads(latestTemp, "BruhPatcher_latest.log")
+            } catch (_: Exception) {}
+
+            if (result.isSuccess) {
+                val savedFile = result.getOrThrow()
+                _savedLogPath.value = savedFile.absolutePath
+                addLog(LogTag.SUCCESS, "Patch log saved to: Downloads/$fileName")
+            } else {
+                addLog(LogTag.WARN, "Failed to save log to Downloads: ${result.exceptionOrNull()?.message}")
+            }
+            result
+        } catch (e: Exception) {
+            addLog(LogTag.ERROR, "Failed to save logs: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Save logs to Downloads folder on demand
      */
     fun saveLogs() {
         viewModelScope.launch {
-            try {
-                val context = getApplication<Application>()
-                val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
-                val fileName = "BruhPatcher_logs_$timestamp.txt"
-                
-                // Format logs
-                val logContent = buildString {
-                    appendLine("Bruh Patcher Diagnostic Logs")
-                    appendLine("Generated: ${java.util.Date()}")
-                    appendLine("Device: ${_deviceInfo.value.deviceCodename}")
-                    appendLine("Android: ${_deviceInfo.value.androidVersion} (API ${_deviceInfo.value.apiLevel})")
-                    appendLine("=" .repeat(50))
-                    appendLine()
-                    
-                    _logs.value.forEach { entry ->
-                        val timeFormat = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
-                        val time = timeFormat.format(java.util.Date(entry.timestamp))
-                        appendLine("$time [${entry.tag.displayName}] ${entry.message}")
-                    }
-                }
-                
-                // Write to temp file
-                val tempFile = File(context.cacheDir, fileName)
-                tempFile.writeText(logContent)
-                
-                // Move to Downloads
-                val result = RootManager.moveToDownloads(tempFile, fileName)
-                
-                if (result.isSuccess) {
-                    addLog(LogTag.SUCCESS, "Logs saved to Downloads/$fileName")
-                } else {
-                    addLog(LogTag.ERROR, "Failed to save logs: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                addLog(LogTag.ERROR, "Failed to save logs: ${e.message}")
-            }
+            saveLogsInternal()
         }
     }
 
@@ -918,7 +950,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (exitCode != 0) {
                     addLog(LogTag.ERROR, "Job failed with exit code $exitCode")
-                    _patchingState.value = PatchingState.Error("Patching failed (exit code $exitCode)", recoverable = true)
+                    _patchingState.value = PatchingState.Error("Patching failed with fatal error (exit code $exitCode)", recoverable = true)
+                    saveLogsInternal()
                     return@launch
                 }
 
@@ -960,6 +993,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (patchedJars.isEmpty()) {
                     addLog(LogTag.ERROR, "Zero patched JARs generated. Aborting module creation to prevent bootloop.")
                     _patchingState.value = PatchingState.Error("No patched JAR files generated. Aborted to prevent bootloop.", recoverable = true)
+                    saveLogsInternal()
                     return@launch
                 }
 
@@ -973,7 +1007,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     patchedJars = patchedJars,
                     deviceCodename = info.deviceCodename,
                     androidVersion = info.androidVersion,
-                    jobOutputDir = jobOutputDirFile
+                    jobOutputDir = jobOutputDirFile,
+                    patchLog = formatLogs()
                 ) { msg ->
                     viewModelScope.launch { addLog(LogTag.MODULE, msg) }
                 }
@@ -998,12 +1033,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             }
                         )
 
+                        // Automatically save patch logs to Downloads upon successful module creation
+                        saveLogsInternal()
+
                         // Cleanup job directory
                         Shell.cmd("rm -rf ${jobDir!!.absolutePath}").exec()
                     },
                     onFailure = { error ->
                         addLog(LogTag.ERROR, "Module generation failed: ${error.message}")
                         _patchingState.value = PatchingState.Error("Module generation failed: ${error.message}", recoverable = true)
+                        saveLogsInternal()
                         // Cleanup job directory on failure too
                         Shell.cmd("rm -rf ${jobDir!!.absolutePath}").exec()
                     }
@@ -1012,6 +1051,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 addLog(LogTag.ERROR, "Error: ${e.message}")
                 _patchingState.value = PatchingState.Error(e.message ?: "Unknown error", recoverable = true)
+                saveLogsInternal()
             } finally {
                 // Step 7: Cleanup
                 withContext(Dispatchers.IO) {

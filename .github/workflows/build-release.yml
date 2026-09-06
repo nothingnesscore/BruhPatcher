@@ -61,7 +61,7 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=v2.0.3-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            echo "VERSION=v2.0.4-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Sign APK with Release Key

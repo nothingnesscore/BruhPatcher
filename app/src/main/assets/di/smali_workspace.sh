@@ -105,7 +105,12 @@ recompile_all() {
     local recompiled_count=0
     local failed_count=0
     
-    echo "[*] Recompiling modified workspaces..."
+    if [ ${#WORKSPACE_PATHS[@]} -eq 0 ]; then
+        echo "[!] FATAL ERROR: No workspaces registered for recompilation!"
+        return 1
+    fi
+
+    echo "[*] Recompiling modified workspaces (${#WORKSPACE_PATHS[@]} total)..."
     
     for jar_name in "${!WORKSPACE_PATHS[@]}"; do
         workspace="${WORKSPACE_PATHS[$jar_name]}"
@@ -153,7 +158,8 @@ recompile_all() {
     
     echo "[*] Recompilation summary: $recompiled_count succeeded, $failed_count failed"
     
-    if [ $failed_count -gt 0 ]; then
+    if [ $failed_count -gt 0 ] || [ $recompiled_count -eq 0 ]; then
+        echo "[!] FATAL ERROR: Recompilation failed (succeeded: $recompiled_count, failed: $failed_count)"
         return 1
     fi
     

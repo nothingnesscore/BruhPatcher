@@ -30,12 +30,40 @@ object DiExecutor {
             return@withContext 1
         }
 
+        var fatalErrorDetected = false
+        var fatalErrorSnippet = ""
+
+        val fatalPatterns = listOf(
+            "FATAL ERROR",
+            "ERROR: Cant decompile",
+            "ERROR: Cant compile",
+            "ERROR: Cant decode",
+            "brut.androlib.exceptions.",
+            "CommandLine\$UnmatchedArgumentException",
+            "[!] Failed to decompile",
+            "[!] Failed to recompile",
+            "Exception in thread",
+            "NullPointerException"
+        )
+
         val stdoutCallback = object : CallbackList<String>() {
-            override fun onAddElement(e: String) { log(e) }
+            override fun onAddElement(e: String) {
+                if (fatalPatterns.any { e.contains(it, ignoreCase = true) }) {
+                    fatalErrorDetected = true
+                    fatalErrorSnippet = e
+                }
+                log(e)
+            }
         }
 
         val stderrCallback = object : CallbackList<String>() {
-            override fun onAddElement(e: String) { log("[ERR] $e") }
+            override fun onAddElement(e: String) {
+                if (fatalPatterns.any { e.contains(it, ignoreCase = true) }) {
+                    fatalErrorDetected = true
+                    fatalErrorSnippet = e
+                }
+                log("[ERR] $e")
+            }
         }
 
         log("Executing job: ${jobDir.name}")
@@ -47,13 +75,17 @@ object DiExecutor {
             .to(stdoutCallback, stderrCallback)
             .exec()
 
-        if (result.isSuccess) {
-            log("Job script finished execution")
+        if (result.isSuccess && !fatalErrorDetected) {
+            log("Job script finished execution successfully")
+            0
         } else {
-            log("Job failed with exit code: ${result.code}")
+            val code = if (result.code != 0) result.code else 1
+            if (fatalErrorDetected) {
+                log("CRITICAL: Fatal patching error detected in output stream: $fatalErrorSnippet")
+            }
+            log("Job failed with exit code: $code")
+            code
         }
-
-        result.code
     }
 
     /**
@@ -160,7 +192,7 @@ object DiExecutor {
             appendLine("export PATH=\"\$DI_BIN:\$PATH\"")
             appendLine("export l=\"\$DI_BIN\"")
 
-            appendLine("if [ -f \"\$DI_TMP/core\" ]; then . \"\$DI_TMP/core\"; else echo '[!] DI Core missing'; fi")
+            appendLine("if [ -f \"\$DI_TMP/core\" ]; then . \"\$DI_TMP/core\"; else echo '[!] FATAL ERROR: DI Core missing at \$DI_TMP/core'; exit 1; fi")
             
             // Source the workspace management library
             appendLine("")
@@ -168,7 +200,7 @@ object DiExecutor {
             appendLine("if [ -f \"\$DI_TMP/smali_workspace.sh\" ]; then")
             appendLine("    . \"\$DI_TMP/smali_workspace.sh\"")
             appendLine("else")
-            appendLine("    echo '[!] ERROR: smali_workspace.sh not found'")
+            appendLine("    echo '[!] FATAL ERROR: smali_workspace.sh not found'")
             appendLine("    exit 1")
             appendLine("fi")
             appendLine("")
@@ -189,7 +221,11 @@ object DiExecutor {
                     else -> ""
                 }
                 if (envVar.isNotEmpty()) {
-                    appendLine("decompile_jar \"$name\" \"\$$envVar\"")
+                    appendLine("if ! decompile_jar \"$name\" \"\$$envVar\"; then")
+                    appendLine("    echo \"[!] FATAL ERROR: Failed to decompile $name! Aborting to prevent incomplete patching.\"")
+                    appendLine("    cleanup_workspaces")
+                    appendLine("    exit 1")
+                    appendLine("fi")
                 }
             }
             appendLine("")
@@ -205,6 +241,11 @@ object DiExecutor {
                 }
                 if (envVar.isNotEmpty()) {
                     appendLine("export $envVar=\$(get_workspace_path \"$name\")")
+                    appendLine("if [ -z \"\$$envVar\" ] || [ ! -d \"\$$envVar\" ]; then")
+                    appendLine("    echo \"[!] FATAL ERROR: Workspace directory for $name is missing or invalid!\"")
+                    appendLine("    cleanup_workspaces")
+                    appendLine("    exit 1")
+                    appendLine("fi")
                 }
             }
             appendLine("")
@@ -227,19 +268,28 @@ object DiExecutor {
             // 2. Run Features
             appendLine("")
             appendLine("echo '[*] Applying ${features.size} features...'")
+            appendLine("FEATURE_FAILURES=0")
             features.forEachIndexed { index, feature ->
                 appendLine("echo '[*] [${index + 1}/${features.size}] Feature: ${feature.name}'")
-                // Source the script. We pass FRAMEWORK_JAR as arg 1 for backward compatibility,
-                // but scripts should preferably use env vars now.
-                appendLine(". \"${feature.runtimePath}\"")
+                // Source the script and verify return code
+                appendLine("if ! . \"${feature.runtimePath}\"; then")
+                appendLine("    echo \"[!] ERROR: Feature script '${feature.name}' returned non-zero exit status \$?!\"")
+                appendLine("    ((FEATURE_FAILURES++))")
+                appendLine("fi")
             }
+            appendLine("")
+            appendLine("if [ \$FEATURE_FAILURES -gt 0 ]; then")
+            appendLine("    echo \"[!] FATAL ERROR: \$FEATURE_FAILURES feature script(s) failed during execution! Aborting to prevent corrupt/partial patch.\"")
+            appendLine("    cleanup_workspaces")
+            appendLine("    exit 1")
+            appendLine("fi")
             appendLine("")
 
             // Phase 3: Recompile all modified workspaces
             appendLine("# Phase 3: Recompile all modified JARs")
             appendLine("echo '[*] Recompiling modified JARs...'")
             appendLine("if ! recompile_all; then")
-            appendLine("    echo '[!] ERROR: Recompilation failed'")
+            appendLine("    echo '[!] FATAL ERROR: Recompilation failed!'")
             appendLine("    cleanup_workspaces")
             appendLine("    exit 1")
             appendLine("fi")

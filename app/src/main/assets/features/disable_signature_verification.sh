@@ -179,6 +179,9 @@ if [ -n "$FRAMEWORK" ]; then
             dynamic_apktool -recompile "$FW_WORK_DIR" -o "$FRAMEWORK"
             delete_recursive "$FW_WORK_DIR"
         fi
+    else
+        echo "[!] FATAL ERROR: Framework workspace directory not found: $FW_WORK_DIR"
+        return 1
     fi
 fi
 
@@ -218,6 +221,9 @@ if [ -n "$SERVICES" ]; then
             dynamic_apktool -recompile "$SVC_WORK_DIR" -o "$SERVICES"
             delete_recursive "$SVC_WORK_DIR"
         fi
+    else
+        echo "[!] FATAL ERROR: Services workspace directory not found: $SVC_WORK_DIR"
+        return 1
     fi
 fi
 
@@ -242,6 +248,9 @@ if [ -n "$MIUI_SERVICES" ]; then
             dynamic_apktool -recompile "$MIUI_WORK_DIR" -o "$MIUI_SERVICES"
             delete_recursive "$MIUI_WORK_DIR"
         fi
+    else
+        echo "[!] FATAL ERROR: MIUI services workspace directory not found: $MIUI_WORK_DIR"
+        return 1
     fi
 fi
 

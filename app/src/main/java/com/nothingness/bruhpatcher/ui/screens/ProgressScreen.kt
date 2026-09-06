@@ -65,6 +65,7 @@ fun ProgressScreen(
 ) {
     val patchingState by viewModel.patchingState.collectAsState()
     val logs by viewModel.logs.collectAsState()
+    val savedLogPath by viewModel.savedLogPath.collectAsState()
     val context = LocalContext.current
 
     var showCancelDialog by remember { mutableStateOf(false) }
@@ -194,7 +195,7 @@ fun ProgressScreen(
                     Column {
                         StatusBanner(
                             title = "Module Ready",
-                            subtitle = "Saved to Downloads folder"
+                            subtitle = if (savedLogPath != null) "Module & logs saved to Downloads folder" else "Saved to Downloads folder"
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         
@@ -209,11 +210,23 @@ fun ProgressScreen(
                         }
                         
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = onComplete,
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Done")
+                            OutlinedButton(
+                                onClick = { viewModel.saveLogs() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Save Logs")
+                            }
+
+                            OutlinedButton(
+                                onClick = onComplete,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Done")
+                            }
                         }
                     }
                 }
@@ -379,14 +392,21 @@ fun ProgressScreen(
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showSuccessDialog = false
-                        viewModel.resetState()
-                        onComplete()
+                Row {
+                    TextButton(
+                        onClick = { viewModel.saveLogs() }
+                    ) {
+                        Text("Save Logs", color = AppColors.HyperOsCyan)
                     }
-                ) {
-                    Text("Later")
+                    TextButton(
+                        onClick = {
+                            showSuccessDialog = false
+                            viewModel.resetState()
+                            onComplete()
+                        }
+                    ) {
+                        Text("Later")
+                    }
                 }
             },
             containerColor = AppColors.DarkSurface

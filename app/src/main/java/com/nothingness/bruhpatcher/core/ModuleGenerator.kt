@@ -34,6 +34,7 @@ object ModuleGenerator {
         deviceCodename: String,
         androidVersion: String,
         jobOutputDir: File? = null,  // Job output directory containing module_extras.conf
+        patchLog: String? = null,
         log: (String) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
@@ -85,6 +86,14 @@ object ModuleGenerator {
                         Shell.cmd("chmod 644 $mirrorPath").exec()
                     }
                 }
+            }
+            
+            // Embed patch.log in the module package
+            if (!patchLog.isNullOrBlank()) {
+                val moduleLogFile = File(workDir, "patch.log")
+                moduleLogFile.writeText(patchLog)
+                Shell.cmd("chmod 644 ${moduleLogFile.absolutePath}").exec()
+                log("Embedded patch.log inside module package")
             }
             
             // Process module extras from feature scripts (APKs, XMLs, libs, etc.)
@@ -273,7 +282,7 @@ object ModuleGenerator {
         val moduleProp = """
             id=$MODULE_ID
             name=Bruh Patcher Patched Framework
-            version=v2.0.3_$timestamp
+            version=v2.0.4_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
             description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch [NoMount VFS Compatible]

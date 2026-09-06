@@ -65,6 +65,9 @@ if [ -d "$SVC_WORK_DIR" ]; then
         dynamic_apktool -recompile "$SVC_WORK_DIR" -o "$SERVICES"
         delete_recursive "$SVC_WORK_DIR"
     fi
+else
+    echo "[!] FATAL ERROR: services.jar workspace directory not found: $SVC_WORK_DIR"
+    return 1
 fi
 
 # ==================== MIUI-SERVICES.JAR (HYPEROS) ====================
@@ -85,6 +88,9 @@ if [ -n "$MIUI_SERVICES" ]; then
             dynamic_apktool -recompile "$MIUI_WORK_DIR" -o "$MIUI_SERVICES"
             delete_recursive "$MIUI_WORK_DIR"
         fi
+    else
+        echo "[!] FATAL ERROR: miui-services.jar workspace directory not found: $MIUI_WORK_DIR"
+        return 1
     fi
 fi
 

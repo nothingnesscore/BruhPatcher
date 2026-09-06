@@ -134,6 +134,9 @@ if [ -d "$FW_DIR" ]; then
         ' "$cert_file" > "${cert_file}.tmp" && mv "${cert_file}.tmp" "$cert_file"
         echo "    Hooked: $cert_file"
     fi
+else
+    echo "[!] FATAL ERROR: Framework workspace directory not found: $FW_DIR"
+    return 1
 fi
 
 # ==================== SERVICES.JAR PATCHES ====================
@@ -154,6 +157,9 @@ if [ -d "$SVC_DIR" ]; then
         ' "$sys_file" > "${sys_file}.tmp" && mv "${sys_file}.tmp" "$sys_file"
         echo "    Hooked: $sys_file"
     fi
+else
+    echo "[!] FATAL ERROR: Services workspace directory not found: $SVC_DIR"
+    return 1
 fi
 
 # ==================== KAORIOS BYTECODE INJECTION ====================
