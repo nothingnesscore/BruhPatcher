@@ -102,7 +102,7 @@ fun SettingsScreen(
                             color = AppColors.TextPrimary
                         )
                         Text(
-                            text = "v2.0.2",
+                            text = "v2.0.3",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.HyperOsCyan

@@ -637,7 +637,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val report = buildString {
             appendLine("=== BRUH PATCHER DIAGNOSTIC REPORT ===")
             appendLine("Timestamp: ${java.util.Date()}")
-            appendLine("App Version: v2.0.2 (Universal Edition - NoMount VFS Compatible)")
+            appendLine("App Version: v2.0.3 (Universal Edition - Apktool 2.11.1 Engine & NoMount VFS)")
             appendLine()
             appendLine("--- Device Information ---")
             appendLine("Device: ${info.deviceName} (${info.deviceCodename})")

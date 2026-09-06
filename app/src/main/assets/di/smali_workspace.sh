@@ -16,6 +16,9 @@ init_workspace() {
     WORKSPACE_PATHS=()
     WORKSPACE_MODIFIED=()
     
+    # Clean stale Apktool framework caches to prevent resource parsing errors across ROM updates
+    rm -rf "$TMP/zbin/apktool" "$HOME/.local/share/apktool/framework" /data/local/tmp/apktool 2>/dev/null || true
+    
     echo "[+] Workspace system ready at: $WORKSPACE_BASE"
 }
 

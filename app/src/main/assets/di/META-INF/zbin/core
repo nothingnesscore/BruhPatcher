@@ -2987,11 +2987,108 @@ apktool() {
          fi
       done
    }
-   if [ "$apktool_aapt" == "off" ]; then
-      run_jar "$l/apktool.jar" --aapt "$l/aapt" -p "$tmp" "$@"
-   else
-      run_jar "$l/apktool.jar" -p "$tmp" "$@"
+
+   # Separate subcommand and options for Picocli (Apktool 2.11+) compatibility
+   local subcmd=""
+   local args=()
+
+   for ((i=1; i<=$#; i++)); do
+      local arg="${!i}"
+      case "$arg" in
+         d|decode|b|build|if|install-framework|empty-framework-dir|publicize-resources)
+            if [ -z "$subcmd" ]; then
+               subcmd="$arg"
+               continue
+            fi
+            ;;
+      esac
+      args+=("$arg")
+   done
+
+   [ -z "$subcmd" ] && subcmd="d"
+
+   # Target folder for build command (to verify AndroidManifest.xml before allowing --copy-original)
+   local target_folder=""
+   if [[ "$subcmd" == "b" || "$subcmd" == "build" ]]; then
+      for a in "${args[@]}"; do
+         if [ -d "$a" ]; then
+            target_folder="$a"
+            break
+         fi
+      done
    fi
+
+   local clean_args=()
+   local has_frame_path=false
+   local has_aapt=false
+   local idx=0
+
+   while [ $idx -lt ${#args[@]} ]; do
+      local a="${args[$idx]}"
+      case "$a" in
+         -p|--frame-path)
+            has_frame_path=true
+            clean_args+=("$a")
+            ((idx++))
+            [ $idx -lt ${#args[@]} ] && clean_args+=("${args[$idx]}")
+            ;;
+         -a|--aapt)
+            has_aapt=true
+            if [[ "$subcmd" == "b" || "$subcmd" == "build" ]]; then
+               clean_args+=("$a")
+               ((idx++))
+               [ $idx -lt ${#args[@]} ] && clean_args+=("${args[$idx]}")
+            else
+               # Skip argument if --aapt was erroneously passed to decode
+               ((idx++))
+            fi
+            ;;
+         -r|--no-res|-s|--no-src)
+            # Only valid for decode
+            if [[ "$subcmd" == "d" || "$subcmd" == "decode" ]]; then
+               clean_args+=("$a")
+            fi
+            ;;
+         -c|--copy-original)
+            # Only valid for build AND only if AndroidManifest.xml exists (not a pure framework JAR)
+            if [[ "$subcmd" == "b" || "$subcmd" == "build" ]]; then
+               if [[ -n "$target_folder" && -f "$target_folder/original/AndroidManifest.xml" ]]; then
+                  clean_args+=("$a")
+               fi
+            fi
+            ;;
+         -j|--jobs)
+            # Thread flag passed erroneously from smali/baksmali scripts
+            ((idx++))
+            ;;
+         *)
+            clean_args+=("$a")
+            ;;
+      esac
+      ((idx++))
+   done
+
+   local final_cmd=("$subcmd")
+
+   # Framework path
+   if ! $has_frame_path; then
+      case "$subcmd" in
+         d|decode|b|build|if|install-framework|empty-framework-dir)
+            final_cmd+=("-p" "$tmp")
+            ;;
+      esac
+   fi
+
+   # AAPT binary (only for build)
+   if [[ "$subcmd" == "b" || "$subcmd" == "build" ]] && ! $has_aapt; then
+      if [ "$apktool_aapt" == "off" ] && [ -e "$l/aapt" ]; then
+         final_cmd+=("--aapt" "$l/aapt")
+      fi
+   fi
+
+   final_cmd+=("${clean_args[@]}")
+
+   run_jar "$l/apktool.jar" "${final_cmd[@]}"
 }
 
 sign() {
@@ -3591,8 +3688,11 @@ dynamic_apktool() {
        ;;
        -ps|-preserve-signature)
        ps=true
-       command+=("--copy-original")
        shift
+       ;;
+       -j|-jobs)
+       # Thread count (handled by baksmali/smali)
+       shift 2;
        ;;
        -f|-framework)
        #Legacy
@@ -3644,13 +3744,13 @@ dynamic_apktool() {
    if [ ! -e "$l/zipsigner.jar" ]; then echo2 "dynamic_apktool: Cant find zipsigner.jar"; return 1; fi
    echo ">> Dynamic Apktool 1.5.1"
    create_dir "$tmp" || return 1
-   [ -n "$allowres" ] || command+=("--no-res")
    if [[ -n "$file" && -z "$folder" && -z "$zipa" && -z "$sign" ]]; then
+      [ -n "$allowres" ] || command+=("--no-res")
       [ -z "$move" ] && move="$outdir"
       if [ -n "$move" ]; then
          echo " L: Decompiling $fullname... "
          echo " L: Please wait..."
-         if ! apktool "${command[@]}" d "$file" -o "$move" >&2; then echo " ERROR: Cant decompile $fullname" && return 1; fi
+         if ! apktool d "$file" "${command[@]}" -o "$move" >&2; then echo " ERROR: Cant decompile $fullname" && return 1; fi
          if [ -n "$bk" ]; then
             count=1
             echo " L: Executing $(basename "$bk")..."
@@ -3707,8 +3807,11 @@ dynamic_apktool() {
                echo " L: Recompiling $(basename "$dex")..."
                if ! run_jar "$sm" a "$dex" "${sc[@]}" -o "$result" || ! is_valid "$result"; then echo "${n} ERROR: Cant compile: \"$dex\" with \"$sm\""; return 1; fi
             done < <(find "$folder" -mindepth 1 -maxdepth 1 -type d -regex '.*/smali\(_classes[0-9]*\)*$' | sort)
-         fi
-         apktool "${command[@]}" b "$folder" -o "$folder/try.apk" >&2
+          fi
+          if [ -n "$ps" ] && [ -f "$folder/original/AndroidManifest.xml" ]; then
+             command+=("--copy-original")
+          fi
+          apktool b "$folder" "${command[@]}" -o "$folder/try.apk" >&2
          if [ ! -f "$folder/try.apk" ]; then echo "ERROR: Compiling $outfile" && return 1; fi
          if [ ${#alladd[@]} -gt 0 ]; then
             for add in "${alladd[@]}"; do
