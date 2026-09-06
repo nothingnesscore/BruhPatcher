@@ -13,8 +13,8 @@ android {
         applicationId = "com.nothingness.bruhpatcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 204
-        versionName = "2.0.4"
+        versionCode = 205
+        versionName = "2.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

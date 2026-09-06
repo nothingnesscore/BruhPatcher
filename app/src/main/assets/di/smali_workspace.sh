@@ -149,6 +149,33 @@ recompile_all() {
         # Use dynamic_apktool to recompile with limited threads (-j) and preserve signature (-ps)
         if dynamic_apktool -recompile "$workspace" -o "$jar_path" -j 2 -ps; then
             echo "[+] Successfully recompiled $jar_name"
+            
+            # Direct multi-dex injection: if any .extra_dex/*.dex exist for this workspace, bundle them directly
+            if [ -d "$workspace/.extra_dex" ]; then
+                local extra_dex_count=0
+                for extra_dex in "$workspace/.extra_dex"/*.dex; do
+                    [ -f "$extra_dex" ] || continue
+                    local dex_name=$(basename "$extra_dex")
+                    echo "[*] Bundling extra multi-dex $dex_name into $jar_name..."
+                    (cd "$workspace/.extra_dex" && zip -qu "$jar_path" "$dex_name") || zip -qju "$jar_path" "$extra_dex"
+                    if unzip -l "$jar_path" 2>/dev/null | grep -q "$dex_name"; then
+                        echo "[+] Verified $dex_name successfully bundled in $jar_name"
+                        ((extra_dex_count++))
+                    else
+                        echo "[!] ERROR: Failed to bundle $dex_name into $jar_name!"
+                        return 1
+                    fi
+                done
+                
+                # Zipalign the JAR archive after adding extra multi-dex files
+                if [ $extra_dex_count -gt 0 ]; then
+                    if [ -x "$DI_BIN/zipalign" ]; then
+                        echo "[*] Zipaligning $jar_name after multi-dex injection..."
+                        "$DI_BIN/zipalign" -f 4 "$jar_path" "$jar_path.aligned" 2>/dev/null && mv -f "$jar_path.aligned" "$jar_path" || true
+                    fi
+                fi
+            fi
+            
             ((recompiled_count++))
         else
             echo "[!] Failed to recompile $jar_name"

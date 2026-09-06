@@ -282,7 +282,7 @@ object ModuleGenerator {
         val moduleProp = """
             id=$MODULE_ID
             name=Bruh Patcher Patched Framework
-            version=v2.0.4_$timestamp
+            version=v2.0.5_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
             description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch [NoMount VFS Compatible]

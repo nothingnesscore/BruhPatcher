@@ -25,6 +25,9 @@ object DiInstaller {
         // Already installed?
         if (Shell.cmd("test -f $DI_ROOT/environment").exec().isSuccess) {
             log("DynamicInstaller already installed.")
+            // Ensure smali_workspace.sh is updated to the latest version bundled with this app update
+            copyFileFromAssets(context, "di/smali_workspace.sh", "$DI_ROOT/smali_workspace.sh")
+            Shell.cmd("cp -f $DI_ROOT/smali_workspace.sh $DI_TMP/smali_workspace.sh 2>/dev/null; chmod 755 $DI_ROOT/smali_workspace.sh $DI_TMP/smali_workspace.sh 2>/dev/null").exec()
             return true
         }
 

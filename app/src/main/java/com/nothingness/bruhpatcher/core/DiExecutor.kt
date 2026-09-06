@@ -197,6 +197,8 @@ object DiExecutor {
             // Source the workspace management library
             appendLine("")
             appendLine("# Source workspace management library")
+            appendLine("cp -f /data/local/di/smali_workspace.sh \"\$DI_TMP/smali_workspace.sh\" 2>/dev/null || true")
+            appendLine("chmod 755 \"\$DI_TMP/smali_workspace.sh\" 2>/dev/null || true")
             appendLine("if [ -f \"\$DI_TMP/smali_workspace.sh\" ]; then")
             appendLine("    . \"\$DI_TMP/smali_workspace.sh\"")
             appendLine("else")
@@ -271,9 +273,10 @@ object DiExecutor {
             appendLine("FEATURE_FAILURES=0")
             features.forEachIndexed { index, feature ->
                 appendLine("echo '[*] [${index + 1}/${features.size}] Feature: ${feature.name}'")
-                // Source the script and verify return code
-                appendLine("if ! . \"${feature.runtimePath}\"; then")
-                appendLine("    echo \"[!] ERROR: Feature script '${feature.name}' returned non-zero exit status \$?!\"")
+                appendLine("f_status=0")
+                appendLine(". \"${feature.runtimePath}\" || f_status=\$?")
+                appendLine("if [ \$f_status -ne 0 ]; then")
+                appendLine("    echo \"[!] ERROR: Feature script '${feature.name}' returned non-zero exit status \$f_status!\"")
                 appendLine("    ((FEATURE_FAILURES++))")
                 appendLine("fi")
             }
