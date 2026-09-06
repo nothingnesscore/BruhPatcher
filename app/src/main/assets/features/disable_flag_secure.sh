@@ -1,5 +1,5 @@
 #@name Disable FLAG_SECURE
-#@description Allows screenshots and screen recording in apps that block it
+#@description Allows screenshots and screen recording in secure/protected apps on AOSP & HyperOS
 #@requires services.jar,miui-services.jar
 
 SERVICES="$SERVICES_JAR"
@@ -10,8 +10,21 @@ if [ -z "$SERVICES" ]; then
     return 1
 fi
 
-SVC_WORK_DIR="$TMP/svc_dc"
-MIUI_WORK_DIR="$TMP/miui_dc"
+if [ -n "$SERVICES_WORKSPACE" ] && [ -d "$SERVICES_WORKSPACE" ]; then
+    SVC_WORK_DIR="$SERVICES_WORKSPACE"
+    SVC_STANDALONE=0
+else
+    SVC_WORK_DIR="$TMP/svc_dc"
+    SVC_STANDALONE=1
+fi
+
+if [ -n "$MIUI_SERVICES_WORKSPACE" ] && [ -d "$MIUI_SERVICES_WORKSPACE" ]; then
+    MIUI_WORK_DIR="$MIUI_SERVICES_WORKSPACE"
+    MIUI_STANDALONE=0
+else
+    MIUI_WORK_DIR="$TMP/miui_dc"
+    MIUI_STANDALONE=1
+fi
 
 return_false='
     .locals 1
@@ -19,58 +32,60 @@ return_false='
     return v0
 '
 
+return_true='
+    .locals 1
+    const/4 v0, 0x1
+    return v0
+'
+
 # ==================== SERVICES.JAR ====================
-echo "[*] Decompiling services.jar..."
-dynamic_apktool -decompile "$SERVICES" -o "$SVC_WORK_DIR"
-
-if [ ! -d "$SVC_WORK_DIR" ]; then
-    echo "[!] ERROR: services.jar decompilation failed"
-    return 1
+if [ "$SVC_STANDALONE" -eq 1 ]; then
+    echo "[*] Decompiling services.jar..."
+    dynamic_apktool -decompile "$SERVICES" -o "$SVC_WORK_DIR"
 fi
 
-echo "[*] Applying FLAG_SECURE patches to services.jar..."
+if [ -d "$SVC_WORK_DIR" ]; then
+    echo "[*] Applying FLAG_SECURE patches to services.jar..."
 
-echo "[*] Patching WindowState.isSecureLocked()..."
-smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowState.smali"
+    echo "[*] Patching WindowState.isSecureLocked()..."
+    smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowState.smali"
+    smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowStateAnimator.smali"
 
-echo "[*] Patching notAllowCaptureDisplay()..."
-smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowManagerService*.smali"
+    echo "[*] Patching notAllowCaptureDisplay()..."
+    smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowManagerService*.smali"
 
-echo "[*] Patching preventTakingScreenshotToTargetWindow()..."
-smali_kit -c -m "preventTakingScreenshotToTargetWindow" -re "$return_false" -d "$SVC_WORK_DIR" -name "ScreenshotController*.smali"
+    echo "[*] Patching DevicePolicyCacheImpl.isScreenCaptureAllowed()..."
+    smali_kit -c -m "isScreenCaptureAllowed" -re "$return_true" -d "$SVC_WORK_DIR" -name "DevicePolicyCacheImpl.smali"
 
-echo "[*] Recompiling services.jar..."
-dynamic_apktool -recompile "$SVC_WORK_DIR" -o "$SERVICES"
+    echo "[*] Patching preventTakingScreenshotToTargetWindow()..."
+    smali_kit -c -m "preventTakingScreenshotToTargetWindow" -re "$return_false" -d "$SVC_WORK_DIR" -name "ScreenshotController*.smali"
 
-if [ $? -ne 0 ]; then
-    echo "[!] ERROR: services.jar recompilation failed"
-    delete_recursive "$SVC_WORK_DIR"
-    return 1
+    if [ "$SVC_STANDALONE" -eq 1 ]; then
+        echo "[*] Recompiling services.jar..."
+        dynamic_apktool -recompile "$SVC_WORK_DIR" -o "$SERVICES"
+        delete_recursive "$SVC_WORK_DIR"
+    fi
 fi
 
-delete_recursive "$SVC_WORK_DIR"
-
-# ==================== MIUI-SERVICES.JAR ====================
+# ==================== MIUI-SERVICES.JAR (HYPEROS) ====================
 if [ -n "$MIUI_SERVICES" ]; then
-    echo "[*] Decompiling miui-services.jar..."
-    dynamic_apktool -decompile "$MIUI_SERVICES" -o "$MIUI_WORK_DIR"
+    if [ "$MIUI_STANDALONE" -eq 1 ]; then
+        echo "[*] Decompiling miui-services.jar..."
+        dynamic_apktool -decompile "$MIUI_SERVICES" -o "$MIUI_WORK_DIR"
+    fi
 
-    if [ ! -d "$MIUI_WORK_DIR" ]; then
-        echo "[!] WARNING: miui-services.jar decompilation failed"
-    else
+    if [ -d "$MIUI_WORK_DIR" ]; then
         echo "[*] Applying FLAG_SECURE patches to miui-services.jar..."
 
         echo "[*] Patching WindowManagerServiceImpl.notAllowCaptureDisplay()..."
         smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$MIUI_WORK_DIR" -name "WindowManagerServiceImpl.smali"
 
-        echo "[*] Recompiling miui-services.jar..."
-        dynamic_apktool -recompile "$MIUI_WORK_DIR" -o "$MIUI_SERVICES"
-        [ $? -ne 0 ] && echo "[!] WARNING: miui-services.jar recompilation failed"
-
-        delete_recursive "$MIUI_WORK_DIR"
+        if [ "$MIUI_STANDALONE" -eq 1 ]; then
+            echo "[*] Recompiling miui-services.jar..."
+            dynamic_apktool -recompile "$MIUI_WORK_DIR" -o "$MIUI_SERVICES"
+            delete_recursive "$MIUI_WORK_DIR"
+        fi
     fi
-else
-    echo "[*] miui-services.jar not found, skipping..."
 fi
 
 echo "[*] FLAG_SECURE patch complete."

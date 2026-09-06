@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<AndroidAttestation>
+    <!-- 
+      Bruh Patcher Hardware Attestation Keybox Template
+      Place your custom Keybox.xml here if you have one.
+      If left as template, standard PIF properties will be utilized.
+    -->
+    <NumberOfKeyboxes>1</NumberOfKeyboxes>
+    <Keybox DeviceID="BruhPatcher">
+        <Key algorithm="ecdsa">
+            <PrivateKey format="pem">
+-----BEGIN EC PRIVATE KEY-----
+<!-- Place your EC Private Key here -->
+-----END EC PRIVATE KEY-----
+            </PrivateKey>
+            <CertificateChain>
+                <NumberOfCertificates>3</NumberOfCertificates>
+                <Certificate format="pem">
+-----BEGIN CERTIFICATE-----
+<!-- Certificate 1 (Leaf) -->
+-----END CERTIFICATE-----
+                </Certificate>
+                <Certificate format="pem">
+-----BEGIN CERTIFICATE-----
+<!-- Certificate 2 (Intermediate) -->
+-----END CERTIFICATE-----
+                </Certificate>
+                <Certificate format="pem">
+-----BEGIN CERTIFICATE-----
+<!-- Certificate 3 (Root) -->
+-----END CERTIFICATE-----
+                </Certificate>
+            </CertificateChain>
+        </Key>
+    </Keybox>
+</AndroidAttestation>

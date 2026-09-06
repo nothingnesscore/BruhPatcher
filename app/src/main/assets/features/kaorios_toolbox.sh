@@ -1,0 +1,265 @@
+#@name Kaorios Toolbox v2.0.6.0
+#@description Integrates Play Integrity Fix, Keybox hardware attestation, per-app game spoofing (120 FPS), and privacy isolation
+#@requires framework.jar,services.jar
+
+FRAMEWORK="$FRAMEWORK_JAR"
+SERVICES="$SERVICES_JAR"
+MIUI_SERVICES="$MIUI_SERVICES_JAR"
+
+echo "[*] Initializing Kaorios Toolbox v2.0.6.0 integration..."
+
+# Determine workspace directories from smali_workspace or fallback
+if [ -n "$FRAMEWORK_WORKSPACE" ] && [ -d "$FRAMEWORK_WORKSPACE" ]; then
+    FW_DIR="$FRAMEWORK_WORKSPACE"
+else
+    FW_DIR="$TMP/smali_workspaces/framework"
+fi
+
+if [ -n "$SERVICES_WORKSPACE" ] && [ -d "$SERVICES_WORKSPACE" ]; then
+    SVC_DIR="$SERVICES_WORKSPACE"
+else
+    SVC_DIR="$TMP/smali_workspaces/services"
+fi
+
+# ==================== FRAMEWORK.JAR PATCHES ====================
+if [ -d "$FW_DIR" ]; then
+    echo "[*] Applying Kaorios hooks to framework.jar..."
+
+    # 1. Instrumentation.smali - App Context Initialization
+    inst_file=$(find "$FW_DIR" -name "Instrumentation.smali" -type f | head -1)
+    if [ -n "$inst_file" ]; then
+        echo "  -> Hooking Instrumentation.newApplication()..."
+        awk '
+        BEGIN { in_method = 0 }
+        /\.method public.*newApplication\(Ljava\/lang\/Class;Landroid\/content\/Context;\)Landroid\/app\/Application;/ { in_method = 1 }
+        /\.method public.*newApplication\(Ljava\/lang\/ClassLoader;Ljava\/lang\/String;Landroid\/content\/Context;\)Landroid\/app\/Application;/ { in_method = 2 }
+        in_method == 1 && /return-object/ {
+            print "    invoke-static {p1}, Landroid/security/kaorios/KaoriosHook;->initContext(Landroid/content/Context;)V"
+            in_method = 0
+        }
+        in_method == 2 && /return-object/ {
+            print "    invoke-static {p3}, Landroid/security/kaorios/KaoriosHook;->initContext(Landroid/content/Context;)V"
+            in_method = 0
+        }
+        { print $0 }
+        ' "$inst_file" > "${inst_file}.tmp" && mv "${inst_file}.tmp" "$inst_file"
+        echo "    Hooked: $inst_file"
+    fi
+
+    # 2. ApplicationPackageManager.smali - System Feature Hook
+    apm_file=$(find "$FW_DIR" -name "ApplicationPackageManager.smali" -type f | head -1)
+    if [ -n "$apm_file" ]; then
+        echo "  -> Hooking ApplicationPackageManager.hasSystemFeature()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method public.*hasSystemFeature\(Ljava\/lang\/String;I\)Z/ {
+            in_target = 1
+            print $0
+            next
+        }
+        in_target && /\.registers/ {
+            print $0
+            print "    invoke-static {p1, p2}, Landroid/security/kaorios/KaoriosHook;->hasSystemFeature(Ljava/lang/String;I)Ljava/lang/Boolean;"
+            print "    move-result-object v0"
+            print "    if-eqz v0, :cond_kaorios_feature_stock"
+            print "    invoke-virtual {v0}, Ljava/lang/Boolean;->booleanValue()Z"
+            print "    move-result v0"
+            print "    return v0"
+            print "    :cond_kaorios_feature_stock"
+            in_target = 0
+            next
+        }
+        { print $0 }
+        ' "$apm_file" > "${apm_file}.tmp" && mv "${apm_file}.tmp" "$apm_file"
+        echo "    Hooked: $apm_file"
+    fi
+
+    # 3. AndroidKeyStoreKeyPairGeneratorSpi.smali - Software KeyGen Hook
+    keygen_file=$(find "$FW_DIR" -name "AndroidKeyStoreKeyPairGeneratorSpi.smali" -type f | head -1)
+    if [ -n "$keygen_file" ]; then
+        echo "  -> Hooking AndroidKeyStoreKeyPairGeneratorSpi.generateKeyPair()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method public.*generateKeyPair\(\)Ljava\/security\/KeyPair;/ {
+            in_target = 1
+            print $0
+            next
+        }
+        in_target && /\.registers/ {
+            reg_count = $2 + 1
+            print "    .registers " reg_count
+            vx = "v" (reg_count - 2)
+            print "    invoke-static {p0}, Landroid/security/kaorios/KaoriosHook;->initGenerateSoftwareKeyPair(Ljava/lang/Object;)Ljava/security/KeyPair;"
+            print "    move-result-object " vx
+            print "    if-eqz " vx ", :cond_kaorios_gen_stock"
+            print "    return-object " vx
+            print "    :cond_kaorios_gen_stock"
+            in_target = 0
+            next
+        }
+        { print $0 }
+        ' "$keygen_file" > "${keygen_file}.tmp" && mv "${keygen_file}.tmp" "$keygen_file"
+        echo "    Hooked: $keygen_file"
+    fi
+
+    # 4. AndroidKeyStoreSpi.smali - Certificate Chain Interception
+    cert_file=$(find "$FW_DIR" -name "AndroidKeyStoreSpi.smali" -type f | head -1)
+    if [ -n "$cert_file" ]; then
+        echo "  -> Hooking AndroidKeyStoreSpi.engineGetCertificateChain()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method public.*engineGetCertificateChain\(Ljava\/lang\/String;\)\[Ljava\/security\/cert\/Certificate;/ { in_target = 1 }
+        in_target && /aput-object ([v0-9]+), ([v0-9]+), ([v0-9]+)/ {
+            match($0, /aput-object ([v0-9]+), ([v0-9]+), ([v0-9]+)/, arr)
+            target_reg = arr[2]
+            print $0
+            print "    invoke-static {" target_reg "}, Landroid/security/kaorios/KaoriosHook;->CertificateChainIfNeeded([Ljava/security/cert/Certificate;)[Ljava/security/cert/Certificate;"
+            print "    move-result-object " target_reg
+            in_target = 0
+            next
+        }
+        { print $0 }
+        ' "$cert_file" > "${cert_file}.tmp" && mv "${cert_file}.tmp" "$cert_file"
+        echo "    Hooked: $cert_file"
+    fi
+
+    # 5. Settings$NameValueCache.smali - Hide Developer Options & ADB Status
+    nvc_file=$(find "$FW_DIR" -name "Settings*NameValueCache.smali" -type f | head -1)
+    if [ -n "$nvc_file" ]; then
+        echo "  -> Hooking Settings\$NameValueCache.getStringForUser()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method public.*getStringForUser\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;I\)Ljava\/lang\/String;/ {
+            in_target = 1
+            print $0
+            next
+        }
+        in_target && /\.registers/ {
+            print $0
+            print "    if-eqz p2, :cond_kaorios_dev_stock"
+            print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_dev_stock"
+            print "    const-string v0, \"0\""
+            print "    return-object v0"
+            print "    :cond_kaorios_dev_stock"
+            in_target = 0
+            next
+        }
+        { print $0 }
+        ' "$nvc_file" > "${nvc_file}.tmp" && mv "${nvc_file}.tmp" "$nvc_file"
+        echo "    Hooked: $nvc_file"
+    fi
+fi
+
+# ==================== SERVICES.JAR PATCHES ====================
+if [ -d "$SVC_DIR" ]; then
+    echo "[*] Applying Kaorios hooks to services.jar..."
+
+    # 6. SystemServer.smali - Init System Server Hook
+    sys_file=$(find "$SVC_DIR" -name "SystemServer.smali" -type f | head -1)
+    if [ -n "$sys_file" ]; then
+        echo "  -> Hooking SystemServer.initSystemServer()..."
+        awk '
+        /startOtherServices\(Lcom\/android\/server\/utils\/TimingsTraceAndSlog;\)V/ {
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->initSystemServer()V"
+        }
+        { print $0 }
+        ' "$sys_file" > "${sys_file}.tmp" && mv "${sys_file}.tmp" "$sys_file"
+        echo "    Hooked: $sys_file"
+    fi
+
+    # 7. AppsFilterBase.smali - Hide Installed Apps (Caller-Aware Isolation)
+    filter_file=$(find "$SVC_DIR" \( -name "AppsFilterBase.smali" -o -name "AppsFilterImpl.smali" \) -type f | head -1)
+    if [ -n "$filter_file" ]; then
+        echo "  -> Hooking AppsFilter.shouldFilterApplication()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method.*shouldFilterApplication/ { in_target = 1 }
+        in_target && /return v[0-9]+/ {
+            print "    const/4 v0, 0x0"
+            print "    invoke-static {p1, v0, p3, p2}, Landroid/security/kaorios/KaoriosHook;->shouldHideAppListForCaller(ILandroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_hide_stock"
+            print "    const/4 v0, 0x1"
+            print "    return v0"
+            print "    :cond_kaorios_hide_stock"
+            in_target = 0
+        }
+        { print $0 }
+        ' "$filter_file" > "${filter_file}.tmp" && mv "${filter_file}.tmp" "$filter_file"
+        echo "    Hooked: $filter_file"
+    fi
+
+    # 8. ComputerEngine.smali - Filter Installer Source Package
+    comp_file=$(find "$SVC_DIR" -name "ComputerEngine.smali" -type f | head -1)
+    if [ -n "$comp_file" ]; then
+        echo "  -> Hooking ComputerEngine.getInstallerPackageName()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method.*getInstallerPackageName\(Ljava\/lang\/String;I\)Ljava\/lang\/String;/ { in_target = 1 }
+        in_target && /return-object/ {
+            match($0, /return-object ([v0-9]+)/, arr)
+            v_inst = arr[1]
+            print "    const/4 v0, 0x0"
+            print "    invoke-static {v0, p1, p2, p1, " v_inst "}, Landroid/security/kaorios/KaoriosHook;->filterInstallerPackageName(Landroid/content/ContentResolver;IILjava/lang/String;Ljava/lang/String;)Ljava/lang/String;"
+            print "    move-result-object " v_inst
+            in_target = 0
+        }
+        { print $0 }
+        ' "$comp_file" > "${comp_file}.tmp" && mv "${comp_file}.tmp" "$comp_file"
+        echo "    Hooked: $comp_file"
+    fi
+fi
+
+# ==================== KAORIOS BYTECODE INJECTION ====================
+echo "[*] Bundling Kaorios Framework DEX into module extras..."
+
+KAORIOS_ASSET_DIR="/data/local/tmp/bruhpatcher/kaorios"
+if [ ! -d "$KAORIOS_ASSET_DIR" ]; then
+    KAORIOS_ASSET_DIR="/data/local/tmp/frameworkforge/kaorios"
+fi
+
+if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
+    echo "[+] Found Kaorios DEX bytecode: $KAORIOS_ASSET_DIR/kaorios_framework.dex"
+    
+    # Check highest classesN.dex in framework workspace
+    if [ -d "$FW_DIR" ]; then
+        max_dex=1
+        for d in "$FW_DIR"/smali*; do
+            [ -d "$d" ] || continue
+            num=$(basename "$d" | sed 's/smali_classes//;s/smali//')
+            [ -z "$num" ] && num=1
+            if [ "$num" -gt "$max_dex" ] 2>/dev/null; then
+                max_dex=$num
+            fi
+        done
+        next_dex=$((max_dex + 1))
+        target_smali_dir="$FW_DIR/smali_classes$next_dex"
+        echo "[*] Injecting Kaorios DEX as smali_classes$next_dex..."
+        
+        # Decompile kaorios_framework.dex directly into the framework workspace
+        if [ -f "$DI_BIN/baksmali.jar" ]; then
+            dalvikvm -Xmx512m -cp "$DI_BIN/baksmali.jar" org.jf.baksmali.Main d "$KAORIOS_ASSET_DIR/kaorios_framework.dex" -o "$target_smali_dir" 2>/dev/null || true
+        fi
+    fi
+    
+    # Register Kaorios configuration files into the flashable Magisk module
+    if [ -f "$KAORIOS_ASSET_DIR/Keybox.xml" ]; then
+        if grep -q "Place your EC Private Key here" "$KAORIOS_ASSET_DIR/Keybox.xml"; then
+            echo "[*] Keybox.xml is template - using Play Integrity props"
+        else
+            add_to_module "$KAORIOS_ASSET_DIR/Keybox.xml" "data/adb/kaorios/Keybox.xml" "file"
+            echo "[+] Keybox hardware attestation registered to module"
+        fi
+    fi
+    if [ -f "$KAORIOS_ASSET_DIR/Pif-props.json" ]; then
+        add_to_module "$KAORIOS_ASSET_DIR/Pif-props.json" "data/adb/kaorios/Pif-props.json" "file"
+    fi
+    if [ -f "$KAORIOS_ASSET_DIR/app-props.json" ]; then
+        add_to_module "$KAORIOS_ASSET_DIR/app-props.json" "data/adb/kaorios/app-props.json" "file"
+    fi
+    echo "[+] Kaorios configuration and keybox registered to module"
+fi
+
+echo "[*] Kaorios Toolbox v2.0.6.0 patches applied successfully."

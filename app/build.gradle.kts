@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    namespace = "com.jefino.frameworkforge"
+    namespace = "com.nothingness.bruhpatcher"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.jefino.frameworkforge"
+        applicationId = "com.nothingness.bruhpatcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 200
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -22,8 +22,8 @@ android {
         buildConfigField("String", "PIXELDRAIN_BASE_URL", "\"https://pixeldrain.com/api/\"")
         buildConfigField("String", "GITHUB_API_BASE_URL", "\"https://api.github.com/\"")
         buildConfigField("String", "WORKFLOW_PROXY_BASE_URL", "\"https://framework-patcher-v2.vercel.app/\"")
-        buildConfigField("String", "GITHUB_OWNER", "\"Jefino9488\"")
-        buildConfigField("String", "GITHUB_REPO", "\"FrameworkPatcherV2\"")
+        buildConfigField("String", "GITHUB_OWNER", "\"nothingnesscore\"")
+        buildConfigField("String", "GITHUB_REPO", "\"BruhPatcher\"")
     }
 
     buildTypes {

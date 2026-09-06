@@ -1,6 +1,0 @@
-[submodule "app/src/main/assets/module_template"]
-	path = app/src/main/assets/module_template
-	url = https://github.com/Jefino9488/FrameworkPatcherModule.git
-[submodule "app/src/main/assets/features"]
-	path = app/src/main/assets/features
-	url = https://github.com/Jefino9488/FrameworkForgeFeatures.git

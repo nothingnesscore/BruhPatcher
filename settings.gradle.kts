@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "FrameworkForge"
+rootProject.name = "BruhPatcher"
 include(":app")
