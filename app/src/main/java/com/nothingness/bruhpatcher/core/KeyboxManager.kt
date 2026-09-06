@@ -5,24 +5,21 @@ import com.nothingness.bruhpatcher.data.NetworkModule
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import okhttp3.Request
+import org.json.JSONObject
 import java.io.File
 
 /**
  * Data class representing system status from https://keybox.hzzmonet.io.vn/api/status
  */
-@Serializable
 data class KeyboxStatus(
     val status: String = "unknown",
-    @SerialName("total_valid") val totalValid: Int = 0,
-    @SerialName("strong_count") val strongCount: Int = 0,
-    @SerialName("device_count") val deviceCount: Int = 0,
-    @SerialName("banned_count") val bannedCount: Int = 0,
-    @SerialName("total_keys") val totalKeys: Int = 0,
-    @SerialName("last_updated") val lastUpdated: String = ""
+    val totalValid: Int = 0,
+    val strongCount: Int = 0,
+    val deviceCount: Int = 0,
+    val bannedCount: Int = 0,
+    val totalKeys: Int = 0,
+    val lastUpdated: String = ""
 )
 
 /**
@@ -44,11 +41,6 @@ object KeyboxManager {
     private const val RUNTIME_KAORIOS_DIR = "/data/local/tmp/bruhpatcher/kaorios"
     private const val SYSTEM_KAORIOS_DIR = "/data/adb/kaorios"
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-    }
-
     private val httpClient = NetworkModule.downloadClient
 
     /**
@@ -68,7 +60,16 @@ object KeyboxManager {
             }
 
             val body = response.body?.string() ?: return@withContext Result.failure(Exception("Empty status response"))
-            val status = json.decodeFromString<KeyboxStatus>(body)
+            val obj = JSONObject(body)
+            val status = KeyboxStatus(
+                status = obj.optString("status", "unknown"),
+                totalValid = obj.optInt("total_valid", 0),
+                strongCount = obj.optInt("strong_count", 0),
+                deviceCount = obj.optInt("device_count", 0),
+                bannedCount = obj.optInt("banned_count", 0),
+                totalKeys = obj.optInt("total_keys", 0),
+                lastUpdated = obj.optString("last_updated", "")
+            )
             Result.success(status)
         } catch (e: Exception) {
             Result.failure(e)
