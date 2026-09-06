@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.nothingness.bruhpatcher.BuildConfig
 import com.nothingness.bruhpatcher.core.ApiKeyManager
 import com.nothingness.bruhpatcher.core.DiExecutor
 import com.nothingness.bruhpatcher.core.DiInstaller
@@ -104,6 +105,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isSyncingKeybox: StateFlow<Boolean> = _isSyncingKeybox.asStateFlow()
 
     init {
+        try {
+            val app = getApplication<Application>()
+            val prefs = app.getSharedPreferences("bruh_patcher_prefs", Context.MODE_PRIVATE)
+            val lastVersion = prefs.getInt("last_version_code", 0)
+            if (lastVersion < BuildConfig.VERSION_CODE) {
+                FeatureManager.clearUpdatedFeatures(app)
+                prefs.edit().putInt("last_version_code", BuildConfig.VERSION_CODE).apply()
+            }
+        } catch (_: Exception) {}
         checkRootAndScan()
         loadLocalPatchFeatures()
         fetchKeyboxStatus()

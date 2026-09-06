@@ -48,6 +48,18 @@ object FeatureManager {
     private const val KAORIOS_RUNTIME_DIR = "$BRUH_RUNTIME_ROOT/kaorios"
 
     /**
+     * Clears cached updated scripts from disk so built-in assets take precedence
+     */
+    fun clearUpdatedFeatures(context: Context) {
+        try {
+            val updatedDir = File(context.filesDir, UPDATED_STORAGE_PATH)
+            if (updatedDir.exists()) {
+                updatedDir.deleteRecursively()
+            }
+        } catch (_: Exception) {}
+    }
+
+    /**
      * Gets available patch features from assets/updated directory without deploying them
      * Used for UI display in local patching mode
      * 
