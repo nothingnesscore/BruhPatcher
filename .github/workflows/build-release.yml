@@ -45,6 +45,14 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --scan --stacktrace
 
+      - name: Upload Build Reports on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: |
+            app/build/reports/
+
       - name: Get version name
         id: version
         run: |

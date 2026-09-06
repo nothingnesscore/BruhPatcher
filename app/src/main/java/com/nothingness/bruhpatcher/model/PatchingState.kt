@@ -72,6 +72,7 @@ enum class LogTag(val displayName: String) {
     INSTALL("INSTALL"),
     SUCCESS("SUCCESS"),
     ERROR("ERROR"),
+    WARN("WARN"),
     // Local patching tags
     DI("DI"),
     PATCH("PATCH"),
