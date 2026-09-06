@@ -107,17 +107,30 @@ if [ -d "$FW_DIR" ]; then
     if [ -n "$cert_file" ]; then
         echo "  -> Hooking AndroidKeyStoreSpi.engineGetCertificateChain()..."
         awk '
-        BEGIN { in_target = 0 }
+        BEGIN { in_target = 0; hooked = 0 }
         /\.method public.*engineGetCertificateChain\(Ljava\/lang\/String;\)\[Ljava\/security\/cert\/Certificate;/ { in_target = 1 }
-        in_target && /aput-object ([v0-9]+), ([v0-9]+), ([v0-9]+)/ {
-            match($0, /aput-object ([v0-9]+), ([v0-9]+), ([v0-9]+)/, arr)
-            target_reg = arr[2]
+        in_target && !hooked && /aput-object/ {
             print $0
-            print "    invoke-static {" target_reg "}, Landroid/security/kaorios/KaoriosHook;->CertificateChainIfNeeded([Ljava/security/cert/Certificate;)[Ljava/security/cert/Certificate;"
-            print "    move-result-object " target_reg
-            in_target = 0
+            # Parse registers cleanly without gawk regex arrays
+            clean_line = $0
+            gsub(/,/, " ", clean_line)
+            count = split(clean_line, toks)
+            target_reg = ""
+            for (idx = 1; idx <= count; idx++) {
+                if (toks[idx] ~ /^aput-object/) {
+                    target_reg = toks[idx+2]
+                    break
+                }
+            }
+            if (target_reg ~ /^[vp][0-9]+$/) {
+                print "    invoke-static {" target_reg "}, Landroid/security/kaorios/KaoriosHook;->CertificateChainIfNeeded([Ljava/security/cert/Certificate;)[Ljava/security/cert/Certificate;"
+                print "    move-result-object " target_reg
+                hooked = 1
+                in_target = 0
+            }
             next
         }
+        in_target && /\.end method/ { in_target = 0 }
         { print $0 }
         ' "$cert_file" > "${cert_file}.tmp" && mv "${cert_file}.tmp" "$cert_file"
         echo "    Hooked: $cert_file"
@@ -128,13 +141,13 @@ if [ -d "$FW_DIR" ]; then
     if [ -n "$nvc_file" ]; then
         echo "  -> Hooking Settings\$NameValueCache.getStringForUser()..."
         awk '
-        BEGIN { in_target = 0 }
+        BEGIN { in_target = 0; hooked = 0 }
         /\.method public.*getStringForUser\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;I\)Ljava\/lang\/String;/ {
             in_target = 1
             print $0
             next
         }
-        in_target && /\.registers/ {
+        in_target && !hooked && /\.registers/ {
             print $0
             print "    if-eqz p2, :cond_kaorios_dev_stock"
             print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
@@ -143,9 +156,11 @@ if [ -d "$FW_DIR" ]; then
             print "    const-string v0, \"0\""
             print "    return-object v0"
             print "    :cond_kaorios_dev_stock"
+            hooked = 1
             in_target = 0
             next
         }
+        in_target && /\.end method/ { in_target = 0 }
         { print $0 }
         ' "$nvc_file" > "${nvc_file}.tmp" && mv "${nvc_file}.tmp" "$nvc_file"
         echo "    Hooked: $nvc_file"
@@ -161,54 +176,14 @@ if [ -d "$SVC_DIR" ]; then
     if [ -n "$sys_file" ]; then
         echo "  -> Hooking SystemServer.initSystemServer()..."
         awk '
-        /startOtherServices\(Lcom\/android\/server\/utils\/TimingsTraceAndSlog;\)V/ {
+        BEGIN { hooked = 0 }
+        !hooked && /invoke-direct.*->startOtherServices\(Lcom\/android\/server\/utils\/TimingsTraceAndSlog;\)V/ {
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->initSystemServer()V"
+            hooked = 1
         }
         { print $0 }
         ' "$sys_file" > "${sys_file}.tmp" && mv "${sys_file}.tmp" "$sys_file"
         echo "    Hooked: $sys_file"
-    fi
-
-    # 7. AppsFilterBase.smali - Hide Installed Apps (Caller-Aware Isolation)
-    filter_file=$(find "$SVC_DIR" \( -name "AppsFilterBase.smali" -o -name "AppsFilterImpl.smali" \) -type f | head -1)
-    if [ -n "$filter_file" ]; then
-        echo "  -> Hooking AppsFilter.shouldFilterApplication()..."
-        awk '
-        BEGIN { in_target = 0 }
-        /\.method.*shouldFilterApplication/ { in_target = 1 }
-        in_target && /return v[0-9]+/ {
-            print "    const/4 v0, 0x0"
-            print "    invoke-static {p1, v0, p3, p2}, Landroid/security/kaorios/KaoriosHook;->shouldHideAppListForCaller(ILandroid/content/ContentResolver;Ljava/lang/String;I)Z"
-            print "    move-result v0"
-            print "    if-eqz v0, :cond_kaorios_hide_stock"
-            print "    const/4 v0, 0x1"
-            print "    return v0"
-            print "    :cond_kaorios_hide_stock"
-            in_target = 0
-        }
-        { print $0 }
-        ' "$filter_file" > "${filter_file}.tmp" && mv "${filter_file}.tmp" "$filter_file"
-        echo "    Hooked: $filter_file"
-    fi
-
-    # 8. ComputerEngine.smali - Filter Installer Source Package
-    comp_file=$(find "$SVC_DIR" -name "ComputerEngine.smali" -type f | head -1)
-    if [ -n "$comp_file" ]; then
-        echo "  -> Hooking ComputerEngine.getInstallerPackageName()..."
-        awk '
-        BEGIN { in_target = 0 }
-        /\.method.*getInstallerPackageName\(Ljava\/lang\/String;I\)Ljava\/lang\/String;/ { in_target = 1 }
-        in_target && /return-object/ {
-            match($0, /return-object ([v0-9]+)/, arr)
-            v_inst = arr[1]
-            print "    const/4 v0, 0x0"
-            print "    invoke-static {v0, p1, p2, p1, " v_inst "}, Landroid/security/kaorios/KaoriosHook;->filterInstallerPackageName(Landroid/content/ContentResolver;IILjava/lang/String;Ljava/lang/String;)Ljava/lang/String;"
-            print "    move-result-object " v_inst
-            in_target = 0
-        }
-        { print $0 }
-        ' "$comp_file" > "${comp_file}.tmp" && mv "${comp_file}.tmp" "$comp_file"
-        echo "    Hooked: $comp_file"
     fi
 fi
 
