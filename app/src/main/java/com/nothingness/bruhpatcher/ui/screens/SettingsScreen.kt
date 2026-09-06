@@ -27,17 +27,33 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,6 +69,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val keyboxStatus by viewModel.keyboxStatus.collectAsState()
     val isSyncingKeybox by viewModel.isSyncingKeybox.collectAsState()
+    val isNoMountInstalled by viewModel.isNoMountInstalled.collectAsState()
+    val isNoMountGuardTripped by viewModel.isNoMountGuardTripped.collectAsState()
+    val isResettingNoMount by viewModel.isResettingNoMount.collectAsState()
 
     Scaffold(
         topBar = {
@@ -97,7 +116,7 @@ fun SettingsScreen(
                             color = AppColors.TextPrimary
                         )
                         Text(
-                            text = "v2.0.1",
+                            text = "v2.0.2",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.HyperOsCyan
@@ -262,6 +281,108 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = AppColors.HyperOsCyan
                         )
+                    }
+                }
+            }
+
+            // NoMount VFS Engine Status & Auto-Recovery
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "NoMount VFS Engine",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.TextPrimary
+                        )
+
+                        val statusText = when {
+                            !isNoMountInstalled -> "Not Detected"
+                            isNoMountGuardTripped -> "Tripped (Disabled)"
+                            else -> "Active & Mounting"
+                        }
+                        val statusBg = when {
+                            !isNoMountInstalled -> AppColors.TextMuted.copy(alpha = 0.2f)
+                            isNoMountGuardTripped -> AppColors.Error.copy(alpha = 0.2f)
+                            else -> AppColors.Success.copy(alpha = 0.2f)
+                        }
+                        val statusColor = when {
+                            !isNoMountInstalled -> AppColors.TextMuted
+                            isNoMountGuardTripped -> AppColors.Error
+                            else -> AppColors.Success
+                        }
+
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(statusBg)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Bruh Patcher generates modules 100% compatible with NoMount (maxsteeel/nomount & Bouteillepleine/NoMount-Suite) using transparent VFS path redirection. Legacy bind-mounts and mount_mirrors calls have been eliminated.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppColors.TextSecondary
+                    )
+
+                    if (isNoMountGuardTripped) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "⚠️ NoMount bootloop protection triggered on a previous crash and disabled mounting. Tap 'Re-arm Guard' below to reset bootcount and remove disable flags.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppColors.Error,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.resetNoMountGuard() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !isResettingNoMount,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isNoMountGuardTripped) AppColors.Error else AppColors.HyperOsBlue
+                            )
+                        ) {
+                            if (isResettingNoMount) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = AppColors.TextPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Re-arming...")
+                            } else {
+                                Text("Re-arm Guard")
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.refreshNoMountStatus() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Refresh Status")
+                        }
                     }
                 }
             }

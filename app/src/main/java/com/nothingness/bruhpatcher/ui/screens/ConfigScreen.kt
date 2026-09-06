@@ -507,9 +507,9 @@ fun ConfigScreen(
 
             Text(
                 text = if (useLocalPatching) 
-                    "Patches will be applied locally using DynamicInstaller. A Magisk module will be created and saved to Downloads."
+                    "Patches will be applied locally using DynamicInstaller. A Magisk / KernelSU / APatch module with full NoMount VFS compatibility will be created and saved to Downloads."
                 else
-                    "Files will be uploaded to the cloud for patching. The resulting Magisk module will be downloaded and installed.",
+                    "Files will be uploaded to the cloud for patching. The resulting NoMount-compatible module will be downloaded and installed.",
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextMuted
             )

@@ -69,6 +69,7 @@ object ModuleGenerator {
 
                     if (name == "miui-services.jar") {
                         Shell.cmd("mkdir -p ${workDir.absolutePath}/system/system_ext/framework").exec()
+                        Shell.cmd("mkdir -p ${workDir.absolutePath}/system_ext/framework").exec()
                     }
 
                     val copyResult = Shell.cmd("cp ${jarFile.absolutePath} $destPath").exec()
@@ -76,6 +77,13 @@ object ModuleGenerator {
                         return@withContext Result.failure(Exception("Failed to copy $name: ${copyResult.err.joinToString()}"))
                     }
                     Shell.cmd("chmod 644 $destPath").exec()
+
+                    // Also mirror to /system_ext/framework for direct VFS path redirection on Android 12+
+                    if (name == "miui-services.jar") {
+                        val mirrorPath = "${workDir.absolutePath}/system_ext/framework/$name"
+                        Shell.cmd("cp ${jarFile.absolutePath} $mirrorPath").exec()
+                        Shell.cmd("chmod 644 $mirrorPath").exec()
+                    }
                 }
             }
             
@@ -243,6 +251,10 @@ object ModuleGenerator {
         Shell.cmd("chmod -R 755 ${workDir.absolutePath}").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/module.prop").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/system.prop").exec()
+        Shell.cmd("chmod 755 ${workDir.absolutePath}/service.sh").exec()
+        Shell.cmd("chmod 755 ${workDir.absolutePath}/post-fs-data.sh").exec()
+        Shell.cmd("chmod 755 ${workDir.absolutePath}/customize.sh").exec()
+        Shell.cmd("chmod 755 ${workDir.absolutePath}/uninstall.sh").exec()
     }
 
     /**
@@ -261,16 +273,16 @@ object ModuleGenerator {
         val moduleProp = """
             id=$MODULE_ID
             name=Bruh Patcher Patched Framework
-            version=v2.0.0_$timestamp
+            version=v2.0.2_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
-            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch
+            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch [NoMount VFS Compatible]
             minMagisk=20400
             ksu=1
             minKsu=10904
             sufs=1
             minSufs=10000
-            minApi=31
+            minApi=26
             maxApi=37
             requireReboot=true
             support=https://github.com/nothingnesscore/BruhPatcher

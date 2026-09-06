@@ -31,7 +31,7 @@ if [ -d "$FW_DIR" ]; then
         echo "  -> Hooking Instrumentation.newApplication()..."
         awk '
         BEGIN { in_method = 0 }
-        /\.method public.*newApplication\(Ljava\/lang\/Class;Landroid\/content\/Context;\)Landroid\/app\/Application;/ { in_method = 1 }
+        /\.method public static.*newApplication\(Ljava\/lang\/Class;Landroid\/content\/Context;\)Landroid\/app\/Application;/ { in_method = 1 }
         /\.method public.*newApplication\(Ljava\/lang\/ClassLoader;Ljava\/lang\/String;Landroid\/content\/Context;\)Landroid\/app\/Application;/ { in_method = 2 }
         in_method == 1 && /return-object/ {
             print "    invoke-static {p1}, Landroid/security/kaorios/KaoriosHook;->initContext(Landroid/content/Context;)V"
@@ -57,7 +57,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /\.registers/ {
+        in_target && /(\.registers|\.locals)/ {
             print $0
             print "    invoke-static {p1, p2}, Landroid/security/kaorios/KaoriosHook;->hasSystemFeature(Ljava/lang/String;I)Ljava/lang/Boolean;"
             print "    move-result-object v0"
@@ -69,6 +69,7 @@ if [ -d "$FW_DIR" ]; then
             in_target = 0
             next
         }
+        in_target && /\.end method/ { in_target = 0 }
         { print $0 }
         ' "$apm_file" > "${apm_file}.tmp" && mv "${apm_file}.tmp" "$apm_file"
         echo "    Hooked: $apm_file"
@@ -85,18 +86,17 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /\.registers/ {
-            reg_count = $2 + 1
-            print "    .registers " reg_count
-            vx = "v" (reg_count - 2)
+        in_target && /(\.registers|\.locals)/ {
+            print "    .locals 15"
             print "    invoke-static {p0}, Landroid/security/kaorios/KaoriosHook;->initGenerateSoftwareKeyPair(Ljava/lang/Object;)Ljava/security/KeyPair;"
-            print "    move-result-object " vx
-            print "    if-eqz " vx ", :cond_kaorios_gen_stock"
-            print "    return-object " vx
+            print "    move-result-object v14"
+            print "    if-eqz v14, :cond_kaorios_gen_stock"
+            print "    return-object v14"
             print "    :cond_kaorios_gen_stock"
             in_target = 0
             next
         }
+        in_target && /\.end method/ { in_target = 0 }
         { print $0 }
         ' "$keygen_file" > "${keygen_file}.tmp" && mv "${keygen_file}.tmp" "$keygen_file"
         echo "    Hooked: $keygen_file"
@@ -111,7 +111,6 @@ if [ -d "$FW_DIR" ]; then
         /\.method public.*engineGetCertificateChain\(Ljava\/lang\/String;\)\[Ljava\/security\/cert\/Certificate;/ { in_target = 1 }
         in_target && !hooked && /aput-object/ {
             print $0
-            # Parse registers cleanly without gawk regex arrays
             clean_line = $0
             gsub(/,/, " ", clean_line)
             count = split(clean_line, toks)
@@ -135,46 +134,16 @@ if [ -d "$FW_DIR" ]; then
         ' "$cert_file" > "${cert_file}.tmp" && mv "${cert_file}.tmp" "$cert_file"
         echo "    Hooked: $cert_file"
     fi
-
-    # 5. Settings$NameValueCache.smali - Hide Developer Options & ADB Status
-    nvc_file=$(find "$FW_DIR" -name "Settings*NameValueCache.smali" -type f | head -1)
-    if [ -n "$nvc_file" ]; then
-        echo "  -> Hooking Settings\$NameValueCache.getStringForUser()..."
-        awk '
-        BEGIN { in_target = 0; hooked = 0 }
-        /\.method public.*getStringForUser\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;I\)Ljava\/lang\/String;/ {
-            in_target = 1
-            print $0
-            next
-        }
-        in_target && !hooked && /\.registers/ {
-            print $0
-            print "    if-eqz p2, :cond_kaorios_dev_stock"
-            print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
-            print "    move-result v0"
-            print "    if-eqz v0, :cond_kaorios_dev_stock"
-            print "    const-string v0, \"0\""
-            print "    return-object v0"
-            print "    :cond_kaorios_dev_stock"
-            hooked = 1
-            in_target = 0
-            next
-        }
-        in_target && /\.end method/ { in_target = 0 }
-        { print $0 }
-        ' "$nvc_file" > "${nvc_file}.tmp" && mv "${nvc_file}.tmp" "$nvc_file"
-        echo "    Hooked: $nvc_file"
-    fi
 fi
 
 # ==================== SERVICES.JAR PATCHES ====================
 if [ -d "$SVC_DIR" ]; then
     echo "[*] Applying Kaorios hooks to services.jar..."
 
-    # 6. SystemServer.smali - Init System Server Hook
+    # 5. SystemServer.smali - Init System Server Hook
     sys_file=$(find "$SVC_DIR" -name "SystemServer.smali" -type f | head -1)
     if [ -n "$sys_file" ]; then
-        echo "  -> Hooking SystemServer.initSystemServer()..."
+        echo "  -> Hooking SystemServer.run()..."
         awk '
         BEGIN { hooked = 0 }
         !hooked && /invoke-direct.*->startOtherServices\(Lcom\/android\/server\/utils\/TimingsTraceAndSlog;\)V/ {
@@ -215,11 +184,24 @@ if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
         
         # Decompile kaorios_framework.dex directly into the framework workspace
         if [ -f "$DI_BIN/baksmali.jar" ]; then
-            dalvikvm -Xmx512m -cp "$DI_BIN/baksmali.jar" org.jf.baksmali.Main d "$KAORIOS_ASSET_DIR/kaorios_framework.dex" -o "$target_smali_dir" 2>/dev/null || true
+            echo "[*] Disassembling Kaorios DEX bytecode..."
+            export CLASSPATH="$DI_BIN/baksmali.jar"
+            /system/bin/app_process -Xmx512m /system/bin org.jf.baksmali.Main d "$KAORIOS_ASSET_DIR/kaorios_framework.dex" -o "$target_smali_dir" 2>/dev/null
+            if [ ! -d "$target_smali_dir" ] || [ -z "$(ls -A "$target_smali_dir" 2>/dev/null)" ]; then
+                dalvikvm -Xmx512m -cp "$DI_BIN/baksmali.jar" org.jf.baksmali.Main d "$KAORIOS_ASSET_DIR/kaorios_framework.dex" -o "$target_smali_dir" 2>/dev/null || true
+            fi
         fi
+
+        # Verify injection succeeded
+        if [ ! -d "$target_smali_dir" ] || [ -z "$(ls -A "$target_smali_dir" 2>/dev/null)" ]; then
+            echo "[!] FATAL: Failed to inject Kaorios bytecode into framework workspace!"
+            echo "[!] Missing Kaorios bytecode would cause bootloops. Aborting."
+            return 1 2>/dev/null || exit 1
+        fi
+        echo "[+] Successfully injected Kaorios bytecode into smali_classes$next_dex"
     fi
     
-    # Register Kaorios configuration files into the flashable Magisk module
+    # Register Kaorios configuration files into the flashable module
     # Attempt to fetch latest verified Strong Keybox from keybox.hzzmonet.io.vn if online
     echo "[*] Connecting to Keybox Hub (https://keybox.hzzmonet.io.vn)..."
     if command -v curl >/dev/null 2>&1; then

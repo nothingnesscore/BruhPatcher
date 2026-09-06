@@ -343,4 +343,56 @@ object RootManager {
             Result.failure(e)
         }
     }
+
+    /**
+     * Checks if NoMount (or NoMount-Suite) metamodule is installed on device
+     */
+    fun isNoMountInstalled(): Boolean {
+        return try {
+            val check = Shell.cmd(
+                "which nomount || which nm || [ -d /data/adb/modules/nomount ] || [ -d /data/adb/nomount ] || [ -d /data/adb/ksu/modules/nomount ] || [ -d /data/adb/apatch/modules/nomount ]"
+            ).exec()
+            check.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Checks if NoMount bootloop protector tripped and disabled NoMount
+     */
+    fun isNoMountDisabledByGuard(): Boolean {
+        return try {
+            val check = Shell.cmd(
+                "[ -f /data/adb/modules/nomount/disable ] || [ -f /data/adb/nomount/disabled ] || [ -f /data/adb/modules/nomount/disabled ] || [ -f /data/adb/nomount/.booting ] || [ -f /data/adb/nomount/boot_failed ]"
+            ).exec()
+            check.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Resets tripped NoMount bootloop protector flags and re-arms NoMount
+     */
+    suspend fun resetNoMountBootloopGuard(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val cmd = Shell.cmd(
+                "rm -f /data/adb/modules/nomount/disable",
+                "rm -f /data/adb/modules/nomount/disabled",
+                "rm -f /data/adb/nomount/disable",
+                "rm -f /data/adb/nomount/disabled",
+                "rm -f /data/adb/nomount/.booting",
+                "rm -f /data/adb/nomount/boot_failed",
+                "echo 0 > /data/adb/nomount/bootcount 2>/dev/null || true"
+            ).exec()
+            if (cmd.isSuccess) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to reset NoMount bootloop guard: ${cmd.err.joinToString()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

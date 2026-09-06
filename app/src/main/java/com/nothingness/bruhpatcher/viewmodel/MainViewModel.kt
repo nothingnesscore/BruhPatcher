@@ -104,6 +104,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isSyncingKeybox = MutableStateFlow(false)
     val isSyncingKeybox: StateFlow<Boolean> = _isSyncingKeybox.asStateFlow()
 
+    // NoMount VFS Engine state
+    private val _isNoMountInstalled = MutableStateFlow(false)
+    val isNoMountInstalled: StateFlow<Boolean> = _isNoMountInstalled.asStateFlow()
+
+    private val _isNoMountGuardTripped = MutableStateFlow(false)
+    val isNoMountGuardTripped: StateFlow<Boolean> = _isNoMountGuardTripped.asStateFlow()
+
+    private val _isResettingNoMount = MutableStateFlow(false)
+    val isResettingNoMount: StateFlow<Boolean> = _isResettingNoMount.asStateFlow()
+
     init {
         try {
             val app = getApplication<Application>()
@@ -122,6 +132,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadLocalPatchFeatures() {
         viewModelScope.launch {
             _localPatchFeatures.value = FeatureManager.getLocalPatchFeatures(getApplication())
+        }
+    }
+
+    fun refreshNoMountStatus() {
+        if (!_isRootAvailable.value) return
+        viewModelScope.launch {
+            val installed = RootManager.isNoMountInstalled()
+            val tripped = RootManager.isNoMountDisabledByGuard()
+            _isNoMountInstalled.value = installed
+            _isNoMountGuardTripped.value = tripped
+        }
+    }
+
+    fun resetNoMountGuard() {
+        viewModelScope.launch {
+            _isResettingNoMount.value = true
+            addLog(LogTag.INFO, "Resetting NoMount bootloop protector flags...")
+            val result = RootManager.resetNoMountBootloopGuard()
+            _isResettingNoMount.value = false
+            if (result.isSuccess) {
+                _isNoMountGuardTripped.value = false
+                addLog(LogTag.SUCCESS, "NoMount guard reset successfully! Metamodule is re-armed.")
+            } else {
+                val err = result.exceptionOrNull()?.message ?: "Unknown error"
+                addLog(LogTag.ERROR, "Failed to reset NoMount guard: $err")
+            }
         }
     }
 
@@ -154,6 +190,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (hasRoot) {
                 _magiskVersion.value = RootManager.getMagiskVersion()
                 addLog(LogTag.INFO, "Root access granted")
+
+                val nmInstalled = RootManager.isNoMountInstalled()
+                val nmTripped = RootManager.isNoMountDisabledByGuard()
+                _isNoMountInstalled.value = nmInstalled
+                _isNoMountGuardTripped.value = nmTripped
+
+                if (nmInstalled) {
+                    if (nmTripped) {
+                        addLog(LogTag.WARN, "NoMount metamodule detected, but its bootloop protector is TRIPPED! Reset guard before rebooting.")
+                    } else {
+                        addLog(LogTag.INFO, "NoMount VFS metamodule detected and ACTIVE")
+                    }
+                }
 
                 _patchingState.value = PatchingState.Scanning("Scanning device...")
                 val info = SystemInspector.getDeviceInfo()
@@ -588,7 +637,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val report = buildString {
             appendLine("=== BRUH PATCHER DIAGNOSTIC REPORT ===")
             appendLine("Timestamp: ${java.util.Date()}")
-            appendLine("App Version: v2.0.0 (Universal Edition)")
+            appendLine("App Version: v2.0.2 (Universal Edition - NoMount VFS Compatible)")
             appendLine()
             appendLine("--- Device Information ---")
             appendLine("Device: ${info.deviceName} (${info.deviceCodename})")
@@ -601,6 +650,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             appendLine("Root Available: ${_isRootAvailable.value}")
             appendLine("Root Manager: ${RootManager.getRootManagerType()}")
             appendLine("Magisk/KSU Version: ${_magiskVersion.value ?: "N/A"}")
+            appendLine("NoMount Metamodule Installed: ${_isNoMountInstalled.value}")
+            appendLine("NoMount Bootloop Guard Tripped: ${_isNoMountGuardTripped.value}")
             appendLine()
             appendLine("--- Keybox Hub ---")
             val kb = _keyboxStatus.value
@@ -882,39 +933,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 extractedFiles.keys.forEach { fileName ->
                     val outputPath = "${jobDir!!.absolutePath}/output/$fileName"
-                    val inputPath = "${jobDir!!.absolutePath}/input/$fileName"
 
-                    // Check if file exists in output (modified or copied by run.sh)
+                    // Check if file exists in output (strictly modified by run.sh)
                     val checkResult = Shell.cmd("test -f $outputPath && echo YES").exec()
                     val hasOutput = checkResult.out.any { it.contains("YES") }
 
-                    val localFile = File(context.cacheDir, "patched_$fileName")
-
                     if (hasOutput) {
+                        val localFile = File(context.cacheDir, "patched_$fileName")
                         // Copy from output to app cache
                         Shell.cmd(
                             "cp $outputPath ${localFile.absolutePath}",
                             "chmod 644 ${localFile.absolutePath}"
                         ).exec()
-                        patchedJars[fileName] = localFile
-                        addLog(LogTag.MODULE, "Retrieved $fileName from output")
+
+                        if (localFile.exists() && localFile.length() > 0) {
+                            patchedJars[fileName] = localFile
+                            addLog(LogTag.MODULE, "Verified patched $fileName (${localFile.length() / 1024} KB)")
+                        } else {
+                            addLog(LogTag.ERROR, "Failed to copy patched $fileName from output")
+                        }
                     } else {
-                        // Fallback to original input if missing from output (safety net)
-                        addLog(LogTag.MODULE, "Warning: $fileName not found in output, using original")
-                        Shell.cmd(
-                            "cp $inputPath ${localFile.absolutePath}",
-                            "chmod 644 ${localFile.absolutePath}"
-                        ).exec()
-                        patchedJars[fileName] = localFile
+                        addLog(LogTag.WARN, "$fileName was not modified by selected patches (omitted from module)")
                     }
                 }
 
                 if (patchedJars.isEmpty()) {
-                    _patchingState.value = PatchingState.Error("No files found to package", recoverable = true)
+                    addLog(LogTag.ERROR, "Zero patched JARs generated. Aborting module creation to prevent bootloop.")
+                    _patchingState.value = PatchingState.Error("No patched JAR files generated. Aborted to prevent bootloop.", recoverable = true)
                     return@launch
                 }
 
-                addLog(LogTag.MODULE, "Building Magisk module...")
+                addLog(LogTag.MODULE, "Building NoMount VFS compatible module with ${patchedJars.size} patched JAR(s)...")
 
                 // Pass the job output directory where module_extras.conf is located
                 val jobOutputDirFile = File(jobDir, "output")
@@ -990,6 +1039,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 result.fold(
                     onSuccess = {
+                        // Re-arm NoMount bootloop protector if metamodule is present
+                        if (RootManager.isNoMountInstalled()) {
+                            RootManager.resetNoMountBootloopGuard()
+                            _isNoMountGuardTripped.value = false
+                            addLog(LogTag.SUCCESS, "Re-armed NoMount VFS metamodule")
+                        }
                         addLog(LogTag.SUCCESS, "Module installed successfully!")
                         addLog(LogTag.SUCCESS, "Please reboot your device to apply changes")
                         _patchingState.value = PatchingState.Success

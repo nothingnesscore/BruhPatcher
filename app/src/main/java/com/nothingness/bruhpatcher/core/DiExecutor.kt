@@ -248,6 +248,7 @@ object DiExecutor {
             // Verify modifications and copy to output
             appendLine("# Verify modifications and copy to output")
             appendLine("echo '[*] Verifying patches...'")
+            appendLine("MODIFIED_COUNT=0")
             inputFiles.keys.forEach { name ->
                 val envVar = when(name) {
                     "framework.jar" -> "FRAMEWORK_JAR"
@@ -263,13 +264,17 @@ object DiExecutor {
                     appendLine("if [ \"\$${envVar}_MD5_PRE\" != \"\$${envVar}_MD5_POST\" ]; then")
                     appendLine("    echo '[SUCCESS] $name was modified by patches.'")
                     appendLine("    cp \"$$envVar\" \"\$OUTPUT_DIR/$name\"")
+                    appendLine("    ((MODIFIED_COUNT++))")
                     appendLine("else")
-                    appendLine("    echo '[WARNING] $name was NOT modified. Copying original to output.'")
-                    // Still copy it so the module generator has the file, but warn the user
-                    appendLine("    cp \"$$envVar\" \"\$OUTPUT_DIR/$name\"")
+                    appendLine("    echo '[INFO] $name was not modified by selected patches.'")
                     appendLine("fi")
                 }
             }
+            appendLine("if [ \$MODIFIED_COUNT -eq 0 ]; then")
+            appendLine("    echo '[!] ERROR: No JAR files were modified by any feature patch!'")
+            appendLine("    cleanup_workspaces")
+            appendLine("    exit 1")
+            appendLine("fi")
             
             // Cleanup workspaces
             appendLine("")
