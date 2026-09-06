@@ -246,12 +246,8 @@ if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
     
     # Register Kaorios configuration files into the flashable Magisk module
     if [ -f "$KAORIOS_ASSET_DIR/Keybox.xml" ]; then
-        if grep -q "Place your EC Private Key here" "$KAORIOS_ASSET_DIR/Keybox.xml"; then
-            echo "[*] Keybox.xml is template - using Play Integrity props"
-        else
-            add_to_module "$KAORIOS_ASSET_DIR/Keybox.xml" "data/adb/kaorios/Keybox.xml" "file"
-            echo "[+] Keybox hardware attestation registered to module"
-        fi
+        add_to_module "$KAORIOS_ASSET_DIR/Keybox.xml" "data/adb/kaorios/Keybox.xml" "file"
+        echo "[+] Keybox hardware attestation registered to module"
     fi
     if [ -f "$KAORIOS_ASSET_DIR/Pif-props.json" ]; then
         add_to_module "$KAORIOS_ASSET_DIR/Pif-props.json" "data/adb/kaorios/Pif-props.json" "file"
