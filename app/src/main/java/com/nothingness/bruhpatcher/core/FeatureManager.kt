@@ -152,17 +152,28 @@ object FeatureManager {
         val files = context.assets.list(KAORIOS_ASSETS_PATH) ?: return
         for (filename in files) {
             try {
-                val cacheFile = File(context.cacheDir, "k_$filename")
-                context.assets.open("$KAORIOS_ASSETS_PATH/$filename").use { input ->
-                    cacheFile.outputStream().use { os -> input.copyTo(os) }
+                // If this is Keybox.xml and we have an updated one from Keybox Hub, use it
+                val customKeybox = if (filename == "Keybox.xml") KeyboxManager.getLocalKeybox(context) else null
+                val sourceFile = if (customKeybox != null && customKeybox.exists()) {
+                    customKeybox
+                } else {
+                    val cacheFile = File(context.cacheDir, "k_$filename")
+                    context.assets.open("$KAORIOS_ASSETS_PATH/$filename").use { input ->
+                        cacheFile.outputStream().use { os -> input.copyTo(os) }
+                    }
+                    cacheFile
                 }
+
                 val runtimePath = "$KAORIOS_RUNTIME_DIR/$filename"
                 Shell.cmd(
-                    "cp ${cacheFile.absolutePath} $runtimePath",
+                    "cp ${sourceFile.absolutePath} $runtimePath",
                     "chmod 644 $runtimePath"
                 ).exec()
-                cacheFile.delete()
-            } catch (_: Exception) { }
+
+                if (sourceFile != customKeybox) {
+                    sourceFile.delete()
+                }
+            } catch (e: Exception) { }
         }
     }
 

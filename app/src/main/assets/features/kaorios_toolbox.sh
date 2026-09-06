@@ -245,6 +245,23 @@ if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
     fi
     
     # Register Kaorios configuration files into the flashable Magisk module
+    # Attempt to fetch latest verified Strong Keybox from keybox.hzzmonet.io.vn if online
+    echo "[*] Connecting to Keybox Hub (https://keybox.hzzmonet.io.vn)..."
+    if command -v curl >/dev/null 2>&1; then
+        curl -k -s -L --connect-timeout 6 -m 12 "https://keybox.hzzmonet.io.vn/api/download" -o "$KAORIOS_ASSET_DIR/Keybox_latest.xml" 2>/dev/null || true
+    elif command -v wget >/dev/null 2>&1; then
+        wget --no-check-certificate -q -T 8 -O "$KAORIOS_ASSET_DIR/Keybox_latest.xml" "https://keybox.hzzmonet.io.vn/api/download" 2>/dev/null || true
+    fi
+
+    if [ -s "$KAORIOS_ASSET_DIR/Keybox_latest.xml" ] && grep -q "<AndroidAttestation" "$KAORIOS_ASSET_DIR/Keybox_latest.xml"; then
+        cp "$KAORIOS_ASSET_DIR/Keybox_latest.xml" "$KAORIOS_ASSET_DIR/Keybox.xml"
+        rm -f "$KAORIOS_ASSET_DIR/Keybox_latest.xml"
+        echo "[+] Downloaded & verified live Strong Keybox from keybox.hzzmonet.io.vn"
+    else
+        rm -f "$KAORIOS_ASSET_DIR/Keybox_latest.xml"
+        echo "[*] Using bundled/cached genuine Keybox.xml (offline fallback)"
+    fi
+
     if [ -f "$KAORIOS_ASSET_DIR/Keybox.xml" ]; then
         add_to_module "$KAORIOS_ASSET_DIR/Keybox.xml" "data/adb/kaorios/Keybox.xml" "file"
         echo "[+] Keybox hardware attestation registered to module"

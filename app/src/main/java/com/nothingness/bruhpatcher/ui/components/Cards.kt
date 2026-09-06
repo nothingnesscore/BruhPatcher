@@ -22,8 +22,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -183,7 +186,10 @@ fun DeviceInfoCard(
 
 @Composable
 fun KaoriosShowcaseCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    keyboxStatus: com.nothingness.bruhpatcher.core.KeyboxStatus? = null,
+    isSyncingKeybox: Boolean = false,
+    onSyncKeybox: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -274,6 +280,67 @@ fun KaoriosShowcaseCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = AppColors.TextMuted
                         )
+                    }
+                }
+            }
+
+            // Keybox Hub (https://keybox.hzzmonet.io.vn) integration box
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AppColors.DarkBackground.copy(alpha = 0.55f))
+                    .border(1.dp, Color(0xFF00C7BE).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                    .padding(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Keybox Hub (keybox.hzzmonet.io.vn)",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.HyperOsCyan
+                        )
+                        val statusSummary = if (keyboxStatus != null) {
+                            "Status: ${keyboxStatus.status.uppercase()} (${keyboxStatus.strongCount} Strong / ${keyboxStatus.deviceCount} Device)"
+                        } else {
+                            "Live Keybox Attestation Sync"
+                        }
+                        Text(
+                            text = statusSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppColors.TextSecondary
+                        )
+                    }
+
+                    if (onSyncKeybox != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = onSyncKeybox,
+                            enabled = !isSyncingKeybox,
+                            modifier = Modifier.height(34.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                        ) {
+                            if (isSyncingKeybox) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = "Sync Keybox",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }

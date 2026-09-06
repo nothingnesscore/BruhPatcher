@@ -41,7 +41,9 @@ object DiExecutor {
         log("Executing job: ${jobDir.name}")
 
         val diBash = "/data/tmp/di/bin/bash"
-        val result = Shell.cmd("su -c '$diBash ${runScript.absolutePath}'")
+        val isBashExecutable = Shell.cmd("test -x $diBash").exec().isSuccess
+        val execCmd = if (isBashExecutable) "$diBash ${runScript.absolutePath}" else "sh ${runScript.absolutePath}"
+        val result = Shell.cmd(execCmd)
             .to(stdoutCallback, stderrCallback)
             .exec()
 

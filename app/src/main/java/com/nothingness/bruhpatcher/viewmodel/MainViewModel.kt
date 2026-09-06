@@ -10,6 +10,8 @@ import com.nothingness.bruhpatcher.core.DiExecutor
 import com.nothingness.bruhpatcher.core.DiInstaller
 import com.nothingness.bruhpatcher.core.FeatureManager
 import com.nothingness.bruhpatcher.core.FeatureUpdater
+import com.nothingness.bruhpatcher.core.KeyboxManager
+import com.nothingness.bruhpatcher.core.KeyboxStatus
 import com.nothingness.bruhpatcher.core.ModuleGenerator
 import com.nothingness.bruhpatcher.core.PatchFeature
 import com.nothingness.bruhpatcher.core.UserFeatureImporter
@@ -94,9 +96,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isUpdatingFeatures = MutableStateFlow(false)
     val isUpdatingFeatures: StateFlow<Boolean> = _isUpdatingFeatures.asStateFlow()
 
+    // Keybox Hub status & sync state
+    private val _keyboxStatus = MutableStateFlow<KeyboxStatus?>(null)
+    val keyboxStatus: StateFlow<KeyboxStatus?> = _keyboxStatus.asStateFlow()
+
+    private val _isSyncingKeybox = MutableStateFlow(false)
+    val isSyncingKeybox: StateFlow<Boolean> = _isSyncingKeybox.asStateFlow()
+
     init {
         checkRootAndScan()
         loadLocalPatchFeatures()
+        fetchKeyboxStatus()
     }
 
     private fun loadLocalPatchFeatures() {
@@ -524,11 +534,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val context = getApplication<Application>()
                 val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
-                val fileName = "FrameworkForge_logs_$timestamp.txt"
+                val fileName = "BruhPatcher_logs_$timestamp.txt"
                 
                 // Format logs
                 val logContent = buildString {
-                    appendLine("FrameworkForge Logs")
+                    appendLine("Bruh Patcher Diagnostic Logs")
                     appendLine("Generated: ${java.util.Date()}")
                     appendLine("Device: ${_deviceInfo.value.deviceCodename}")
                     appendLine("Android: ${_deviceInfo.value.androidVersion} (API ${_deviceInfo.value.apiLevel})")
@@ -560,8 +570,103 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Exports full diagnostic report to clipboard for easy feedback/bug reporting
+     */
+    fun copyDiagnosticReport(context: Context): String {
+        val info = _deviceInfo.value
+        val report = buildString {
+            appendLine("=== BRUH PATCHER DIAGNOSTIC REPORT ===")
+            appendLine("Timestamp: ${java.util.Date()}")
+            appendLine("App Version: v2.0.0 (Universal Edition)")
+            appendLine()
+            appendLine("--- Device Information ---")
+            appendLine("Device: ${info.deviceName} (${info.deviceCodename})")
+            appendLine("Brand/Model: ${info.brand} ${info.model}")
+            appendLine("Android: ${info.androidVersion} (API ${info.apiLevel})")
+            appendLine("ROM / HyperOS: ${if (info.isHyperOS) "HyperOS (${info.hyperOsVersion})" else if (info.isMiui) "MIUI (${info.miuiVersion})" else info.romDescription}")
+            appendLine("Framework JARs: framework=${info.hasFrameworkJar}, services=${info.hasServicesJar}, miui-services=${info.hasMiuiServicesJar}")
+            appendLine()
+            appendLine("--- Root & Environment ---")
+            appendLine("Root Available: ${_isRootAvailable.value}")
+            appendLine("Root Manager: ${RootManager.getRootManagerType()}")
+            appendLine("Magisk/KSU Version: ${_magiskVersion.value ?: "N/A"}")
+            appendLine()
+            appendLine("--- Keybox Hub ---")
+            val kb = _keyboxStatus.value
+            appendLine("Keybox Status: ${kb?.status ?: "Unknown"} (Strong: ${kb?.strongCount ?: 0}, Device: ${kb?.deviceCount ?: 0}, Banned: ${kb?.bannedCount ?: 0})")
+            appendLine()
+            appendLine("--- Patching State ---")
+            appendLine("Mode: ${_patchingMode.value}")
+            appendLine("Local Mode Enabled: ${_useLocalPatching.value}")
+            appendLine("Active State: ${_patchingState.value}")
+            appendLine("Selected Features: ${_localPatchFeatures.value.filter { it.isEnabled }.joinToString { it.name }}")
+            appendLine()
+            appendLine("--- Recent Logs ---")
+            _logs.value.takeLast(60).forEach { entry ->
+                val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(entry.timestamp))
+                appendLine("$time [${entry.tag.displayName}] ${entry.message}")
+            }
+            appendLine("======================================")
+        }
+
+        try {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("BruhPatcher_Diagnostics", report)
+            clipboard.setPrimaryClip(clip)
+            addLog(LogTag.SUCCESS, "Diagnostic report copied to clipboard!")
+        } catch (e: Exception) {
+            addLog(LogTag.ERROR, "Failed to copy to clipboard: ${e.message}")
+        }
+        return report
+    }
+
+    /**
+     * Queries Keybox Hub (https://keybox.hzzmonet.io.vn/api/status)
+     */
+    fun fetchKeyboxStatus() {
+        viewModelScope.launch {
+            val result = KeyboxManager.getStatus()
+            result.fold(
+                onSuccess = { status ->
+                    _keyboxStatus.value = status
+                    addLog(LogTag.INFO, "Keybox Hub: ${status.status} (${status.strongCount} Strong / ${status.deviceCount} Device)")
+                },
+                onFailure = { _ ->
+                    // Offline or server unreachable
+                }
+            )
+        }
+    }
+
+    /**
+     * Downloads and applies the latest verified Strong Keybox from https://keybox.hzzmonet.io.vn/api/download
+     */
+    fun syncLatestKeybox() {
+        viewModelScope.launch {
+            _isSyncingKeybox.value = true
+            addLog(LogTag.INFO, "Connecting to Keybox Hub (https://keybox.hzzmonet.io.vn)...")
+            try {
+                val context = getApplication<Application>()
+                val result = KeyboxManager.fetchAndApplyLatestKeybox(context)
+                result.fold(
+                    onSuccess = { msg ->
+                        addLog(LogTag.SUCCESS, msg)
+                        fetchKeyboxStatus()
+                    },
+                    onFailure = { error ->
+                        addLog(LogTag.ERROR, "Keybox sync failed: ${error.message}")
+                    }
+                )
+            } finally {
+                _isSyncingKeybox.value = false
+            }
+        }
+    }
+
     fun refreshDeviceInfo() {
         checkRootAndScan()
+        fetchKeyboxStatus()
     }
 
     /**
@@ -698,7 +803,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Step 4: Create isolated job directory
                 val jobId = System.currentTimeMillis().toString()
-                jobDir = File("/data/local/tmp/frameworkforge/jobs/$jobId")
+                jobDir = File("/data/local/tmp/bruhpatcher/jobs/$jobId")
                 
                 _patchingState.value = PatchingState.Patching("Setting up job", 0, featureScripts.size)
                 addLog(LogTag.PATCH, "Creating job directory: ${jobDir.name}")
@@ -770,7 +875,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val inputPath = "${jobDir!!.absolutePath}/input/$fileName"
 
                     // Check if file exists in output (modified or copied by run.sh)
-                    val checkResult = Shell.cmd("su -c 'test -f $outputPath && echo YES'").exec()
+                    val checkResult = Shell.cmd("test -f $outputPath && echo YES").exec()
                     val hasOutput = checkResult.out.any { it.contains("YES") }
 
                     val localFile = File(context.cacheDir, "patched_$fileName")

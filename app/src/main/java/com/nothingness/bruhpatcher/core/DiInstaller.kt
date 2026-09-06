@@ -47,8 +47,7 @@ object DiInstaller {
         // Extract DI tools directly (bypass setup script)
         // The setup script would do this but starts interactive bash
         val extractCmd = """
-            su -c '
-                cd $DI_ZBIN || exit 1
+            cd $DI_ZBIN || exit 1
                 
                 echo "[DIAG] Contents of zbin:"
                 ls -la
@@ -154,7 +153,6 @@ object DiInstaller {
                 else
                     echo "[DIAG] zipalign NOT FOUND"
                 fi
-            '
         """.trimIndent()
 
         val extractResult = Shell.cmd(extractCmd).exec()
@@ -162,28 +160,26 @@ object DiInstaller {
 
         // Create environment file using printf (heredoc doesn't work well in this context)
         val createEnvCmd = """
-            su -c '
-                printf "#!/system/bin/sh\n" > $DI_ROOT/environment
-                printf "# DynamicInstaller Environment\n" >> $DI_ROOT/environment
-                printf "export DI_ROOT=\"$DI_ZBIN\"\n" >> $DI_ROOT/environment
-                printf "export DI_TMP=\"$DI_TMP\"\n" >> $DI_ROOT/environment
-                printf "export DI_BIN=\"$DI_BIN\"\n" >> $DI_ROOT/environment
-                printf "export PATH=\"$DI_BIN:\${'$'}PATH\"\n" >> $DI_ROOT/environment
-                printf "export TMPDIR=\"$DI_TMP\"\n" >> $DI_ROOT/environment
-                chmod 755 $DI_ROOT/environment
-            '
+            printf "#!/system/bin/sh\n" > $DI_ROOT/environment
+            printf "# DynamicInstaller Environment\n" >> $DI_ROOT/environment
+            printf "export DI_ROOT=\"$DI_ZBIN\"\n" >> $DI_ROOT/environment
+            printf "export DI_TMP=\"$DI_TMP\"\n" >> $DI_ROOT/environment
+            printf "export DI_BIN=\"$DI_BIN\"\n" >> $DI_ROOT/environment
+            printf "export PATH=\"$DI_BIN:\${'$'}PATH\"\n" >> $DI_ROOT/environment
+            printf "export TMPDIR=\"$DI_TMP\"\n" >> $DI_ROOT/environment
+            chmod 755 $DI_ROOT/environment
         """.trimIndent()
 
         Shell.cmd(createEnvCmd).exec()
 
         // Verify
-        if (!Shell.cmd("su -c 'test -f $DI_ROOT/environment'").exec().isSuccess) {
+        if (!Shell.cmd("test -f $DI_ROOT/environment").exec().isSuccess) {
             log("Failed to create environment file")
             return false
         }
 
         // Test that busybox is working
-        val testResult = Shell.cmd("su -c '$DI_BIN/busybox --help >/dev/null 2>&1 && echo OK'").exec()
+        val testResult = Shell.cmd("$DI_BIN/busybox --help >/dev/null 2>&1 && echo OK").exec()
         if (testResult.out.any { it.contains("OK") }) {
             log("BusyBox verified")
         } else {

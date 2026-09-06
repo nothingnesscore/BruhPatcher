@@ -23,8 +23,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nothingness.bruhpatcher.ui.theme.AppColors
@@ -36,6 +50,10 @@ fun SettingsScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val keyboxStatus by viewModel.keyboxStatus.collectAsState()
+    val isSyncingKeybox by viewModel.isSyncingKeybox.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -174,6 +192,76 @@ fun SettingsScreen(
                                 color = AppColors.TextMuted
                             )
                         }
+                    }
+                }
+            }
+
+            // Feedback & Diagnostics
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Diagnostics & Feedback",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Having errors or patching issues? Tap below to copy a complete diagnostic report (device specs, root status, keybox info, and recent terminal logs) to your clipboard, and paste it directly into your chat or GitHub issue for instant diagnosis and fixes.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppColors.TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val report = viewModel.copyDiagnosticReport(context)
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("BruhPatcher Diagnostics", report))
+                                Toast.makeText(context, "Diagnostic report copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                        ) {
+                            Text("Copy Report")
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.syncLatestKeybox() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !isSyncingKeybox
+                        ) {
+                            if (isSyncingKeybox) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = AppColors.HyperOsCyan
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Syncing...")
+                            } else {
+                                Text("Sync Keybox")
+                            }
+                        }
+                    }
+
+                    if (keyboxStatus != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Keybox Hub: ${keyboxStatus?.status?.uppercase()} (${keyboxStatus?.strongCount} Strong / ${keyboxStatus?.totalKeys} Keys)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AppColors.HyperOsCyan
+                        )
                     }
                 }
             }

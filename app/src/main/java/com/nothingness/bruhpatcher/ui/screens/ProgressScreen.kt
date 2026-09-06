@@ -5,12 +5,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
@@ -61,6 +65,7 @@ fun ProgressScreen(
 ) {
     val patchingState by viewModel.patchingState.collectAsState()
     val logs by viewModel.logs.collectAsState()
+    val context = LocalContext.current
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -248,13 +253,32 @@ fun ProgressScreen(
                     .fillMaxWidth()
             )
 
-            // Save Logs button
-            OutlinedButton(
-                onClick = { viewModel.saveLogs() },
+            // Action buttons: Save Logs & Copy Diagnostic Report
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Save Logs")
+                OutlinedButton(
+                    onClick = { viewModel.saveLogs() },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Save Logs")
+                }
+
+                Button(
+                    onClick = {
+                        val report = viewModel.copyDiagnosticReport(context)
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("BruhPatcher Diagnostics", report))
+                        Toast.makeText(context, "Diagnostics copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                ) {
+                    Text("Copy Report")
+                }
             }
 
             // Action buttons

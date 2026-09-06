@@ -73,6 +73,8 @@ fun DashboardScreen(
     val patchingState by viewModel.patchingState.collectAsState()
     val matchingReleases by viewModel.matchingReleases.collectAsState()
     val isLoadingReleases by viewModel.isLoadingReleases.collectAsState()
+    val keyboxStatus by viewModel.keyboxStatus.collectAsState()
+    val isSyncingKeybox by viewModel.isSyncingKeybox.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -191,7 +193,11 @@ fun DashboardScreen(
 
             // Kaorios Toolbox v2.0.6.0 Feature Showcase
             if (!isLoading) {
-                com.nothingness.bruhpatcher.ui.components.KaoriosShowcaseCard()
+                com.nothingness.bruhpatcher.ui.components.KaoriosShowcaseCard(
+                    keyboxStatus = keyboxStatus,
+                    isSyncingKeybox = isSyncingKeybox,
+                    onSyncKeybox = { viewModel.syncLatestKeybox() }
+                )
             }
 
             // Existing Releases Section
