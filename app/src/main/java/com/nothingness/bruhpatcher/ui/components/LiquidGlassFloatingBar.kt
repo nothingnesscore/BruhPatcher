@@ -1,11 +1,25 @@
 package com.nothingness.bruhpatcher.ui.components
 
 // Authentic iOS-Style Liquid Glass Floating Navigation Bar
-// Designed with quiet optical realism based on:
-// 1. Kyant0/AndroidLiquidGlass (Apache 2.0) — Damped drag spring physics, press scaling & velocity inertia
-// 2. SukiSU-Ultra (GPL-3.0 / Apache 2.0) — Interactive specular highlight bloom & floating capsule architecture
-// 3. Apple iOS 17/18 Human Interface Guidelines — Translucent frosted acrylic, directional specular bevel & SF typography
+// Designed with optical realism based on:
+// 1. Kyant0/AndroidLiquidGlass (Apache 2.0) — SDF rounded-rect refraction AGSL, damped spring physics
+// 2. Kashif-E/KMPLiquidGlass (Apache 2.0) — RoundedRectRefractionShader + chromatic dispersion pipeline
+// 3. SukiSU-Ultra (GPL-3.0 / Apache 2.0) — Floating capsule architecture, specular bloom
+// 4. Apple iOS 18 HIG — Translucent frosted acrylic, directional specular bevel, SF typography
+//
+// Refraction pipeline (API 33+):
+//   RuntimeShader(AGSL) -> graphicsLayer renderEffect ->
+//   SDF lens distortion (circleMap) + 7-sample chromatic dispersion
+// Frosted glass fallback (API 31-32):
+//   RenderEffect.createBlurEffect() -> graphicsLayer renderEffect
+// Legacy fallback (API 26-30):
+//   Brush.verticalGradient translucent overlay
 
+import android.graphics.RenderEffect
+import android.graphics.RuntimeShader
+import android.graphics.Shader
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
@@ -50,10 +64,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -73,6 +89,7 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import com.nothingness.bruhpatcher.ui.components.liquid.DampedDragAnimation
 import com.nothingness.bruhpatcher.ui.components.liquid.InteractiveHighlight
+import com.nothingness.bruhpatcher.ui.components.liquid.LiquidGlassShaders
 import com.nothingness.bruhpatcher.ui.theme.AppColors
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -92,19 +109,59 @@ enum class LiquidNavDestination(
     SETTINGS("settings", "Settings", Icons.Rounded.Settings)
 }
 
+// ─── AGSL RuntimeShader cache (lazily initialised once per process) ───────────
+
+private val refractionShader: RuntimeShader? by lazy {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        runCatching {
+            RuntimeShader(
+                LiquidGlassShaders.ROUNDED_RECT_REFRACTION_WITH_DISPERSION
+            )
+        }.getOrNull()
+    } else null
+}
+
+// ─── Helper: build the pill RenderEffect ──────────────────────────────────────
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun buildRefractionEffect(
+    shader: RuntimeShader,
+    pillWidthPx: Float,
+    pillHeightPx: Float,
+    cornerRadiusPx: Float
+): RenderEffect {
+    val halfW = pillWidthPx * 0.5f
+    val halfH = pillHeightPx * 0.5f
+
+    shader.setFloatUniform("size", pillWidthPx, pillHeightPx)
+    shader.setFloatUniform("offset", 0f, 0f)
+    // cornerRadii: topLeft, topRight, bottomRight, bottomLeft (all equal for capsule)
+    shader.setFloatUniform("cornerRadii", cornerRadiusPx, cornerRadiusPx, cornerRadiusPx, cornerRadiusPx)
+    // refractionHeight: how deep the lens bends (px from edge inward)
+    shader.setFloatUniform("refractionHeight", minOf(halfW, halfH) * 0.55f)
+    // refractionAmount: max pixel displacement at edge
+    shader.setFloatUniform("refractionAmount", minOf(halfW, halfH) * 0.18f)
+    // depthEffect: 0 = pure surface-normal refraction; 1 = depth-bias toward center
+    shader.setFloatUniform("depthEffect", 0.40f)
+    // chromaticAberration: prismatic dispersion at corners
+    shader.setFloatUniform("chromaticAberration", 0.35f)
+
+    return RenderEffect.createRuntimeShaderEffect(shader, "content")
+}
+
 /**
  * iOS-Style Liquid Glass Floating Bottom Navigation Bar.
- * 
+ *
  * Features:
- * - Ultra-clean frosted dark obsidian glass surface (no idle animations or blings)
- * - Directional specular glass hairline border (top ambient reflection)
- * - Deep, soft ambient elevation drop shadow
- * - Sliding frosted elevated indicator pill with authentic Kyant0 spring physics:
- *   - 78/56 press expansion ratio on touch
- *   - Velocity inertia momentum stretching
- *   - Rubber-band edge resistance
- * - Interactive touch-following specular bloom that ONLY lights up under finger interaction
- * - Refined SF-style typography and smooth tactile haptic press feedback
+ * - Frosted dark obsidian glass surface with specular hairline border
+ * - Deep ambient elevation drop shadow (20dp)
+ * - Sliding indicator pill with REAL optical refraction:
+ *     API 33+: AGSL RuntimeShader SDF lens — circleMap displacement + 7-sample chromatic dispersion
+ *     API 31-32: hardware RenderEffect Gaussian blur (frosted glass)
+ *     API <31: translucent gradient simulation
+ * - Kyant0 damped spring physics: 78/56 press ratio, velocity inertia, rubber-band edges
+ * - Interactive touch-following AGSL specular bloom (API 33+) / radial-gradient fallback
+ * - SF-style typography, HyperOS Cyan active tint, tactile haptic feedback
  */
 @Composable
 fun LiquidGlassFloatingBar(
@@ -229,7 +286,7 @@ fun LiquidGlassFloatingBar(
                 .fillMaxWidth()
                 .height(64.dp)
                 .graphicsLayer { translationX = panelOffset }
-                // Soft, deep ambient drop shadow
+                // Deep ambient drop shadow
                 .shadow(
                     elevation = 20.dp,
                     shape = pillShape,
@@ -246,14 +303,14 @@ fun LiquidGlassFloatingBar(
                         )
                     )
                 )
-                // Layer 2: Directional specular glass hairline border (top ambient light reflection)
+                // Layer 2: Directional specular hairline border
                 .border(
                     width = 0.8.dp,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.26f), // Crisp top light reflection
-                            Color.White.copy(alpha = 0.08f), // Soft mid-edge bevel
-                            Color.White.copy(alpha = 0.04f)  // Subtle bottom edge
+                            Color.White.copy(alpha = 0.26f),
+                            Color.White.copy(alpha = 0.08f),
+                            Color.White.copy(alpha = 0.04f)
                         )
                     ),
                     shape = pillShape
@@ -275,12 +332,16 @@ fun LiquidGlassFloatingBar(
                     }
             )
 
-            // Kyant0 / SukiSU-Ultra Sliding Indicator Pill with Optical Lens Simulation
+            // ── Refractive Indicator Pill ──────────────────────────────────────
             if (tabWidthPx > 0f) {
                 val tabWidthDp = with(density) { tabWidthPx.toDp() }
+                val pillHeightPx = with(density) { 54.dp.toPx() }
                 val progressOffset = dampedDrag.value * tabWidthPx
                 val pillOffsetX = if (isLtr) progressOffset + with(density) { 5.dp.toPx() }
                                   else totalWidthPx - tabWidthPx - progressOffset - with(density) { 5.dp.toPx() }
+
+                // Corner radius for a perfect capsule pill = half height
+                val pillCornerRadiusPx = pillHeightPx * 0.5f
 
                 Box(
                     modifier = Modifier
@@ -293,48 +354,100 @@ fun LiquidGlassFloatingBar(
                             scaleX /= 1f - (v * 0.65f).fastCoerceIn(-0.16f, 0.16f)
                             scaleY *= 1f - (v * 0.20f).fastCoerceIn(-0.16f, 0.16f)
                         }
+                        .height(54.dp)
+                        .width(tabWidthDp)
+                        // ── Apply refractive RenderEffect ────────────────────
+                        .then(
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val shader = refractionShader
+                                if (shader != null) {
+                                    Modifier.graphicsLayer {
+                                        val effect = buildRefractionEffect(
+                                            shader = shader,
+                                            pillWidthPx = tabWidthPx * dampedDrag.scaleX,
+                                            pillHeightPx = pillHeightPx * dampedDrag.scaleY,
+                                            cornerRadiusPx = pillCornerRadiusPx
+                                        )
+                                        renderEffect = effect.asComposeRenderEffect()
+                                        clip = true
+                                        shape = pillShape
+                                    }
+                                } else Modifier
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                // API 31-32: hardware blur as frosted glass
+                                Modifier.graphicsLayer {
+                                    @Suppress("DEPRECATION")
+                                    renderEffect = RenderEffect
+                                        .createBlurEffect(18f, 18f, Shader.TileMode.CLAMP)
+                                        .asComposeRenderEffect()
+                                    clip = true
+                                    shape = pillShape
+                                }
+                            } else {
+                                Modifier
+                            }
+                        )
                         .clip(pillShape)
-                        // Elevated frosted optical glass lens fill
+                        // Elevated lens-glass fill (visible on all API levels; on 33+ it's beneath the shader)
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.16f),
-                                    Color.White.copy(alpha = 0.07f)
+                                    Color.White.copy(alpha = 0.22f),
+                                    Color.White.copy(alpha = 0.09f)
                                 )
                             ),
                             shape = pillShape
                         )
-                        // SukiSU-grade dual-peak specular lens edge
+                        // Dual-peak specular edge ring (top bright → mid shadow → bottom glint)
                         .border(
                             width = 0.8.dp,
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.32f),
-                                    Color.White.copy(alpha = 0.05f),
-                                    Color.White.copy(alpha = 0.14f)
+                                    Color.White.copy(alpha = 0.55f), // Top specular peak
+                                    Color.White.copy(alpha = 0.06f), // Mid shadow
+                                    Color.White.copy(alpha = 0.22f)  // Bottom glint
                                 )
                             ),
                             shape = pillShape
                         )
-                        .height(54.dp)
-                        .width(tabWidthDp)
                 ) {
-                    // Top curved optical refraction highlight
+                    // Top curved optical refraction highlight streak
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(1.dp)
-                            .padding(horizontal = 14.dp)
+                            .height(1.2.dp)
+                            .padding(horizontal = 12.dp)
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(
                                         Color.Transparent,
-                                        Color.White.copy(alpha = 0.36f),
+                                        Color.White.copy(alpha = 0.55f),
+                                        Color.White.copy(alpha = 0.55f),
                                         Color.Transparent
                                     )
                                 )
                             )
                     )
+
+                    // Bottom curved caustic reflection streak (API 33+ only — subtle prismatic teal)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(0.8.dp)
+                                .padding(horizontal = 20.dp)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            AppColors.HyperOsCyan.copy(alpha = 0.28f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                    }
                 }
             }
 
