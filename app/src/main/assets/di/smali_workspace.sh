@@ -153,11 +153,73 @@ recompile_all() {
             # Direct multi-dex injection: if any .extra_dex/*.dex exist for this workspace, bundle them directly
             if [ -d "$workspace/.extra_dex" ]; then
                 local extra_dex_count=0
+                
+                # Locate zip archiver
+                local zip_bin=""
+                if [ -x "$DI_BIN/zip" ]; then
+                    zip_bin="$DI_BIN/zip"
+                elif [ -x "$DI_TMP/bin/zip" ]; then
+                    zip_bin="$DI_TMP/bin/zip"
+                elif [ -x "/data/tmp/di/bin/zip" ]; then
+                    zip_bin="/data/tmp/di/bin/zip"
+                elif [ -n "$ARCH" ] && [ -x "$DI_ROOT/META-INF/zbin/arch/$ARCH/zip" ]; then
+                    zip_bin="$DI_ROOT/META-INF/zbin/arch/$ARCH/zip"
+                elif [ -x "$DI_ROOT/META-INF/zbin/arch/arm64-v8a/zip" ]; then
+                    zip_bin="$DI_ROOT/META-INF/zbin/arch/arm64-v8a/zip"
+                elif command -v zip >/dev/null 2>&1; then
+                    zip_bin=$(command -v zip)
+                fi
+
+                # Locate aapt archiver as fallback
+                local aapt_bin=""
+                if [ -x "$DI_BIN/aapt" ]; then
+                    aapt_bin="$DI_BIN/aapt"
+                elif [ -x "$DI_TMP/bin/aapt" ]; then
+                    aapt_bin="$DI_TMP/bin/aapt"
+                elif [ -x "/data/tmp/di/bin/aapt" ]; then
+                    aapt_bin="/data/tmp/di/bin/aapt"
+                elif [ -n "$ARCH" ] && [ -x "$DI_ROOT/META-INF/zbin/arch/$ARCH/aapt" ]; then
+                    aapt_bin="$DI_ROOT/META-INF/zbin/arch/$ARCH/aapt"
+                elif [ -x "$DI_ROOT/META-INF/zbin/arch/arm64-v8a/aapt" ]; then
+                    aapt_bin="$DI_ROOT/META-INF/zbin/arch/arm64-v8a/aapt"
+                elif command -v aapt >/dev/null 2>&1; then
+                    aapt_bin=$(command -v aapt)
+                fi
+
+                # Locate zipalign
+                local zipalign_bin=""
+                if [ -x "$DI_BIN/zipalign" ]; then
+                    zipalign_bin="$DI_BIN/zipalign"
+                elif [ -x "$DI_TMP/bin/zipalign" ]; then
+                    zipalign_bin="$DI_TMP/bin/zipalign"
+                elif [ -x "/data/tmp/di/bin/zipalign" ]; then
+                    zipalign_bin="/data/tmp/di/bin/zipalign"
+                elif [ -n "$ARCH" ] && [ -x "$DI_ROOT/META-INF/zbin/arch/$ARCH/zipalign" ]; then
+                    zipalign_bin="$DI_ROOT/META-INF/zbin/arch/$ARCH/zipalign"
+                elif [ -x "$DI_ROOT/META-INF/zbin/arch/arm64-v8a/zipalign" ]; then
+                    zipalign_bin="$DI_ROOT/META-INF/zbin/arch/arm64-v8a/zipalign"
+                elif command -v zipalign >/dev/null 2>&1; then
+                    zipalign_bin=$(command -v zipalign)
+                fi
+
                 for extra_dex in "$workspace/.extra_dex"/*.dex; do
                     [ -f "$extra_dex" ] || continue
                     local dex_name=$(basename "$extra_dex")
                     echo "[*] Bundling extra multi-dex $dex_name into $jar_name..."
-                    (cd "$workspace/.extra_dex" && zip -qu "$jar_path" "$dex_name") || zip -qju "$jar_path" "$extra_dex"
+                    
+                    local added=false
+                    if [ -n "$zip_bin" ] && [ -x "$zip_bin" ]; then
+                        echo "[*] Using zip archiver: $zip_bin"
+                        (cd "$workspace/.extra_dex" && "$zip_bin" -qu "$jar_path" "$dex_name") || "$zip_bin" -qju "$jar_path" "$extra_dex"
+                        added=true
+                    elif [ -n "$aapt_bin" ] && [ -x "$aapt_bin" ]; then
+                        echo "[*] Fallback: Using aapt archiver: $aapt_bin"
+                        (cd "$workspace/.extra_dex" && "$aapt_bin" add "$jar_path" "$dex_name")
+                        added=true
+                    else
+                        echo "[!] ERROR: No zip or aapt binary available to bundle $dex_name!"
+                    fi
+
                     if unzip -l "$jar_path" 2>/dev/null | grep -q "$dex_name"; then
                         echo "[+] Verified $dex_name successfully bundled in $jar_name"
                         ((extra_dex_count++))
@@ -169,9 +231,9 @@ recompile_all() {
                 
                 # Zipalign the JAR archive after adding extra multi-dex files
                 if [ $extra_dex_count -gt 0 ]; then
-                    if [ -x "$DI_BIN/zipalign" ]; then
+                    if [ -n "$zipalign_bin" ] && [ -x "$zipalign_bin" ]; then
                         echo "[*] Zipaligning $jar_name after multi-dex injection..."
-                        "$DI_BIN/zipalign" -f 4 "$jar_path" "$jar_path.aligned" 2>/dev/null && mv -f "$jar_path.aligned" "$jar_path" || true
+                        "$zipalign_bin" -f 4 "$jar_path" "$jar_path.aligned" 2>/dev/null && mv -f "$jar_path.aligned" "$jar_path" || true
                     fi
                 fi
             fi

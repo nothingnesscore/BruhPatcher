@@ -597,7 +597,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return buildString {
             appendLine("=== BRUH PATCHER DIAGNOSTIC & PATCH LOGS ===")
             appendLine("Generated: ${java.util.Date()}")
-            appendLine("App Version: v2.0.5 (Universal Edition)")
+            appendLine("App Version: v2.0.6 (Universal Edition)")
             appendLine("Device: ${info.deviceName} (${info.deviceCodename})")
             appendLine("Brand/Model: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
             appendLine("Android: ${info.androidVersion} (API ${info.apiLevel})")

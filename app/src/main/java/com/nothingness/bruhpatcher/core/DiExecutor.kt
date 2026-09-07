@@ -69,6 +69,7 @@ object DiExecutor {
         log("Executing job: ${jobDir.name}")
 
         val diBash = "/data/tmp/di/bin/bash"
+        Shell.cmd("chmod -R 755 /data/tmp/di/bin /data/local/di 2>/dev/null || true").exec()
         val isBashExecutable = Shell.cmd("test -x $diBash").exec().isSuccess
         val execCmd = if (isBashExecutable) "$diBash ${runScript.absolutePath}" else "sh ${runScript.absolutePath}"
         val result = Shell.cmd(execCmd)
