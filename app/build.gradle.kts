@@ -34,6 +34,7 @@ android {
                 storePassword = "bruhpatcher"
                 keyAlias = "bruhpatcher"
                 keyPassword = "bruhpatcher"
+                storeType = "PKCS12"
                 isV1SigningEnabled = true
                 isV2SigningEnabled = true
             }

@@ -44,11 +44,21 @@ jobs:
 
       - name: Verify Release Keystore
         run: |
-          ls -la app/keystore/release.jks
-          keytool -list -v -keystore app/keystore/release.jks -storepass bruhpatcher
+          echo "### 🔑 Keystore Verification" >> $GITHUB_STEP_SUMMARY
+          ls -la app/keystore/release.jks >> $GITHUB_STEP_SUMMARY
+          keytool -list -v -keystore app/keystore/release.jks -storepass bruhpatcher -storetype PKCS12 >> $GITHUB_STEP_SUMMARY 2>&1 || true
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --scan --stacktrace
+        run: |
+          ./gradlew assembleRelease --scan --stacktrace 2>&1 | tee build.log
+
+      - name: Dump Build Failure to Summary
+        if: failure()
+        run: |
+          echo "### ❌ Build Failure Log" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 150 build.log >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload Build Reports on Failure
         if: failure()
@@ -56,6 +66,7 @@ jobs:
         with:
           name: build-reports
           path: |
+            build.log
             app/build/reports/
 
       - name: Get version name
