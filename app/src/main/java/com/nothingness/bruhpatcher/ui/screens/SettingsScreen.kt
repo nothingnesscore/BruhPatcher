@@ -134,8 +134,8 @@ fun SettingsScreen(
                         }
                     }
                     MiuixStatusBadge(
-                        text = "v2.0.9",
-                        containerColor = Color(0x2200C7BE),
+                        text = "v2.1.0",
+                        containerColor = AppColors.HyperOsCyan.copy(alpha = 0.15f),
                         contentColor = AppColors.HyperOsCyan,
                         showDot = true
                     )
@@ -377,7 +377,7 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(110.dp)) // Space for Liquid Glass Floating Bar
+            Spacer(modifier = Modifier.height(140.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 }

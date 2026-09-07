@@ -192,6 +192,8 @@ object DiExecutor {
             appendLine("export TMPDIR=\"/data/tmp/di\"")
             appendLine("export PATH=\"\$DI_BIN:\$PATH\"")
             appendLine("export l=\"\$DI_BIN\"")
+            appendLine("export dalvik_memory=\"2048m\"")
+            appendLine("export DI_DALVIK_MEMORY=\"2048m\"")
 
             appendLine("if [ -f \"\$DI_TMP/core\" ]; then . \"\$DI_TMP/core\"; else echo '[!] FATAL ERROR: DI Core missing at \$DI_TMP/core'; exit 1; fi")
             

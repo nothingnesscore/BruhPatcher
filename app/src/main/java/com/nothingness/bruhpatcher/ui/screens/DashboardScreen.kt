@@ -133,69 +133,6 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header with gradient
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                AppColors.HyperOsBlue.copy(alpha = 0.25f),
-                                AppColors.HyperOsPurple.copy(alpha = 0.15f)
-                            )
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    .padding(20.dp)
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
-                                contentDescription = "HyperOS Patching Logo",
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                            )
-                            Column {
-                                Text(
-                                    text = "Bruh Patcher",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.TextPrimary
-                                )
-                                Text(
-                                    text = "HyperOS Alive Design • Universal",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = AppColors.HyperOsCyan
-                                )
-                            }
-                        }
-                        com.nothingness.bruhpatcher.ui.components.miuix.MiuixStatusBadge(
-                            text = "MIUIX GLASS",
-                            containerColor = Color(0x33007AFF),
-                            contentColor = AppColors.HyperOsCyan,
-                            showDot = true
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Universal Android Framework Patcher (Android 8–17, HyperOS 1–4, AOSP & All OEM ROMs)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppColors.TextSecondary
-                    )
-                }
-            }
-
             // Root status
             RootStatusCard(
                 isRootAvailable = isRootAvailable,
@@ -288,7 +225,7 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(110.dp)) // Space for Liquid Glass Floating Bar
+            Spacer(modifier = Modifier.height(140.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 }

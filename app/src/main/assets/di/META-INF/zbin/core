@@ -2823,7 +2823,7 @@ run_jar() {
     local dalvikvm file main
     #Inspired in the osm0sis method
     [ -z "$dalvik_logging" ] && local dalvik_logging=false
-    [ -z "$dalvik_memory" ] && local dalvik_memory=800m
+    [ -z "$dalvik_memory" ] && local dalvik_memory=2048m
     
     # Detect OEM ROMs that have modified dalvikvm which crashes with SystemProperties.native_get
     # These ROMs need app_process instead of bare dalvikvm
@@ -2884,7 +2884,7 @@ run_jar() {
 # ThreadPoolExecutor with native SystemProperties calls that fail under bare dalvikvm
 run_jar_appprocess() {
     local file main
-    [ -z "$dalvik_memory" ] && local dalvik_memory=800m
+    [ -z "$dalvik_memory" ] && local dalvik_memory=2048m
     
     file="$1"
     if [ ! -f "$file" ]; then echo2 "CANT FIND: $file" && return 1; fi
@@ -3057,10 +3057,11 @@ apktool() {
                fi
             fi
             ;;
-         -j|--jobs)
-            # Thread flag passed erroneously from smali/baksmali scripts
-            ((idx++))
-            ;;
+          -j|--jobs)
+             clean_args+=("$a")
+             ((idx++))
+             [ $idx -lt ${#args[@]} ] && clean_args+=("${args[$idx]}")
+             ;;
          *)
             clean_args+=("$a")
             ;;
@@ -3690,10 +3691,10 @@ dynamic_apktool() {
        ps=true
        shift
        ;;
-       -j|-jobs)
-       # Thread count (handled by baksmali/smali)
-       shift 2;
-       ;;
+        -j|-jobs)
+        command+=("-j" "$2")
+        shift 2;
+        ;;
        -f|-framework)
        #Legacy
        echo2 "dynamic_apktool: -framework is deprecated, use the setdefault framework_res instead"

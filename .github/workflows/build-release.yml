@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version tag for release (e.g., v2.0.0)'
         required: true
-        default: 'v2.0.9'
+        default: 'v2.1.0'
 
 permissions:
   contents: write
@@ -79,7 +79,7 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=v2.0.8-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            echo "VERSION=v2.1.0-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Sign APK with Release Key

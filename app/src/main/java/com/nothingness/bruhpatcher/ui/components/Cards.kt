@@ -8,6 +8,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nothingness.bruhpatcher.model.DeviceInfo
 import com.nothingness.bruhpatcher.ui.theme.AppColors
@@ -164,11 +167,11 @@ fun DeviceInfoCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                InfoItem(label = "Android", value = deviceInfo.androidVersion)
-                InfoItem(label = "API Level", value = deviceInfo.apiLevel.toString())
-                InfoItem(label = "Version", value = deviceInfo.versionName, useMarquee = true)
+                InfoItem(label = "Android", value = deviceInfo.androidVersion, modifier = Modifier.weight(0.7f))
+                InfoItem(label = "API Level", value = deviceInfo.apiLevel.toString(), modifier = Modifier.weight(0.7f))
+                InfoItem(label = "Version", value = deviceInfo.versionName, useMarquee = true, modifier = Modifier.weight(1.6f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -180,9 +183,10 @@ fun DeviceInfoCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FileChip("framework.jar", deviceInfo.hasFrameworkJar)
                 FileChip("services.jar", deviceInfo.hasServicesJar)
@@ -362,8 +366,16 @@ fun KaoriosShowcaseCard(
 }
 
 @Composable
-private fun InfoItem(label: String, value: String, useMarquee: Boolean = false) {
-    Column(horizontalAlignment = Alignment.Start) {
+private fun InfoItem(
+    label: String,
+    value: String,
+    useMarquee: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.Start
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
@@ -375,6 +387,7 @@ private fun InfoItem(label: String, value: String, useMarquee: Boolean = false) 
             fontWeight = FontWeight.SemiBold,
             color = AppColors.TextPrimary,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = if (useMarquee) Modifier.basicMarquee() else Modifier
         )
     }
@@ -401,7 +414,9 @@ private fun FileChip(name: String, available: Boolean) {
             text = name,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

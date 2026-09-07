@@ -51,6 +51,8 @@ object DiInstaller {
                 printf "export DI_BIN=\"$DI_BIN\"\n" >> $DI_ROOT/environment
                 printf "export PATH=\"$DI_BIN:\${'$'}PATH\"\n" >> $DI_ROOT/environment
                 printf "export TMPDIR=\"$DI_TMP\"\n" >> $DI_ROOT/environment
+                printf "export dalvik_memory=\"2048m\"\n" >> $DI_ROOT/environment
+                printf "export DI_DALVIK_MEMORY=\"2048m\"\n" >> $DI_ROOT/environment
                 chmod 755 $DI_ROOT/environment
             """.trimIndent()
             Shell.cmd(createEnvCmd).exec()

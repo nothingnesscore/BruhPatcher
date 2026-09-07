@@ -2,6 +2,10 @@
 # Smali Workspace Management Library
 # Provides centralized JAR decompilation/recompilation to eliminate redundant operations
 
+# Global memory & heap allocation for Apktool
+export dalvik_memory="${dalvik_memory:-2048m}"
+export DI_DALVIK_MEMORY="2048m"
+
 # Global workspace tracking
 declare -A WORKSPACE_PATHS
 declare -A WORKSPACE_MODIFIED
@@ -52,7 +56,7 @@ decompile_jar() {
     echo "[*] Decompiling $jar_name..."
     
     # Use dynamic_apktool to decompile with signature preservation
-    if dynamic_apktool -decompile "$jar_path" -o "$workspace_dir" -ps; then
+    if dynamic_apktool -decompile "$jar_path" -o "$workspace_dir" -j 2 -ps; then
         WORKSPACE_PATHS[$jar_name]="$workspace_dir"
         WORKSPACE_MODIFIED[$jar_name]=0
         echo "[+] Decompiled $jar_name to workspace: $workspace_dir"

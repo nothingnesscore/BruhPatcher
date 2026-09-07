@@ -231,29 +231,29 @@ fun LiquidGlassFloatingBar(
                 .graphicsLayer { translationX = panelOffset }
                 // Soft, deep ambient drop shadow
                 .shadow(
-                    elevation = 16.dp,
+                    elevation = 20.dp,
                     shape = pillShape,
-                    ambientColor = Color.Black.copy(alpha = 0.45f),
-                    spotColor = Color.Black.copy(alpha = 0.65f)
+                    ambientColor = Color.Black.copy(alpha = 0.50f),
+                    spotColor = Color.Black.copy(alpha = 0.70f)
                 )
                 .clip(pillShape)
                 // Layer 1: Translucent frosted obsidian acrylic backdrop
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xE0181B26), // Frosted dark glass
-                            Color(0xF010121A)  // Deep rich obsidian base
+                            Color(0xE6141721), // Frosted dark glass
+                            Color(0xF20D0F17)  // Deep rich obsidian base
                         )
                     )
                 )
                 // Layer 2: Directional specular glass hairline border (top ambient light reflection)
                 .border(
-                    width = 1.dp,
+                    width = 0.8.dp,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.22f), // Crisp top light reflection
+                            Color.White.copy(alpha = 0.26f), // Crisp top light reflection
                             Color.White.copy(alpha = 0.08f), // Soft mid-edge bevel
-                            Color.White.copy(alpha = 0.03f)  // Subtle bottom edge
+                            Color.White.copy(alpha = 0.04f)  // Subtle bottom edge
                         )
                     ),
                     shape = pillShape
@@ -275,7 +275,7 @@ fun LiquidGlassFloatingBar(
                     }
             )
 
-            // Kyant0 / SukiSU-Ultra Sliding Indicator Pill
+            // Kyant0 / SukiSU-Ultra Sliding Indicator Pill with Optical Lens Simulation
             if (tabWidthPx > 0f) {
                 val tabWidthDp = with(density) { tabWidthPx.toDp() }
                 val progressOffset = dampedDrag.value * tabWidthPx
@@ -294,25 +294,48 @@ fun LiquidGlassFloatingBar(
                             scaleY *= 1f - (v * 0.20f).fastCoerceIn(-0.16f, 0.16f)
                         }
                         .clip(pillShape)
-                        // Elevated frosted glass pill background
+                        // Elevated frosted optical glass lens fill
                         .background(
-                            color = Color.White.copy(alpha = 0.11f),
-                            shape = pillShape
-                        )
-                        // Delicate top-lit specular edge
-                        .border(
-                            width = 0.5.dp,
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.20f),
-                                    Color.White.copy(alpha = 0.04f)
+                                    Color.White.copy(alpha = 0.16f),
+                                    Color.White.copy(alpha = 0.07f)
+                                )
+                            ),
+                            shape = pillShape
+                        )
+                        // SukiSU-grade dual-peak specular lens edge
+                        .border(
+                            width = 0.8.dp,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.32f),
+                                    Color.White.copy(alpha = 0.05f),
+                                    Color.White.copy(alpha = 0.14f)
                                 )
                             ),
                             shape = pillShape
                         )
                         .height(54.dp)
                         .width(tabWidthDp)
-                )
+                ) {
+                    // Top curved optical refraction highlight
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .padding(horizontal = 14.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = 0.36f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                }
             }
 
             // Tab Items Row
@@ -366,7 +389,7 @@ private fun LiquidNavItem(
     )
 
     // Animated color transition between active and inactive states
-    val activeColor = Color.White
+    val activeColor = AppColors.HyperOsCyan
     val inactiveColor = Color(0x8A9EADC0) // Apple Secondary Slate
 
     val contentColor by animateColorAsState(
