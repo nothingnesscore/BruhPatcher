@@ -13,8 +13,8 @@ android {
         applicationId = "com.nothingness.bruhpatcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 206
-        versionName = "2.0.6"
+        versionCode = 207
+        versionName = "2.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -26,6 +26,19 @@ android {
         buildConfigField("String", "GITHUB_REPO", "\"BruhPatcher\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystore/release.jks")
+            storePassword = "bruhpatcher"
+            keyAlias = "bruhpatcher"
+            keyPassword = "bruhpatcher"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -33,7 +46,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

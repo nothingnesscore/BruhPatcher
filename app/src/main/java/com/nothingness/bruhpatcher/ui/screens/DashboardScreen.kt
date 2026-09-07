@@ -49,7 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
+import com.nothingness.bruhpatcher.R
 import com.nothingness.bruhpatcher.data.api.GitHubRelease
 import com.nothingness.bruhpatcher.model.PatchingState
 import com.nothingness.bruhpatcher.ui.components.DeviceInfoCard
@@ -89,10 +92,22 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Bruh Patcher",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
+                            contentDescription = "HyperOS Patching Logo",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                        Text(
+                            text = "Bruh Patcher",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refreshDeviceInfo() }) {
@@ -139,12 +154,31 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Bruh Patcher",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
+                                contentDescription = "HyperOS Patching Logo",
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            )
+                            Column {
+                                Text(
+                                    text = "Bruh Patcher",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.TextPrimary
+                                )
+                                Text(
+                                    text = "HyperOS Alive Design • Universal",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = AppColors.HyperOsCyan
+                                )
+                            }
+                        }
                         Box(
                             modifier = Modifier
                                 .background(

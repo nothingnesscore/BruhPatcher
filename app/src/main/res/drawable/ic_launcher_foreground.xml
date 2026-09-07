@@ -4,27 +4,130 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
+
+    <!-- Ambient Core Glow -->
+    <path
+        android:pathData="M54,54m-26,0a26,26 0 1,0 52,0a26,26 0 1,0 -52,0">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="26"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#4D00F0FF" />
+                <item android:offset="0.6" android:color="#1A1677FF" />
+                <item android:offset="1.0" android:color="#00000000" />
             </gradient>
         </aapt:attr>
     </path>
+
+    <!-- HyperOS Squircle Outer Framework Shield -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:pathData="M37,30 C45,28 63,28 71,30 C78,32 80,34 80,42 C80,50 80,58 80,66 C80,74 78,76 71,78 C63,80 45,80 37,78 C30,76 28,74 28,66 C28,58 28,50 28,42 C28,34 30,32 37,30 Z"
+        android:strokeWidth="1.8"
+        android:fillColor="#150E1E38">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="28"
+                android:startY="28"
+                android:endX="80"
+                android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00F0FF" />
+                <item android:offset="0.5" android:color="#1677FF" />
+                <item android:offset="1.0" android:color="#7000FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- HyperOS Fluid Alive Interlocking Bands -->
+    <!-- Upper Flowing Ribbon -->
+    <path
+        android:pathData="M34,44 C34,36 43,33 54,33 C65,33 74,37 74,45 C74,51 68,54 62,54 L52,54"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="34"
+                android:startY="33"
+                android:endX="74"
+                android:endY="54"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00F0FF" />
+                <item android:offset="1.0" android:color="#1677FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Lower Flowing Ribbon -->
+    <path
+        android:pathData="M74,64 C74,72 65,75 54,75 C43,75 34,71 34,63 C34,57 40,54 46,54 L56,54"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="74"
+                android:startY="75"
+                android:endX="34"
+                android:endY="54"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#7000FF" />
+                <item android:offset="0.5" android:color="#1677FF" />
+                <item android:offset="1.0" android:color="#00F0FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Patching Data Lines -->
+    <path
+        android:pathData="M23,54 L30,54 M78,54 L85,54"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeColor="#00F0FF"
+        android:fillColor="#00000000" />
+
+    <!-- Central Code Patch Bracket: Left < -->
+    <path
+        android:pathData="M46,47 L41,54 L46,61"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeColor="#00F0FF"
+        android:fillColor="#00000000" />
+
+    <!-- Central Code Patch Bracket: Right > -->
+    <path
+        android:pathData="M62,47 L67,54 L62,61"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeColor="#1677FF"
+        android:fillColor="#00000000" />
+
+    <!-- Central Glowing Core Diamond (Bytecode Fusion Node) -->
+    <path
+        android:pathData="M54,49 L58,54 L54,59 L50,54 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Core Diamond Inner Accent -->
+    <path
+        android:pathData="M54,51.5 L56,54 L54,56.5 L52,54 Z"
+        android:fillColor="#00F0FF" />
+
+    <!-- Top & Bottom Alive Pulse Indicators -->
+    <path
+        android:pathData="M51,25 L57,25"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeColor="#00F0FF"
+        android:fillColor="#00000000" />
+
+    <path
+        android:pathData="M51,83 L57,83"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeColor="#1677FF"
+        android:fillColor="#00000000" />
 </vector>

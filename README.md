@@ -2,7 +2,7 @@
 
 > **The Universal Android Framework Patcher**  
 > Supporting **Android 8.0 through Android 17 (API 37 / Baklava)** across **AOSP, Pixel, Xiaomi MIUI & HyperOS 1–4, Samsung OneUI, ColorOS, OxygenOS & all OEM ROMs**.  
-> Features modern **MIUIX Liquid Glass UI** with optical light refraction & dynamic contrast support, and integrated **Kaorios Toolbox v2.0.6.0**!
+> Features modern **MIUIX Liquid Glass UI** with HyperOS Alive Design theme, permanent release signature for seamless in-place updates, and integrated **Kaorios Toolbox v2.0.6.0**!
 
 ---
 

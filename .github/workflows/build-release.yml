@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version tag for release (e.g., v2.0.0)'
         required: true
-        default: 'v2.0.0'
+        default: 'v2.0.7'
 
 permissions:
   contents: write
@@ -61,7 +61,7 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=v2.0.6-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            echo "VERSION=v2.0.7-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Sign APK with Release Key
@@ -113,10 +113,12 @@ jobs:
             
             ### What's New
             - Built from commit ${{ github.sha }}
-            - **NoMount VFS Engine Compatibility**: Generated modules are 100% compatible with NoMount (`maxsteeel/nomount` & `Bouteillepleine/NoMount-Suite`) VFS path redirection. Clean Magisk / KernelSU / APatch scripts without `mount_mirrors` conflicts.
-            - **NoMount Auto-Recovery & Guard Re-arming**: Automatically detects tripped NoMount metamodules on flash and provides an in-app 1-tap button to reset bootcount and remove disable flags (`.booting`, `disabled`, `disable`).
-            - **Strict Zero-Tolerance Verification**: Never packages unpatched original files as fallback—safeguards device from flashing corrupted frameworks.
-            - **Refined Bytecode & Smali Hooks**: Fixed registers in `AndroidKeyStoreKeyPairGeneratorSpi.smali`, `AndroidKeyStoreSpi.smali`, `SystemServer.smali`, and verified smali decompile/compile flow.
+            - **Permanent Release Signature (Seamless In-Place Updates)**: Release APKs are now signed with the permanent project release keystore (V1, V2, V3, and V4 signing schemes). No more signature mismatch errors (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`) when installing new versions over older builds.
+            - **HyperOS Based Patching Logo & Alive UI Theme**: High-tech HyperOS adaptive launcher icon (obsidian superellipse, glowing cyan `#00F0FF` / electric blue `#1677FF` nexus) and rich in-app branding across Dashboard and Settings.
+            - **Self-Contained Standalone Binaries**: Bundled standalone `zip`, `zipalign`, `aapt`, `bash`, and `busybox` binaries across `arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86` with automatic multi-path discovery and `aapt add` fallback.
+            - **NoMount VFS Engine Compatibility**: Generated modules are 100% compatible with NoMount (`maxsteeel/nomount` & `Bouteillepleine/NoMount-Suite`) VFS path redirection.
+            - **NoMount Auto-Recovery & Guard Re-arming**: Automatically detects tripped NoMount metamodules on flash with 1-tap reset.
+            - **Universal Android Framework Patcher**: Full support from Android 8.0 through Android 17 (Baklava / API 37) and HyperOS 1-4.
             - Direct `.apk` file distribution (never inside a `.zip`)
             - 1-Tap Diagnostic & Stacktrace feedback reporting for instant issue fixing
             - Live Keybox Hub synchronization from `https://keybox.hzzmonet.io.vn`

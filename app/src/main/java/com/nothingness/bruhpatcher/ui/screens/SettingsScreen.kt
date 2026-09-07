@@ -43,6 +43,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.nothingness.bruhpatcher.R
 import com.nothingness.bruhpatcher.ui.theme.AppColors
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
 
@@ -93,16 +96,36 @@ fun SettingsScreen(
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
+                                contentDescription = "HyperOS Patching Logo",
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                            )
+                            Column {
+                                Text(
+                                    text = "Bruh Patcher",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.TextPrimary
+                                )
+                                Text(
+                                    text = "HyperOS Alive Design Edition",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = AppColors.HyperOsCyan
+                                )
+                            }
+                        }
                         Text(
-                            text = "Bruh Patcher",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
-                        )
-                        Text(
-                            text = "v2.0.6",
+                            text = "v2.0.7",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.HyperOsCyan
