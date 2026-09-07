@@ -47,6 +47,7 @@ import com.nothingness.bruhpatcher.model.DeviceInfo
 import com.nothingness.bruhpatcher.ui.theme.AppColors
 import androidx.compose.foundation.basicMarquee
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceInfoCard(
     deviceInfo: DeviceInfo,

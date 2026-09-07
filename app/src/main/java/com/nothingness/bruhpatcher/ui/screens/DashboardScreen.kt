@@ -133,6 +133,7 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             // Root status
             RootStatusCard(
                 isRootAvailable = isRootAvailable,
