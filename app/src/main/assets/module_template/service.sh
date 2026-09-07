@@ -1,12 +1,63 @@
 #!/system/bin/sh
-# Bruh Patcher - Late Start Service
+# Bruh Patcher / KaoriOS - Late Start Service & Property Spoofing
 MODDIR=${0%/*}
 
 # Wait for boot completion
-while [ "$(getprop sys.boot_completed)" != "1" ]; do
+until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
-sleep 2
+sleep 1
+
+# =========================================================================
+# Locate resetprop tool
+# =========================================================================
+resetprop=$(find /data/adb -name "resetprop" 2>/dev/null | head -n 1)
+
+if [ -z "$resetprop" ]; then
+    if command -v resetprop >/dev/null 2>&1; then
+        resetprop="resetprop"
+    else
+        resetprop="/data/adb/ksu/bin/resetprop"
+        [ ! -x "$resetprop" ] && resetprop="/data/adb/ap/bin/resetprop"
+        [ ! -x "$resetprop" ] && resetprop="/data/adb/magisk/resetprop"
+    fi
+fi
+
+# =========================================================================
+# Apply Verified Boot, Lock State, and Tamper-Flag Spoofing Properties
+# =========================================================================
+PROPERTIES="
+ro.boot.verifiedbootstate=green
+ro.boot.veritymode=enforcing
+vendor.boot.vbmeta.device_state=locked
+ro.crypto.state=encrypted
+ro.secureboot.lockstate=locked
+ro.boot.flash.locked=1
+ro.boot.vbmeta.device_state=locked
+ro.boot.selinux=enforcing
+sys.oem_unlock_allowed=0
+ro.boot.veritymode.managed=yes
+ro.debuggable=0
+ro.force.debuggable=0
+ro.secure=1
+ro.boot.realmebootstate=green
+ro.boot.warranty_bit=0
+ro.vendor.boot.warranty_bit=0
+ro.vendor.warranty_bit=0
+ro.warranty_bit=0
+ro.boot.realme.lockstate=1
+vendor.boot.verifiedbootstate=green
+"
+
+if [ -n "$resetprop" ] && [ -x "$resetprop" -o "$resetprop" = "resetprop" ]; then
+    echo "=== SET PROPERTIES ==="
+    for item in $PROPERTIES; do
+        key="${item%%=*}"
+        val="${item#*=}"
+        $resetprop "$key" "$val" 2>/dev/null
+    done
+    echo "Done setting properties!"
+fi
 
 # =========================================================================
 # NoMount VFS Verification

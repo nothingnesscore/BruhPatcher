@@ -266,6 +266,7 @@ object ModuleGenerator {
         Shell.cmd("chmod -R 755 ${workDir.absolutePath}").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/module.prop").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/system.prop").exec()
+        Shell.cmd("chmod 755 ${workDir.absolutePath}/action.sh").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/service.sh").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/post-fs-data.sh").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/customize.sh").exec()

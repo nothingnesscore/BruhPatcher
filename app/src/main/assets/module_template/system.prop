@@ -1,2 +1,9 @@
-# System Properties
-# This file will be read by resetprop
+# System Properties for Bruh Patcher & KaoriOS Framework
+# Read by resetprop during early boot
+
+# Disable privapp permission enforcement so com.kousei.kaorios acquires full system privileges
+ro.control_privapp_permissions=
+
+# KaoriOS spoofing property
+persist.sys.kaorios=kousei
+ro.crypto.state=encrypted

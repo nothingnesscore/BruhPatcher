@@ -182,6 +182,37 @@ if [ -d "$FW_DIR" ]; then
         ' "$nvc_file" > "${nvc_file}.tmp" && mv "${nvc_file}.tmp" "$nvc_file" 2>/dev/null || rm -f "${nvc_file}.tmp"
         echo "    Hooked: $nvc_file"
     fi
+
+    # 4d. Settings Global/Secure/System - Dev status & ADB stealth for query packages
+    for s_file in $(find "$FW_DIR" -name "Settings\$Global.smali" -o -name "Settings\$Secure.smali" -o -name "Settings\$System.smali" 2>/dev/null); do
+        if [ -f "$s_file" ] && ! grep -q "KaoriosHook;->shouldHideDevStatus" "$s_file"; then
+            echo "  -> Hooking $(basename "$s_file") for developer status stealth..."
+            awk '
+            BEGIN { in_target = 0; hooked = 0 }
+            /\.method public static.*getString\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;\)Ljava\/lang\/String;/ { in_target = 1; print $0; next }
+            in_target && !hooked && /(\.registers|\.locals)/ {
+                print $0
+                print "    invoke-static {}, Landroid/provider/Settings\$Config;->getContentResolver()Landroid/content/ContentResolver;"
+                print "    move-result-object v0"
+                print "    if-eqz v0, :cond_kaorios_hidedev"
+                print "    invoke-virtual {v0}, Landroid/content/ContentResolver;->getPackageName()Ljava/lang/String;"
+                print "    move-result-object v1"
+                print "    invoke-static {v0, v1, p1}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatus(Landroid/content/ContentResolver;Ljava/lang/String;Ljava/lang/String;)Z"
+                print "    move-result v1"
+                print "    if-eqz v1, :cond_kaorios_hidedev"
+                print "    const-string p1, \"0\""
+                print "    return-object p1"
+                print "    :cond_kaorios_hidedev"
+                hooked = 1
+                in_target = 0
+                next
+            }
+            in_target && /\.end method/ { in_target = 0 }
+            { print $0 }
+            ' "$s_file" > "${s_file}.tmp" && mv "${s_file}.tmp" "$s_file" 2>/dev/null || rm -f "${s_file}.tmp"
+            echo "    Hooked: $s_file"
+        fi
+    done
 else
     echo "[!] FATAL ERROR: Framework workspace directory not found: $FW_DIR"
     return 1
@@ -204,6 +235,31 @@ if [ -d "$SVC_DIR" ]; then
         { print $0 }
         ' "$sys_file" > "${sys_file}.tmp" && mv "${sys_file}.tmp" "$sys_file"
         echo "    Hooked: $sys_file"
+    fi
+
+    # 6. WindowState.smali - Dynamic FLAG_SECURE Hook (Controlled via KaoriosToolbox app toggle)
+    ws_file=$(find "$SVC_DIR" -name "WindowState.smali" -type f | head -1)
+    if [ -n "$ws_file" ] && ! grep -q "KaoriosHook;->isSecureFlag" "$ws_file"; then
+        echo "  -> Hooking WindowState.isSecureLocked()..."
+        awk '
+        BEGIN { in_method = 0; hooked = 0 }
+        /\.method.*isSecureLocked\(\)Z/ { in_method = 1; print $0; next }
+        in_method && !hooked && /(\.registers|\.locals)/ {
+            print $0
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_sec_stock"
+            print "    const/4 v0, 0x0"
+            print "    return v0"
+            print "    :cond_kaorios_sec_stock"
+            hooked = 1
+            in_method = 0
+            next
+        }
+        in_method && /\.end method/ { in_method = 0 }
+        { print $0 }
+        ' "$ws_file" > "${ws_file}.tmp" && mv "${ws_file}.tmp" "$ws_file" 2>/dev/null || rm -f "${ws_file}.tmp"
+        echo "    Hooked: $ws_file"
     fi
 
 else
@@ -321,7 +377,26 @@ if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
     if [ -f "$KAORIOS_ASSET_DIR/device-model.json" ]; then
         add_to_module "$KAORIOS_ASSET_DIR/device-model.json" "data/adb/kaorios/device-model.json" "file"
     fi
-    echo "[+] Kaorios configuration and keybox registered to module"
+
+    # Register Kaorios Companion App as a privileged system app
+    if [ -f "$KAORIOS_ASSET_DIR/KaoriosToolbox.apk" ]; then
+        add_to_module "$KAORIOS_ASSET_DIR/KaoriosToolbox.apk" "system/priv-app/KaoriosToolbox/KaoriosToolbox.apk" "apk"
+        echo "[+] Kaorios Toolbox APK registered to module (system/priv-app)"
+    fi
+    if [ -f "$KAORIOS_ASSET_DIR/com.kousei.kaorios.xml" ]; then
+        add_to_module "$KAORIOS_ASSET_DIR/com.kousei.kaorios.xml" "system/etc/permissions/com.kousei.kaorios.xml" "xml"
+        echo "[+] Kaorios privapp permission whitelist registered to module"
+    fi
+    if [ -d "$KAORIOS_ASSET_DIR/lib" ]; then
+        for so_file in $(find "$KAORIOS_ASSET_DIR/lib" -type f); do
+            rel_so=$(echo "$so_file" | sed "s|^$KAORIOS_ASSET_DIR/lib/||")
+            add_to_module "$so_file" "system/priv-app/KaoriosToolbox/lib/$rel_so" "lib"
+        done
+        echo "[+] Kaorios companion native libraries registered to module"
+    fi
+
+    echo "[+] Kaorios configuration, companion APK, and keybox registered to module"
 fi
 
 echo "[*] Kaorios Toolbox v2.0.6.0 patches applied successfully."
+

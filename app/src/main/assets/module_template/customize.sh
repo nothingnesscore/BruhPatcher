@@ -90,10 +90,35 @@ set_perm_recursive "$MODPATH/system/framework" 0 0 0755 0644
 [ -d "$MODPATH/system_ext/framework" ] && set_perm_recursive "$MODPATH/system_ext/framework" 0 0 0755 0644
 
 # Ensure hook scripts are executable
+[ -f "$MODPATH/action.sh" ] && chmod 0755 "$MODPATH/action.sh"
 [ -f "$MODPATH/service.sh" ] && chmod 0755 "$MODPATH/service.sh"
 [ -f "$MODPATH/post-fs-data.sh" ] && chmod 0755 "$MODPATH/post-fs-data.sh"
 [ -f "$MODPATH/uninstall.sh" ] && chmod 0755 "$MODPATH/uninstall.sh"
 
+# =========================================================================
+# System Priv-App Permissions & App Setup
+# =========================================================================
+if [ -d "$MODPATH/system/priv-app" ]; then
+    set_perm_recursive "$MODPATH/system/priv-app" 0 0 0755 0644
+fi
+if [ -d "$MODPATH/system/etc/permissions" ]; then
+    set_perm_recursive "$MODPATH/system/etc/permissions" 0 0 0755 0644
+fi
+
+# =========================================================================
+# Play Integrity & Package Cache Invalidation
+# =========================================================================
+ui_print "- Cleaning stale Play Integrity & package caches..."
+rm -f /data/data/com.google.android.gms/cache/pif.prop /data/data/com.google.android.gms/pif.prop \
+    /data/data/com.google.android.gms/cache/pif.json /data/data/com.google.android.gms/pif.json
+rm -rf /data/system/package_cache/*
+
+# Run service tasks immediately to stage properties
+if [ -f "$MODPATH/service.sh" ]; then
+    . "$MODPATH/service.sh" 2>/dev/null || true
+fi
+
 ui_print " "
 ui_print "[+] Bruh Patcher module installation completed successfully."
 ui_print " "
+

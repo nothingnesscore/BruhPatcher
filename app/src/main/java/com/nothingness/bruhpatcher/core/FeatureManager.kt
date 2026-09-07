@@ -158,35 +158,55 @@ object FeatureManager {
     }
 
     /**
-     * Deploys Kaorios framework DEX and configuration to runtime directory
+     * Deploys Kaorios framework DEX, configuration, and companion APK/libraries to runtime directory
      */
     private fun deployKaoriosAssets(context: Context) {
-        val files = context.assets.list(KAORIOS_ASSETS_PATH) ?: return
-        for (filename in files) {
-            try {
-                // If this is Keybox.xml and we have an updated one from Keybox Hub, use it
-                val customKeybox = if (filename == "Keybox.xml") KeyboxManager.getLocalKeybox(context) else null
-                val sourceFile = if (customKeybox != null && customKeybox.exists()) {
-                    customKeybox
+        fun copyAssetTree(assetSubDir: String) {
+            val fullAssetPath = if (assetSubDir.isEmpty()) KAORIOS_ASSETS_PATH else "$KAORIOS_ASSETS_PATH/$assetSubDir"
+            val entries = context.assets.list(fullAssetPath) ?: return
+            for (entry in entries) {
+                val relPath = if (assetSubDir.isEmpty()) entry else "$assetSubDir/$entry"
+                val entryAssetPath = "$KAORIOS_ASSETS_PATH/$relPath"
+                val subEntries = context.assets.list(entryAssetPath) ?: emptyArray()
+
+                if (subEntries.isEmpty()) {
+                    // Leaf file
+                    try {
+                        val customKeybox = if (entry == "Keybox.xml") KeyboxManager.getLocalKeybox(context) else null
+                        val sourceFile = if (customKeybox != null && customKeybox.exists()) {
+                            customKeybox
+                        } else {
+                            val cacheFile = File(context.cacheDir, "k_${entry.replace('/', '_')}")
+                            context.assets.open(entryAssetPath).use { input ->
+                                cacheFile.outputStream().use { os -> input.copyTo(os) }
+                            }
+                            cacheFile
+                        }
+
+                        val runtimePath = "$KAORIOS_RUNTIME_DIR/$relPath"
+                        val parentDir = File(runtimePath).parent
+                        if (parentDir != null) {
+                            Shell.cmd("mkdir -p \"$parentDir\"").exec()
+                        }
+                        Shell.cmd(
+                            "cp \"${sourceFile.absolutePath}\" \"$runtimePath\"",
+                            "chmod 644 \"$runtimePath\""
+                        ).exec()
+
+                        if (sourceFile != customKeybox) {
+                            sourceFile.delete()
+                        }
+                    } catch (e: Exception) { }
                 } else {
-                    val cacheFile = File(context.cacheDir, "k_$filename")
-                    context.assets.open("$KAORIOS_ASSETS_PATH/$filename").use { input ->
-                        cacheFile.outputStream().use { os -> input.copyTo(os) }
-                    }
-                    cacheFile
+                    // Directory: recurse
+                    copyAssetTree(relPath)
                 }
-
-                val runtimePath = "$KAORIOS_RUNTIME_DIR/$filename"
-                Shell.cmd(
-                    "cp ${sourceFile.absolutePath} $runtimePath",
-                    "chmod 644 $runtimePath"
-                ).exec()
-
-                if (sourceFile != customKeybox) {
-                    sourceFile.delete()
-                }
-            } catch (e: Exception) { }
+            }
         }
+
+        try {
+            copyAssetTree("")
+        } catch (e: Exception) { }
     }
 
     /**
