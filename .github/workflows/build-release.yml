@@ -50,6 +50,7 @@ jobs:
 
       - name: Build Release APK
         run: |
+          set -o pipefail
           ./gradlew assembleRelease --scan --stacktrace 2>&1 | tee build.log
 
       - name: Dump Build Failure to Summary
