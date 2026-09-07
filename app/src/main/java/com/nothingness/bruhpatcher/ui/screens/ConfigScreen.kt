@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nothingness.bruhpatcher.core.FeatureManager
 import com.nothingness.bruhpatcher.model.PatchingMode
 import com.nothingness.bruhpatcher.model.SelectedFile
@@ -348,8 +349,19 @@ fun ConfigScreen(
                     fontWeight = FontWeight.Bold,
                     color = AppColors.TextPrimary
                 )
-                if (useLocalPatching) {
-                    Row {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.applyAutoPatcherPreset() },
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text("⚡ Auto Preset", fontSize = 12.sp, color = AppColors.HyperOsCyan)
+                    }
+
+                    if (useLocalPatching) {
                         // Refresh button
                         IconButton(
                             onClick = { viewModel.updateFeatureScripts() },

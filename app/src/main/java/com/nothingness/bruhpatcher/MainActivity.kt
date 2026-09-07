@@ -5,12 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.nothingness.bruhpatcher.ui.navigation.AppNavigation
-import com.nothingness.bruhpatcher.ui.theme.AppColors
 import com.nothingness.bruhpatcher.ui.theme.BruhPatcherTheme
+import com.nothingness.bruhpatcher.viewmodel.MainViewModel
 import com.topjohnwu.superuser.Shell
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +24,6 @@ class MainActivity : ComponentActivity() {
             Shell.enableVerboseLogging = BuildConfig.DEBUG
             Shell.setDefaultBuilder(
                 Shell.Builder.create()
-                    .setFlags(Shell.FLAG_REDIRECT_STDERR)
                     .setTimeout(30)
             )
         }
@@ -31,13 +34,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            BruhPatcherTheme(darkTheme = true) {
+            val viewModel: MainViewModel = viewModel()
+            val useDynamicColor by viewModel.useDynamicColor.collectAsState()
+
+            BruhPatcherTheme(
+                darkTheme = true,
+                dynamicColor = useDynamicColor
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = AppColors.DarkBackground
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    AppNavigation(navController = navController)
+                    AppNavigation(
+                        navController = navController,
+                        viewModel = viewModel
+                    )
                 }
             }
         }

@@ -13,8 +13,8 @@ android {
         applicationId = "com.nothingness.bruhpatcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 220
-        versionName = "2.2.0"
+        versionCode = 230
+        versionName = "2.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,8 +35,8 @@ android {
                 keyAlias = "bruhpatcher"
                 keyPassword = "bruhpatcher"
                 storeType = "PKCS12"
-                isV1SigningEnabled = true
-                isV2SigningEnabled = true
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }

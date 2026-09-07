@@ -26,6 +26,32 @@ data class DeviceInfo(
         get() = apiLevel >= 37 || androidVersion.startsWith("17")
 
     /**
+     * Determines if device is Xiaomi Redmi Turbo 3 / Poco F6 (peridot)
+     */
+    val isPocoF6OrTurbo3: Boolean
+        get() = deviceCodename.equals("peridot", ignoreCase = true) ||
+                deviceName.contains("24069RA21C", ignoreCase = true) ||
+                deviceName.contains("POCO F6", ignoreCase = true) ||
+                deviceName.contains("Redmi Turbo 3", ignoreCase = true)
+
+    /**
+     * Determines if device is running HyperOS 4.0
+     */
+    val isHyperOS4: Boolean
+        get() = isHyperOS && (hyperOsVersion?.contains("4.") == true ||
+                versionName.contains("OS4.", ignoreCase = true) ||
+                (isAndroid17 && isHyperOS))
+
+    /**
+     * Detected SoC name if known
+     */
+    val socDescription: String
+        get() = when {
+            isPocoF6OrTurbo3 -> "Snapdragon 8s Gen 3 (SM8635)"
+            else -> ""
+        }
+
+    /**
      * Gets the workflow version string based on API level
      */
     val workflowVersion: String

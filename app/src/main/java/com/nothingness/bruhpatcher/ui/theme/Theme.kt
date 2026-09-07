@@ -56,7 +56,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun BruhPatcherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disabled by default for consistent branding
+    dynamicColor: Boolean = true, // Enabled by default for Monet / Dynamic Color on Android 12+ & HyperOS
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

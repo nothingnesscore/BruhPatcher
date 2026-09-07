@@ -2,15 +2,16 @@
 
 > **The Universal Android Framework Patcher**  
 > Supporting **Android 8.0 through Android 17 (API 37 / Baklava)** across **AOSP, Pixel, Xiaomi MIUI & HyperOS 1–4, Samsung OneUI, ColorOS, OxygenOS & all OEM ROMs**.  
-> Features modern **MIUIX Liquid Glass UI** with HyperOS Alive Design theme, permanent release signature for seamless in-place updates, and integrated **Kaorios Toolbox v2.0.6.0**!
+> Features modern **Monet Dynamic Color & MIUIX Alive Design**, 1-Tap **AutoPatcher** for Android 17 / HyperOS 4 (specifically Redmi Turbo 3 / Poco F6 `peridot`), seamless toggle between **Liquid Glass Floating Navbar** and **MIUIX Docked Navigation Bar**, and complete **Kaorios Toolbox v2.0.6.0** automated hooks!
 
 ---
 
-## 🌟 Universal Compatibility (Not Limited to Any Single OS)
+## 🌟 Universal Compatibility & AutoPatcher Engine
 
 **Bruh Patcher is an all-in-one universal framework modification suite.**  
-It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **all available features across any supported device, OEM skin, and Android release**:
+It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **all available features across any supported device, OEM skin, and Android release**, while featuring a dedicated **1-Tap AutoPatcher Preset** for latest-gen hardware:
 
+- **1-Tap AutoPatcher**: Automatically detects Xiaomi Redmi Turbo 3 / Poco F6 (`peridot`, 24069RA21C, Snapdragon 8s Gen 3, Android 17 API 37, HyperOS 4.0), selects all 6 core patches, enables automated extraction, and starts local patching with a single tap.
 - **Supported Android Versions**: Android 8.0, 8.1, 9, 10, 11, 12, 12L, 13, 14, 15, 16, and **Android 17 (Baklava / API 37)**.
 - **Supported ROM Ecosystems**: Pure AOSP, Google Pixel, Xiaomi (MIUI 12/13/14, HyperOS 1, 2, 3, 4), Samsung OneUI, OnePlus/Oppo (OxygenOS/ColorOS), Realme UI, Motorola, LineageOS, and custom ROMs.
 - **Root Managers Supported**: Magisk (v24+), KernelSU, KernelSU Next, APatch, and SUFS. Also supports manual file extraction without root.
@@ -19,30 +20,25 @@ It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **a
 
 ## ✨ Key Features & Patches
 
-### 🪞 1. Authentic iOS-Style Liquid Glass Floating Navbar
-- **Architecture & Lineage**:
-  - **Kyant0/AndroidLiquidGlass** (Apache 2.0): Foundational SDF optical distance fields, circle map convex lens refraction, and spring inertia physics.
-  - **compose-miuix-ui** (Apache 2.0 by yukonga): Compose Multiplatform port (`IosLiquidGlassNavigationBar`) and MIUIX alive design system.
-  - **SukiSU-Ultra / SukiSU Manager** (Apache 2.0): Production-hardened `FloatingBottomBar`, `InteractiveHighlight`, and `DampedDragAnimation`.
-  - **Apple iOS 17/18 Design Standards**: Translucent frosted dark acrylic, directional top-edge specular hairline bevel, and quiet optical realism without distracting bling animations.
-- **Damped Spring Drag Physics**: Features `DampedDragAnimation` (`stiffness = 650f, damping = 0.82f`) with 78/56 horizontal press expansion ratio, fling velocity inertia deformation, and non-linear rubber-band edge elasticity.
-- **Sliding Frosted Indicator Pill**: Minimalist elevated frosted glass pill (`Color.White.copy(alpha = 0.11f)`) with 0.5dp top-lit specular edge sliding smoothly beneath active tabs.
-- **Interactive Specular Bloom**: Touch-driven specular highlight that ONLY activates under active touch/drag coordinates via hardware AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26–32 (zero GPU/CPU idle overhead).
-- **Tactile iOS Navigation Tabs**: Crisp 22dp icons, SF-style 11sp typography (`SemiBold` active, `Medium` inactive), gentle 0.94x press scale compression, and tactile haptic feedback on tab changes.
-- **Minimalist Status Indicator**: Elegant 6dp solid Apple System Green dot on the Terminal tab during active background patching.
+### 🪞 1. Monet Dynamic Color & Dual Navigation Architecture
+- **Material You Monet Theming**: Adapts seamlessly to system wallpaper dynamic palette across all UI cards, buttons, switches, and elevated surfaces.
+- **Liquid Glass Navbar Toggle**: Switch effortlessly between the authentic iOS-style refractive floating navbar and the standard docked MIUIX navigation bar in **Settings > Appearance & Navigation**.
+- **Authentic iOS-Style Liquid Glass Floating Navbar**:
+  - **Architecture & Lineage**: Kyant0/AndroidLiquidGlass SDF optical distance fields, compose-miuix-ui multiplatform port, and SukiSU-Ultra production-hardened physics.
+  - **Damped Spring Drag Physics**: Features `DampedDragAnimation` (`stiffness = 650f, damping = 0.82f`) with 78/56 horizontal press expansion ratio, fling velocity inertia deformation, and non-linear rubber-band edge elasticity.
+  - **Sliding Frosted Indicator Pill**: Minimalist elevated frosted glass pill (`Color.White.copy(alpha = 0.11f)`) with 0.5dp top-lit specular edge sliding smoothly beneath active tabs.
+  - **Interactive Specular Bloom**: Touch-driven specular highlight that ONLY activates under active touch/drag coordinates via hardware AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26–32 (zero GPU/CPU idle overhead).
+- **Docked MIUIX Navigation Bar**: Clean, classic docked bottom bar with squircle selection indicators, terminal active status dots, and tactile haptic feedback.
 
-### 🛡️ 2. Integrated Kaorios Toolbox Engine (v2.0.6.0)
-- **Play Integrity Fix & Hardware Attestation**:
-  - Injects `kaorios_framework.dex` directly into `framework.jar`.
-  - Provisions `Pif-props.json`, `app-props.json`, and `device-model.json` into the flashable Magisk/KSU module.
-  - Supports custom user `Keybox.xml` hardware attestation files.
-  - Automated smali hooks into `Instrumentation`, `ApplicationPackageManager`, `AndroidKeyStoreSpi`, and `SystemServer`.
-- **Per-App High Refresh Rate Spoofing**:
-  - Unlock 120 FPS in games (Honor of Kings, Genshin Impact, PUBG Mobile, etc.).
-- **Privacy Isolation & Caller-Aware Stealth**:
-  - `AppsFilterBase` and `ComputerEngine` hooks ensure target apps are completely invisible to querying packages without breaking IPC.
-- **Installer Source Spoofing**:
-  - Bypasses marketplace-restricted installation checks.
+### 🛡️ 2. Integrated Kaorios Toolbox Engine (v2.0.6.0+)
+- **Full Smali Hook Suite**:
+  - **Process Runtime Hook**: Injects `KaoriosHook.initActivityThread(String, String)` directly into `ActivityThread.attach()` for early runtime spoofing.
+  - **Developer Options & ADB Stealth**: Hooks `Settings$NameValueCache.getStringForUser` to hide developer mode and ADB debugging status from banking apps.
+  - **Caller-Aware Privacy Isolation**: Process runtime isolation and context filtering to protect installed package lists from inspection without breaking system IPC.
+  - **Play Integrity & Hardware Attestation**: Injects `kaorios_framework.dex` into `framework.jar`, provisions `Pif-props.json`, `app-props.json`, `device-model.json`, and integrates with user `Keybox.xml`.
+  - **ApplicationPackageManager & KeyStore**: Complete hooks into `ApplicationPackageManager.hasSystemFeature`, `AndroidKeyStoreKeyPairGeneratorSpi.generateKeyPair`, and `AndroidKeyStoreSpi.engineGetCertificateChain`.
+- **Per-App High Refresh Rate Spoofing**: Unlock 120 FPS in games (Honor of Kings, Genshin Impact, PUBG Mobile, etc.).
+- **Installer Source Spoofing**: Bypasses marketplace-restricted installation checks.
 
 ### 🚀 3. Android 17 (Baklava) & HyperOS 4 Extended Support
 - **Android 17 Build Static-Final Unfinalize**:
@@ -58,6 +54,7 @@ It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **a
 ### 📸 5. Media & Security Tweaks
 - **Disable Secure Flag**: Enables screenshots, screen recording, and display mirroring in DRM and banking apps.
 - **Google Photos Unlimited**: Enables original-quality cloud photo and video backup by spoofing Pixel XL.
+- **Robust Local Packaging**: Fixed `EACCES (Permission denied)` log creation on restricted storage; logs are staged in context cache before atomic root copy into flashable module.
 
 ---
 

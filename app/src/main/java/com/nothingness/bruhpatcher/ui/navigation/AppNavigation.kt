@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.nothingness.bruhpatcher.model.PatchingState
 import com.nothingness.bruhpatcher.ui.components.LiquidGlassFloatingBar
 import com.nothingness.bruhpatcher.ui.components.LiquidNavDestination
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixNavigationBar
 import com.nothingness.bruhpatcher.ui.screens.ConfigScreen
 import com.nothingness.bruhpatcher.ui.screens.DashboardScreen
 import com.nothingness.bruhpatcher.ui.screens.ProgressScreen
@@ -42,6 +43,25 @@ fun AppNavigation(
     val isPatchingActive = patchingState !is PatchingState.Idle &&
             patchingState !is PatchingState.Success &&
             patchingState !is PatchingState.Error
+    val useLiquidGlassNavbar by viewModel.useLiquidGlassNavbar.collectAsState()
+
+    val onNavigateToDestination: (LiquidNavDestination) -> Unit = { destination ->
+        val targetRoute = when (destination) {
+            LiquidNavDestination.DASHBOARD -> Screen.Dashboard.route
+            LiquidNavDestination.CONFIG -> Screen.Config.route
+            LiquidNavDestination.PROGRESS -> Screen.Progress.route
+            LiquidNavDestination.SETTINGS -> Screen.Settings.route
+        }
+        if (currentRoute != targetRoute) {
+            navController.navigate(targetRoute) {
+                popUpTo(Screen.Dashboard.route) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
@@ -102,31 +122,25 @@ fun AppNavigation(
             }
         }
 
-        // MIUIX Liquid Glass Floating Bar overlay with light refraction & dynamic contrast
-        LiquidGlassFloatingBar(
-            currentRoute = currentRoute,
-            isPatchingActive = isPatchingActive,
-            isHighDynamicContrast = true,
-            onNavigate = { destination ->
-                val targetRoute = when (destination) {
-                    LiquidNavDestination.DASHBOARD -> Screen.Dashboard.route
-                    LiquidNavDestination.CONFIG -> Screen.Config.route
-                    LiquidNavDestination.PROGRESS -> Screen.Progress.route
-                    LiquidNavDestination.SETTINGS -> Screen.Settings.route
-                }
-                if (currentRoute != targetRoute) {
-                    navController.navigate(targetRoute) {
-                        popUpTo(Screen.Dashboard.route) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-        )
+        if (useLiquidGlassNavbar) {
+            // MIUIX Liquid Glass Floating Bar overlay with light refraction & dynamic contrast
+            LiquidGlassFloatingBar(
+                currentRoute = currentRoute,
+                isPatchingActive = isPatchingActive,
+                isHighDynamicContrast = true,
+                onNavigate = onNavigateToDestination,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+            )
+        } else {
+            // Standard docked MIUIX Navigation Bar (HyperOS Alive Design)
+            MiuixNavigationBar(
+                currentRoute = currentRoute,
+                isPatchingActive = isPatchingActive,
+                onNavigate = onNavigateToDestination,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }

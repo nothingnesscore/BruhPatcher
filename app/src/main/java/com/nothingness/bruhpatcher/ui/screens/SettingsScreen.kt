@@ -60,6 +60,7 @@ import com.nothingness.bruhpatcher.ui.components.miuix.MiuixGroupCard
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixItemPosition
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixPreferenceItem
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixStatusBadge
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixSwitchPreference
 import com.nothingness.bruhpatcher.ui.theme.AppColors
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
 
@@ -75,6 +76,8 @@ fun SettingsScreen(
     val isNoMountInstalled by viewModel.isNoMountInstalled.collectAsState()
     val isNoMountGuardTripped by viewModel.isNoMountGuardTripped.collectAsState()
     val isResettingNoMount by viewModel.isResettingNoMount.collectAsState()
+    val useDynamicColor by viewModel.useDynamicColor.collectAsState()
+    val useLiquidGlassNavbar by viewModel.useLiquidGlassNavbar.collectAsState()
 
     Scaffold(
         topBar = {
@@ -134,7 +137,7 @@ fun SettingsScreen(
                         }
                     }
                     MiuixStatusBadge(
-                        text = "v2.2.0",
+                        text = "v2.3.0",
                         containerColor = AppColors.HyperOsCyan.copy(alpha = 0.15f),
                         contentColor = AppColors.HyperOsCyan,
                         showDot = true
@@ -152,6 +155,29 @@ fun SettingsScreen(
                     text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v2.0.6.0, CorePatch signature verification bypass, and NoMount VFS transparent redirection.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppColors.TextSecondary
+                )
+            }
+
+            // Appearance & Navigation Controls
+            MiuixCategoryHeader(title = "Appearance & Navigation")
+            MiuixGroupCard {
+                MiuixSwitchPreference(
+                    title = "Monet Dynamic Color",
+                    subtitle = "Harmonize interface palette dynamically with HyperOS wallpaper accent tones (Android 12+)",
+                    icon = Icons.Rounded.ColorLens,
+                    iconTint = AppColors.HyperOsBlue,
+                    checked = useDynamicColor,
+                    onCheckedChange = { viewModel.setDynamicColor(it) },
+                    position = MiuixItemPosition.TOP
+                )
+                MiuixSwitchPreference(
+                    title = "Liquid Glass Floating Navbar",
+                    subtitle = "Switch between floating iOS/SukiSU optical glass pill and docked MIUIX navigation bar",
+                    icon = Icons.Rounded.Layers,
+                    iconTint = AppColors.HyperOsCyan,
+                    checked = useLiquidGlassNavbar,
+                    onCheckedChange = { viewModel.setLiquidGlassNavbar(it) },
+                    position = MiuixItemPosition.BOTTOM
                 )
             }
 

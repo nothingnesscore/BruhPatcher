@@ -35,8 +35,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.nothingness.bruhpatcher.ui.components.LiquidNavDestination
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -484,3 +488,155 @@ fun MiuixTopAppBar(
         }
     }
 }
+
+/**
+ * Standard MIUIX Bottom Navigation Bar (HyperOS Alive Design)
+ * 
+ * Clean, docked bottom bar alternative to the floating Liquid Glass bar.
+ * Features:
+ * - Docked at screen bottom with navigationBarsPadding
+ * - Translucent obsidian acrylic background with 0.5dp top border
+ * - Active pill indicator with spring animation
+ * - Green status dot on Terminal tab when patching is active
+ * - Native haptic feedback on tab changes
+ */
+@Composable
+fun MiuixNavigationBar(
+    currentRoute: String,
+    isPatchingActive: Boolean,
+    onNavigate: (LiquidNavDestination) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xF0141824),
+                        Color(0xF80E111A)
+                    )
+                )
+            )
+            .border(
+                width = 0.5.dp,
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.12f),
+                        Color.Transparent
+                    )
+                ),
+                shape = RoundedCornerShape(0.dp)
+            )
+            .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            for (destination in LiquidNavDestination.entries) {
+                MiuixNavItem(
+                    destination = destination,
+                    isSelected = currentRoute == destination.route,
+                    isPatchingActive = isPatchingActive,
+                    onNavigate = onNavigate,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiuixNavItem(
+    destination: LiquidNavDestination,
+    isSelected: Boolean,
+    isPatchingActive: Boolean,
+    onNavigate: (LiquidNavDestination) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 600f),
+        label = "TabScale"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else AppColors.TextMuted,
+        animationSpec = tween(durationMillis = 200),
+        label = "TabContentColor"
+    )
+
+    Column(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onNavigate(destination)
+                }
+            )
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
+            // Background capsule for selected tab
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .width(48.dp)
+                        .height(26.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
+                )
+            }
+
+            Icon(
+                imageVector = destination.icon,
+                contentDescription = destination.title,
+                tint = contentColor,
+                modifier = Modifier.size(22.dp)
+            )
+
+            // Status dot for Terminal tab when background patching is in progress
+            if (destination == LiquidNavDestination.PROGRESS && isPatchingActive) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.Success)
+                        .border(1.dp, Color(0xFF141824), CircleShape)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        Text(
+            text = destination.title,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+            ),
+            color = contentColor
+        )
+    }
+}
+

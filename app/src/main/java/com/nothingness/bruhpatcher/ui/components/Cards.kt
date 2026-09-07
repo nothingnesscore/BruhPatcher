@@ -24,8 +24,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -532,3 +535,224 @@ fun ProgressCard(
         }
     }
 }
+
+/**
+ * 1-Tap AutoPatcher Card for Android 17 / HyperOS 4 (Poco F6 / Redmi Turbo 3 & Universal)
+ * 
+ * Automatically configures and applies the complete suite of patches:
+ * - CorePatch (Signature & Downgrade bypass)
+ * - KaoriOS Toolbox v2.0.6.0 (Hardware Keybox + 120 FPS + Privacy Stealth)
+ * - Android 17 Build Reflection Unfinalize
+ * - HyperOS CN Notification Fix
+ * - Disable FLAG_SECURE
+ * - Google Photos Unlimited Original Backup
+ */
+@Composable
+fun AutoPatcherCard(
+    deviceInfo: DeviceInfo,
+    isRootAvailable: Boolean,
+    onRunAutoPatcher: () -> Unit,
+    onCustomize: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(20.dp)
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.2.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF00F0FF).copy(alpha = 0.40f),
+                        Color(0xFF007AFF).copy(alpha = 0.35f),
+                        Color(0xFF7C3AED).copy(alpha = 0.20f)
+                    )
+                ),
+                shape = shape
+            ),
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF141826)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(Color(0xFF007AFF), Color(0xFF00F0FF))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = "AutoPatcher",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.TextPrimary
+                        )
+                        Text(
+                            text = if (deviceInfo.isPocoF6OrTurbo3) {
+                                "Poco F6 / Redmi Turbo 3 (peridot)"
+                            } else {
+                                "HyperOS 4 & Android 17 Suite"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AppColors.HyperOsCyan
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF007AFF).copy(alpha = 0.18f))
+                        .border(0.8.dp, Color(0xFF00C7BE).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "1-TAP",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00F0FF)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Target Spec Details
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF0D101A))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Column {
+                    Text(
+                        text = if (deviceInfo.isPocoF6OrTurbo3) {
+                            "⚡ Target: Redmi Turbo 3 / Poco F6 • Snapdragon 8s Gen 3"
+                        } else {
+                            "⚡ Target: ${deviceInfo.deviceName} (${deviceInfo.deviceCodename})"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Environment: ${deviceInfo.osBadgeText} • API ${deviceInfo.apiLevel} • NoMount VFS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AppColors.TextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val autoPatches = listOf(
+                "CorePatch" to "Bypasses signature, digest checks & app downgrades",
+                "Kaorios Toolbox v2.0.6.0" to "Play Integrity, Keybox attestation, 120 FPS & stealth",
+                "Android 17 Build Reflection" to "Unfinalizes static final Build fields for spoofing",
+                "HyperOS CN Push Delay Fix" to "Eliminates push delays & unfreezes notification services",
+                "Disable Secure Flag" to "Enables screenshots/recording in banking & DRM apps",
+                "Unlimited Google Photos" to "Original-quality cloud backup by spoofing Pixel XL"
+            )
+
+            autoPatches.forEach { (title, desc) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF00F0FF),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.TextPrimary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "— $desc",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AppColors.TextMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = onRunAutoPatcher,
+                    modifier = Modifier.weight(1.3f),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = isRootAvailable,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.HyperOsBlue
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text("Run AutoPatcher")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onCustomize,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Customize",
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+

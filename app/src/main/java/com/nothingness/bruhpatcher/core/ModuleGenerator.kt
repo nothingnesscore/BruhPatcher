@@ -45,7 +45,7 @@ object ModuleGenerator {
 
             log("Creating module directory...")
             Shell.cmd("rm -rf ${workDir.absolutePath}").exec()
-            Shell.cmd("mkdir -p ${workDir.absolutePath}").exec()
+            Shell.cmd("mkdir -p ${workDir.absolutePath} && chmod -R 777 ${workDir.absolutePath}").exec()
 
             // Copy template files from assets
             log("Copying template files...")
@@ -57,7 +57,7 @@ object ModuleGenerator {
 
             // Create system/framework directory
             log("Setting up framework directory structure...")
-            Shell.cmd("mkdir -p ${workDir.absolutePath}/system/framework").exec()
+            Shell.cmd("mkdir -p ${workDir.absolutePath}/system/framework && chmod -R 777 ${workDir.absolutePath}/system").exec()
 
             // Copy patched JARs
             for ((name, jarFile) in patchedJars) {
@@ -88,12 +88,18 @@ object ModuleGenerator {
                 }
             }
             
-            // Embed patch.log in the module package
+            // Embed patch.log in the module package using cacheDir staging to avoid root EACCES
             if (!patchLog.isNullOrBlank()) {
-                val moduleLogFile = File(workDir, "patch.log")
-                moduleLogFile.writeText(patchLog)
-                Shell.cmd("chmod 644 ${moduleLogFile.absolutePath}").exec()
-                log("Embedded patch.log inside module package")
+                try {
+                    val tempLogFile = File(context.cacheDir, "temp_patch_${timestamp}.log")
+                    tempLogFile.writeText(patchLog)
+                    val moduleLogFile = File(workDir, "patch.log")
+                    Shell.cmd("cp ${tempLogFile.absolutePath} ${moduleLogFile.absolutePath} && chmod 644 ${moduleLogFile.absolutePath}").exec()
+                    tempLogFile.delete()
+                    log("Embedded patch.log inside module package")
+                } catch (e: Exception) {
+                    log("Warning: Could not embed patch.log: ${e.message}")
+                }
             }
             
             // Process module extras from feature scripts (APKs, XMLs, libs, etc.)
@@ -282,7 +288,7 @@ object ModuleGenerator {
         val moduleProp = """
             id=$MODULE_ID
             name=Bruh Patcher Patched Framework
-            version=v2.0.7_$timestamp
+            version=v2.3.0_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
             description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch [NoMount VFS Compatible]

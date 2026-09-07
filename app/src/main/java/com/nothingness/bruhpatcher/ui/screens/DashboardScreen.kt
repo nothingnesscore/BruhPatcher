@@ -153,6 +153,19 @@ fun DashboardScreen(
                 DeviceInfoCard(deviceInfo = deviceInfo)
             }
 
+            // 1-Tap AutoPatcher Card for Android 17 / HyperOS 4
+            if (!isLoading) {
+                com.nothingness.bruhpatcher.ui.components.AutoPatcherCard(
+                    deviceInfo = deviceInfo,
+                    isRootAvailable = isRootAvailable,
+                    onRunAutoPatcher = {
+                        viewModel.startAutoPatcher()
+                        onNavigateToProgress()
+                    },
+                    onCustomize = onNavigateToConfig
+                )
+            }
+
             // Kaorios Toolbox v2.0.6.0 Feature Showcase
             if (!isLoading) {
                 com.nothingness.bruhpatcher.ui.components.KaoriosShowcaseCard(

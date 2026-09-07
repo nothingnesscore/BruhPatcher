@@ -87,11 +87,11 @@ if [ -d "$FW_DIR" ]; then
             next
         }
         in_target && /(\.registers|\.locals)/ {
-            print "    .locals 15"
+            print $0
             print "    invoke-static {p0}, Landroid/security/kaorios/KaoriosHook;->initGenerateSoftwareKeyPair(Ljava/lang/Object;)Ljava/security/KeyPair;"
-            print "    move-result-object v14"
-            print "    if-eqz v14, :cond_kaorios_gen_stock"
-            print "    return-object v14"
+            print "    move-result-object v0"
+            print "    if-eqz v0, :cond_kaorios_gen_stock"
+            print "    return-object v0"
             print "    :cond_kaorios_gen_stock"
             in_target = 0
             next
@@ -134,6 +134,54 @@ if [ -d "$FW_DIR" ]; then
         ' "$cert_file" > "${cert_file}.tmp" && mv "${cert_file}.tmp" "$cert_file"
         echo "    Hooked: $cert_file"
     fi
+
+    # 4b. ActivityThread.smali - Process Runtime Hook
+    act_file=$(find "$FW_DIR" -name "ActivityThread.smali" -type f | head -1)
+    if [ -n "$act_file" ] && ! grep -q "KaoriosHook;->initActivityThread" "$act_file"; then
+        echo "  -> Hooking ActivityThread.attach()..."
+        awk '
+        BEGIN { in_target = 0; hooked = 0 }
+        /\.method private.*attach\(ZJ\)V/ { in_target = 1 }
+        in_target && !hooked && /return-void/ {
+            print "    const-string v0, \"kaorios\""
+            print "    const-string v1, \"init\""
+            print "    invoke-static {v0, v1}, Landroid/security/kaorios/KaoriosHook;->initActivityThread(Ljava/lang/String;Ljava/lang/String;)V"
+            hooked = 1
+        }
+        in_target && /\.end method/ { in_target = 0 }
+        { print $0 }
+        ' "$act_file" > "${act_file}.tmp" && mv "${act_file}.tmp" "$act_file" 2>/dev/null || rm -f "${act_file}.tmp"
+        echo "    Hooked: $act_file"
+    fi
+
+    # 4c. Settings NameValueCache - Dev status & ADB stealth
+    nvc_file=$(find "$FW_DIR" -name "*NameValueCache*.smali" -type f | head -1)
+    if [ -n "$nvc_file" ] && ! grep -q "KaoriosHook;->shouldHideDevStatus" "$nvc_file"; then
+        echo "  -> Hooking NameValueCache for developer status isolation..."
+        awk '
+        BEGIN { in_get = 0; hooked = 0 }
+        /\.method public.*getStringForUser\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;I\)Ljava\/lang\/String;/ {
+            in_get = 1
+            print $0
+            next
+        }
+        in_get && !hooked && /(\.registers|\.locals)/ {
+            print $0
+            print "    invoke-static {p1, p2, p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_nvc_stock"
+            print "    const/4 v0, 0x0"
+            print "    return-object v0"
+            print "    :cond_kaorios_nvc_stock"
+            hooked = 1
+            in_get = 0
+            next
+        }
+        in_get && /\.end method/ { in_get = 0 }
+        { print $0 }
+        ' "$nvc_file" > "${nvc_file}.tmp" && mv "${nvc_file}.tmp" "$nvc_file" 2>/dev/null || rm -f "${nvc_file}.tmp"
+        echo "    Hooked: $nvc_file"
+    fi
 else
     echo "[!] FATAL ERROR: Framework workspace directory not found: $FW_DIR"
     return 1
@@ -157,6 +205,7 @@ if [ -d "$SVC_DIR" ]; then
         ' "$sys_file" > "${sys_file}.tmp" && mv "${sys_file}.tmp" "$sys_file"
         echo "    Hooked: $sys_file"
     fi
+
 else
     echo "[!] FATAL ERROR: Services workspace directory not found: $SVC_DIR"
     return 1

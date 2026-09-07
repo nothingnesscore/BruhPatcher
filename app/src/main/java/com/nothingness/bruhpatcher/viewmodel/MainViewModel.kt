@@ -35,6 +35,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.os.Build
+import com.nothingness.bruhpatcher.data.SettingsRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import java.io.File
 import java.io.FileOutputStream
 
@@ -42,6 +46,14 @@ import java.io.FileOutputStream
  * Main ViewModel for orchestrating the patching flow
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val settingsRepository = SettingsRepository(application)
+
+    val useDynamicColor: StateFlow<Boolean> = settingsRepository.useDynamicColor
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+
+    val useLiquidGlassNavbar: StateFlow<Boolean> = settingsRepository.useLiquidGlassNavbar
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     private val workflowRepository = WorkflowRepository()
     private val uploadRepository: UploadRepository by lazy {
@@ -797,6 +809,86 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _useLocalPatching.value = useLocal
     }
 
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicColor(enabled)
+        }
+    }
+
+    fun setLiquidGlassNavbar(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLiquidGlassNavbar(enabled)
+        }
+    }
+
+    /**
+     * Applies the complete recommended AutoPatcher preset:
+     * - CorePatch (Signature Verification)
+     * - Kaorios Toolbox v2.0.6.0
+     * - Android 17 Build Reflection Unfinalize
+     * - HyperOS CN Notification Fix (if HyperOS/MIUI)
+     * - Disable Secure Flag
+     * - Google Photos Unlimited
+     */
+    fun applyAutoPatcherPreset() {
+        val info = _deviceInfo.value
+        _localPatchFeatures.value = _localPatchFeatures.value.map { feature ->
+            val shouldEnable = when (feature.id) {
+                "disable_signature_verification" -> true
+                "kaorios_toolbox" -> true
+                "disable_flag_secure" -> true
+                "google_photos_unlimited" -> true
+                "android17_build_unfinalize" -> true
+                "cn_notification_fix" -> info.isHyperOS || info.hasMiuiServicesJar
+                else -> feature.isEnabled
+            }
+            feature.copy(isEnabled = shouldEnable)
+        }
+
+        _features.value = _features.value.map { feature ->
+            val shouldEnable = when (feature.id) {
+                Feature.DISABLE_SIGNATURE_VERIFICATION.id -> true
+                Feature.KAORIOS_TOOLBOX.id -> true
+                Feature.DISABLE_SECURE_FLAG.id -> true
+                Feature.GOOGLE_PHOTOS_UNLIMITED.id -> true
+                Feature.ANDROID17_BUILD_UNFINALIZE.id -> true
+                Feature.CN_NOTIFICATION_FIX.id -> info.isHyperOS || info.hasMiuiServicesJar
+                else -> feature.isEnabled
+            }
+            feature.copy(isEnabled = shouldEnable)
+        }
+        addLog(LogTag.INFO, "Applied AutoPatcher recommended preset for ${info.osBadgeText}")
+    }
+
+    /**
+     * Automated 1-Tap AutoPatcher for Android 17 / HyperOS 4 (Poco F6 / Redmi Turbo 3):
+     * 1. Checks root access
+     * 2. Sets mode to AUTO_EXTRACT
+     * 3. Enables all 6 core patches via preset
+     * 4. Triggers local on-device patching pipeline
+     */
+    fun startAutoPatcher() {
+        viewModelScope.launch {
+            if (!_isRootAvailable.value) {
+                _patchingState.value = PatchingState.Error("Root access is required for AutoPatcher", recoverable = true)
+                return@launch
+            }
+
+            _useLocalPatching.value = true
+            _patchingMode.value = PatchingMode.AUTO_EXTRACT
+            applyAutoPatcherPreset()
+
+            val info = _deviceInfo.value
+            val targetNotice = if (info.isPocoF6OrTurbo3) {
+                "Targeting Xiaomi Redmi Turbo 3 / Poco F6 (peridot) [Snapdragon 8s Gen 3]"
+            } else {
+                "Targeting ${info.deviceName} (${info.deviceCodename})"
+            }
+            addLog(LogTag.INFO, "⚡ 1-Tap AutoPatcher launched! $targetNotice")
+            startLocalPatching()
+        }
+    }
+
     /**
      * Start local on-device patching using DynamicInstaller.
      * 
@@ -906,7 +998,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         "mkdir -p ${jobDir!!.absolutePath}/input",
                         "mkdir -p ${jobDir!!.absolutePath}/work",
                         "mkdir -p ${jobDir!!.absolutePath}/output",
-                        "chmod -R 755 ${jobDir!!.absolutePath}"
+                        "chmod -R 777 ${jobDir!!.absolutePath}"
                     ).exec()
                 }
 
