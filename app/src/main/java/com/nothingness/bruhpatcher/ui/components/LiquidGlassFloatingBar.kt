@@ -1,25 +1,22 @@
 package com.nothingness.bruhpatcher.ui.components
 
-// Adapted from:
-// 1. Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0)
-// 2. compose-miuix-ui — https://github.com/compose-miuix-ui/miuix (Apache 2.0)
-// 3. SukiSU-Ultra — https://github.com/SukiSU-Ultra/SukiSU-Ultra (manager FloatingBottomBar.kt)
+// Authentic iOS-Style Liquid Glass Floating Navigation Bar
+// Designed with quiet optical realism based on:
+// 1. Kyant0/AndroidLiquidGlass (Apache 2.0) — Damped drag spring physics, press scaling & velocity inertia
+// 2. SukiSU-Ultra (GPL-3.0 / Apache 2.0) — Interactive specular highlight bloom & floating capsule architecture
+// 3. Apple iOS 17/18 Human Interface Guidelines — Translucent frosted acrylic, directional specular bevel & SF typography
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,16 +50,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -74,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.util.lerp
 import com.nothingness.bruhpatcher.ui.components.liquid.DampedDragAnimation
 import com.nothingness.bruhpatcher.ui.components.liquid.InteractiveHighlight
 import com.nothingness.bruhpatcher.ui.theme.AppColors
@@ -83,79 +79,58 @@ import kotlin.math.abs
 import kotlin.math.sign
 
 /**
- * Navigation items for the Liquid Glass Floating Bar
+ * Navigation items for the iOS-Style Liquid Glass Floating Bar
  */
 enum class LiquidNavDestination(
     val route: String,
     val title: String,
     val icon: ImageVector
 ) {
-    DASHBOARD("dashboard", "Status", Icons.Rounded.Dashboard),
-    CONFIG("config", "Patches", Icons.Rounded.Build),
+    DASHBOARD("dashboard", "Dashboard", Icons.Rounded.Dashboard),
+    CONFIG("config", "Config", Icons.Rounded.Build),
     PROGRESS("progress", "Terminal", Icons.Rounded.Terminal),
     SETTINGS("settings", "Settings", Icons.Rounded.Settings)
 }
 
 /**
- * SukiSU Manager / MIUIX Liquid Glass Floating Bottom Navigation Bar
+ * iOS-Style Liquid Glass Floating Bottom Navigation Bar.
  * 
- * Features implemented directly from SukiSU-Ultra and compose-miuix-ui:
- * 1. DampedDragAnimation with spring physics and scale expansion (78/56 ratio)
- * 2. Sliding indicator pill with spring damping and inertia velocity
- * 3. Edge rubber-banding resistance on over-drag
- * 4. Interactive touch-driven specular bloom highlight (InteractiveHighlight)
- * 5. Multi-layer titanium glass surface with dual-peak Fresnel lens specular highlights
- * 6. Chromatic aberration prismatic perimeter border
- * 7. Live status pulsing orb on the Terminal tab during patching
+ * Features:
+ * - Ultra-clean frosted dark obsidian glass surface (no idle animations or blings)
+ * - Directional specular glass hairline border (top ambient reflection)
+ * - Deep, soft ambient elevation drop shadow
+ * - Sliding frosted elevated indicator pill with authentic Kyant0 spring physics:
+ *   - 78/56 press expansion ratio on touch
+ *   - Velocity inertia momentum stretching
+ *   - Rubber-band edge resistance
+ * - Interactive touch-following specular bloom that ONLY lights up under finger interaction
+ * - Refined SF-style typography and smooth tactile haptic press feedback
  */
 @Composable
 fun LiquidGlassFloatingBar(
     currentRoute: String,
     onNavigate: (LiquidNavDestination) -> Unit,
     modifier: Modifier = Modifier,
+    isPatchingActive: Boolean = false,
     isHighDynamicContrast: Boolean = true,
-    isPatchingActive: Boolean = false
+    items: List<LiquidNavDestination> = listOf(
+        LiquidNavDestination.DASHBOARD,
+        LiquidNavDestination.CONFIG,
+        LiquidNavDestination.PROGRESS,
+        LiquidNavDestination.SETTINGS
+    )
 ) {
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val onNavigateUpdated by rememberUpdatedState(onNavigate)
 
-    val items = LiquidNavDestination.entries
     val tabsCount = items.size
     val selectedIndex = items.indexOfFirst { it.route == currentRoute }.coerceIn(0, tabsCount - 1)
 
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
     var currentIndex by remember { mutableIntStateOf(selectedIndex) }
-
-    // Dynamic contrast factor alphas
-    val surfaceAlpha = if (isHighDynamicContrast) 0.86f else 0.72f
-    val borderAlpha = if (isHighDynamicContrast) 0.50f else 0.32f
-    val refractionGlow = if (isHighDynamicContrast) 0.45f else 0.25f
-
-    // Ambient light refraction shimmer across glass surface
-    val infiniteTransition = rememberInfiniteTransition(label = "LiquidGlassShimmer")
-    val shimmerOffset by infiniteTransition.animateFloat(
-        initialValue = -0.3f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "RefractionOffset"
-    )
-
-    // Live terminal tab pulse when patching is active
-    val terminalPulse by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 850, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "TerminalPulse"
-    )
 
     // Edge rubber-band elasticity
     val offsetAnimation = remember { Animatable(0f) }
@@ -173,14 +148,14 @@ fun LiquidGlassFloatingBar(
     fun indexAt(positionX: Float): Int {
         if (tabWidthPx == 0f) return currentIndex
         val horizontalPaddingPx = with(density) { 6.dp.toPx() }
-        val logicalX = if (isLtr) positionX else totalWidthPx - positionX
-        return ((logicalX - horizontalPaddingPx) / tabWidthPx)
-            .toInt()
-            .coerceIn(0, tabsCount - 1)
+        val relativeX = (positionX - horizontalPaddingPx).coerceIn(0f, totalWidthPx)
+        val rawIndex = (relativeX / tabWidthPx).toInt()
+        val clampedIndex = rawIndex.coerceIn(0, tabsCount - 1)
+        return if (isLtr) clampedIndex else (tabsCount - 1 - clampedIndex)
     }
 
-    // SukiSU-Ultra DampedDragAnimation controller
-    val dampedDrag = remember(animationScope, tabsCount, density, isLtr) {
+    // Kyant0 DampedDragAnimation controller
+    val dampedDrag = remember(animationScope, tabsCount, isLtr) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = selectedIndex.toFloat(),
@@ -226,7 +201,7 @@ fun LiquidGlassFloatingBar(
         }
     }
 
-    // SukiSU InteractiveHighlight tracking pointer touch
+    // Interactive specular highlight bloom tracking touch/drag coordinates
     val interactiveHighlight = remember(animationScope, isLtr, dampedDrag) {
         InteractiveHighlight(
             animationScope = animationScope,
@@ -245,96 +220,48 @@ fun LiquidGlassFloatingBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer Container: Frosted Titanium-Glass surface
+        // Outer Container: Authentic Frosted Dark Glass Surface
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp)
+                .height(64.dp)
                 .graphicsLayer { translationX = panelOffset }
+                // Soft, deep ambient drop shadow
                 .shadow(
-                    elevation = if (isHighDynamicContrast) 18.dp else 10.dp,
+                    elevation = 16.dp,
                     shape = pillShape,
-                    ambientColor = Color(0x66007AFF),
-                    spotColor = Color(0x9900C7BE)
+                    ambientColor = Color.Black.copy(alpha = 0.45f),
+                    spotColor = Color.Black.copy(alpha = 0.65f)
                 )
                 .clip(pillShape)
-                // Layer 1: Frosted titanium-glass base surface
+                // Layer 1: Translucent frosted obsidian acrylic backdrop
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF141824).copy(alpha = surfaceAlpha),
-                            Color(0xFF090B12).copy(alpha = surfaceAlpha)
+                            Color(0xE0181B26), // Frosted dark glass
+                            Color(0xF010121A)  // Deep rich obsidian base
                         )
                     )
                 )
-                // Layer 2: Dual-peak Fresnel specular highlight & dynamic light refraction
-                .drawWithCache {
-                    val width = size.width
-                    val height = size.height
-                    val shimmerPos = shimmerOffset * width
-
-                    val refractionBrush = Brush.linearGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color(0x20FFFFFF),
-                            Color(0x4500C7BE),
-                            Color(0x60FFFFFF),
-                            Color(0x357000FF),
-                            Color.Transparent
-                        ),
-                        start = Offset(shimmerPos - 120f, 0f),
-                        end = Offset(shimmerPos + 120f, height)
-                    )
-
-                    val topFresnelBrush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color(0x25FFFFFF),
-                            Color.White.copy(alpha = refractionGlow),
-                            Color(0x5000C7BE),
-                            Color.White.copy(alpha = refractionGlow),
-                            Color(0x20FFFFFF)
-                        )
-                    )
-
-                    onDrawWithContent {
-                        drawContent()
-                        // Refractive specular dispersion
-                        drawRect(
-                            brush = refractionBrush,
-                            blendMode = BlendMode.Screen
-                        )
-                        // Dual-peak top lens highlight hairline
-                        drawLine(
-                            brush = topFresnelBrush,
-                            start = Offset(28f, 1f),
-                            end = Offset(width - 28f, 1f),
-                            strokeWidth = 1.6.dp.toPx()
-                        )
-                    }
-                }
-                // Layer 3: Chromatic dispersion prismatic border
+                // Layer 2: Directional specular glass hairline border (top ambient light reflection)
                 .border(
-                    width = 1.2.dp,
-                    brush = Brush.linearGradient(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = borderAlpha),
-                            Color(0xFF00C7BE).copy(alpha = borderAlpha * 0.9f),
-                            Color(0xFF1677FF).copy(alpha = borderAlpha * 0.85f),
-                            Color(0xFF7000FF).copy(alpha = borderAlpha * 0.9f),
-                            Color.White.copy(alpha = borderAlpha * 0.45f)
-                        ),
-                        start = Offset(0f, 0f),
-                        end = Offset(800f, 200f)
+                            Color.White.copy(alpha = 0.22f), // Crisp top light reflection
+                            Color.White.copy(alpha = 0.08f), // Soft mid-edge bevel
+                            Color.White.copy(alpha = 0.03f)  // Subtle bottom edge
+                        )
                     ),
                     shape = pillShape
                 )
                 .then(interactiveHighlight.modifier)
                 .then(interactiveHighlight.gestureModifier)
                 .then(dampedDrag.modifier)
-                .padding(horizontal = 6.dp, vertical = 4.dp),
+                .padding(horizontal = 5.dp, vertical = 5.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             // Measure total bar dimensions
@@ -343,17 +270,17 @@ fun LiquidGlassFloatingBar(
                     .fillMaxSize()
                     .onGloballyPositioned { coords ->
                         totalWidthPx = coords.size.width.toFloat()
-                        val contentWidthPx = totalWidthPx - with(density) { 12.dp.toPx() }
+                        val contentWidthPx = totalWidthPx - with(density) { 10.dp.toPx() }
                         tabWidthPx = (contentWidthPx / tabsCount).coerceAtLeast(0f)
                     }
             )
 
-            // SukiSU-Ultra Sliding Indicator Pill with spring damping
+            // Kyant0 / SukiSU-Ultra Sliding Indicator Pill
             if (tabWidthPx > 0f) {
                 val tabWidthDp = with(density) { tabWidthPx.toDp() }
                 val progressOffset = dampedDrag.value * tabWidthPx
-                val pillOffsetX = if (isLtr) progressOffset + with(density) { 6.dp.toPx() }
-                                  else totalWidthPx - tabWidthPx - progressOffset - with(density) { 6.dp.toPx() }
+                val pillOffsetX = if (isLtr) progressOffset + with(density) { 5.dp.toPx() }
+                                  else totalWidthPx - tabWidthPx - progressOffset - with(density) { 5.dp.toPx() }
 
                 Box(
                     modifier = Modifier
@@ -361,29 +288,24 @@ fun LiquidGlassFloatingBar(
                             translationX = pillOffsetX
                             scaleX = dampedDrag.scaleX
                             scaleY = dampedDrag.scaleY
+                            // Velocity inertia momentum deformation
                             val v = dampedDrag.velocity / 12f
-                            scaleX /= 1f - (v * 0.65f).fastCoerceIn(-0.18f, 0.18f)
-                            scaleY *= 1f - (v * 0.20f).fastCoerceIn(-0.18f, 0.18f)
+                            scaleX /= 1f - (v * 0.65f).fastCoerceIn(-0.16f, 0.16f)
+                            scaleY *= 1f - (v * 0.20f).fastCoerceIn(-0.16f, 0.16f)
                         }
                         .clip(pillShape)
-                        // Layer 1: Translucent liquid pill surface
+                        // Elevated frosted glass pill background
                         .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF1677FF).copy(alpha = 0.38f),
-                                    Color(0xFF7000FF).copy(alpha = 0.24f)
-                                )
-                            ),
+                            color = Color.White.copy(alpha = 0.11f),
                             shape = pillShape
                         )
-                        // Layer 2: Tactile inner specular glow
+                        // Delicate top-lit specular edge
                         .border(
-                            width = 1.1.dp,
-                            brush = Brush.horizontalGradient(
+                            width = 0.5.dp,
+                            brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.55f),
-                                    Color(0xFF00F0FF).copy(alpha = 0.40f),
-                                    Color.White.copy(alpha = 0.20f)
+                                    Color.White.copy(alpha = 0.20f),
+                                    Color.White.copy(alpha = 0.04f)
                                 )
                             ),
                             shape = pillShape
@@ -406,8 +328,6 @@ fun LiquidGlassFloatingBar(
                         destination = destination,
                         isSelected = isSelected,
                         isPatchingActive = isPatchingActive && destination == LiquidNavDestination.PROGRESS,
-                        terminalPulseAlpha = terminalPulse,
-                        pressProgress = dampedDrag.pressProgress,
                         onClick = {
                             if (currentIndex != index) {
                                 currentIndex = index
@@ -424,31 +344,34 @@ fun LiquidGlassFloatingBar(
 }
 
 /**
- * Individual navigation tab item inside the Liquid Glass Bar
+ * Authentic iOS-style individual navigation tab item inside the Liquid Glass Bar
  */
 @Composable
 private fun LiquidNavItem(
     destination: LiquidNavDestination,
     isSelected: Boolean,
     isPatchingActive: Boolean,
-    terminalPulseAlpha: Float,
-    pressProgress: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
-    // Animated scale on selection and drag press
-    val iconScale by animateFloatAsState(
-        targetValue = if (isSelected) 1.08f else 1.0f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-        label = "IconScale"
+    // Tactile press compression (subtle 0.94x scale down on tap)
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = 500f),
+        label = "PressScale"
     )
 
-    // Animated color transition
+    // Animated color transition between active and inactive states
+    val activeColor = Color.White
+    val inactiveColor = Color(0x8A9EADC0) // Apple Secondary Slate
+
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White else AppColors.TextSecondary.copy(alpha = 0.70f),
-        animationSpec = tween(durationMillis = 200),
+        targetValue = if (isSelected) activeColor else inactiveColor,
+        animationSpec = tween(durationMillis = 180),
         label = "ContentColor"
     )
 
@@ -459,7 +382,10 @@ private fun LiquidNavItem(
                 interactionSource = interactionSource,
                 indication = null,
                 role = Role.Tab,
-                onClick = onClick
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                }
             )
             .semantics {
                 selected = isSelected
@@ -471,8 +397,8 @@ private fun LiquidNavItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.graphicsLayer {
-                scaleX = iconScale
-                scaleY = iconScale
+                scaleX = pressScale
+                scaleY = pressScale
             }
         ) {
             Box(contentAlignment = Alignment.TopEnd) {
@@ -483,13 +409,13 @@ private fun LiquidNavItem(
                     modifier = Modifier.size(22.dp)
                 )
 
-                // SukiSU Live status glowing indicator badge
+                // Minimalist iOS-style status indicator badge dot
                 if (isPatchingActive) {
                     Box(
                         modifier = Modifier
-                            .size(7.dp)
+                            .size(6.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF30D158).copy(alpha = terminalPulseAlpha))
+                            .background(Color(0xFF30D158)) // Apple System Green
                     )
                 }
             }
@@ -498,7 +424,8 @@ private fun LiquidNavItem(
                 text = destination.title,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    letterSpacing = 0.15.sp
                 ),
                 color = contentColor,
                 maxLines = 1

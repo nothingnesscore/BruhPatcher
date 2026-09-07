@@ -134,7 +134,7 @@ fun SettingsScreen(
                         }
                     }
                     MiuixStatusBadge(
-                        text = "v2.0.8",
+                        text = "v2.0.9",
                         containerColor = Color(0x2200C7BE),
                         contentColor = AppColors.HyperOsCyan,
                         showDot = true

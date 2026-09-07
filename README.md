@@ -19,16 +19,17 @@ It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **a
 
 ## ✨ Key Features & Patches
 
-### 🪞 1. SukiSU-Grade MIUIX Liquid Glass Floating Navbar
+### 🪞 1. Authentic iOS-Style Liquid Glass Floating Navbar
 - **Architecture & Lineage**:
-  - **Kyant0/AndroidLiquidGlass** (Apache 2.0): Foundational SDF optical squircle distance fields, circle map convex refraction, 7-band chromatic dispersion, and spring inertia.
-  - **compose-miuix-ui** (Apache 2.0 by yukonga): Compose Multiplatform port (`IosLiquidGlassNavigationBar`) and MIUIX design system.
+  - **Kyant0/AndroidLiquidGlass** (Apache 2.0): Foundational SDF optical distance fields, circle map convex lens refraction, and spring inertia physics.
+  - **compose-miuix-ui** (Apache 2.0 by yukonga): Compose Multiplatform port (`IosLiquidGlassNavigationBar`) and MIUIX alive design system.
   - **SukiSU-Ultra / SukiSU Manager** (Apache 2.0): Production-hardened `FloatingBottomBar`, `InteractiveHighlight`, and `DampedDragAnimation`.
-- **Damped Spring Drag Physics**: Features `DampedDragAnimation` (`stiffness = 1000f, damping = 1.0f`) with dynamic 78/56 scale expansion during touch, velocity inertia tracking, and rubber-band edge elasticity.
-- **Sliding Indicator Pill**: Translucent cobalt-to-purple liquid glass indicator sliding smoothly behind tabs.
-- **Interactive Specular Bloom**: Touch-driven specular highlight tracking pointer coordinates via AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26-32.
-- **Multi-layer Optical Refraction**: Dual-peak Fresnel lens specular highlights along top/bottom rims and chromatic aberration prismatic border.
-- **Live Status Pulse**: Glowing green indicator orb on the Terminal tab during active patching.
+  - **Apple iOS 17/18 Design Standards**: Translucent frosted dark acrylic, directional top-edge specular hairline bevel, and quiet optical realism without distracting bling animations.
+- **Damped Spring Drag Physics**: Features `DampedDragAnimation` (`stiffness = 650f, damping = 0.82f`) with 78/56 horizontal press expansion ratio, fling velocity inertia deformation, and non-linear rubber-band edge elasticity.
+- **Sliding Frosted Indicator Pill**: Minimalist elevated frosted glass pill (`Color.White.copy(alpha = 0.11f)`) with 0.5dp top-lit specular edge sliding smoothly beneath active tabs.
+- **Interactive Specular Bloom**: Touch-driven specular highlight that ONLY activates under active touch/drag coordinates via hardware AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26–32 (zero GPU/CPU idle overhead).
+- **Tactile iOS Navigation Tabs**: Crisp 22dp icons, SF-style 11sp typography (`SemiBold` active, `Medium` inactive), gentle 0.94x press scale compression, and tactile haptic feedback on tab changes.
+- **Minimalist Status Indicator**: Elegant 6dp solid Apple System Green dot on the Terminal tab during active background patching.
 
 ### 🛡️ 2. Integrated Kaorios Toolbox Engine (v2.0.6.0)
 - **Play Integrity Fix & Hardware Attestation**:

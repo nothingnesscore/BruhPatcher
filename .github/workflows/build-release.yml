@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version tag for release (e.g., v2.0.0)'
         required: true
-        default: 'v2.0.8'
+        default: 'v2.0.9'
 
 permissions:
   contents: write
@@ -129,25 +129,20 @@ jobs:
             ### Direct Download (No ZIP)
             👉 **Direct APK:** [BruhPatcher.apk](https://github.com/nothingnesscore/BruhPatcher/releases/download/${{ startsWith(github.ref, 'refs/tags/') && steps.version.outputs.VERSION || 'latest' }}/BruhPatcher.apk)
             
-            ### What's New
+            ### What's New in v2.0.9
             - Built from commit ${{ github.sha }}
-            - **SukiSU Liquid Glass Floating Bottom Navbar**: High-fidelity floating liquid glass navigation bar adapted from SukiSU Manager (`FloatingBottomBar.kt`), `compose-miuix-ui` (`IosLiquidGlassNavigationBar.kt`), and `Kyant0/AndroidLiquidGlass`.
-              - **DampedDragAnimation**: Continuous spring-damped tab dragging (`stiffness = 1000f, damping = 1.0f`) with 78/56 scale pop during touch and velocity inertia tracking.
-              - **Sliding Indicator Pill**: Translucent cobalt-to-purple liquid pill sliding dynamically behind active tabs.
-              - **Interactive Specular Bloom**: Touch-driven specular highlight tracking pointer coordinates via AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26-32.
-              - **Multi-layer Optical Refraction & Dispersion**: Dual-peak Fresnel specular highlights along top/bottom rims and chromatic aberration prismatic border.
-              - **Live Status Pulse**: Glowing green indicator orb on the Terminal tab during active patching.
+            - **Authentic iOS-Style Liquid Glass Floating Navbar**: Complete redesign eliminating all animated blings, laser sweeps, rainbow borders, and neon strobes in favor of true optical realism:
+              - **Frosted Dark Obsidian Glass**: Pure translucent acrylic base (`Color(0xE0181B26)`) with directional top-lit specular hairline bevel (`Brush.verticalGradient(White 22% -> 3%)`).
+              - **Sliding Frosted Indicator Pill**: Minimalist elevated frosted glass capsule (`Color.White.copy(alpha = 0.11f)`) sliding underneath active tabs with Kyant0 spring physics (`stiffness = 650f, damping = 0.82f`).
+              - **Physical Momentum & Fling Deformation**: 78/56 horizontal press expansion ratio and velocity inertia stretching (`scaleX /= 1 - v * 0.65`).
+              - **Zero-Idle Interactive Highlight Bloom**: Touch-driven specular highlight that ONLY illuminates under the user's finger during touch/drag (0% idle CPU/GPU load).
+              - **Tactile iOS Navigation Tabs**: Crisp 22dp icons, SF-style 11sp typography (`SemiBold` active, `Medium` inactive), 0.94x press compression, and native haptic feedback.
+              - **Minimalist Status Dot**: Sleek 6dp Apple System Green status dot for background patching (no flashing disco halo).
             - **MIUIX / HyperOS Alive Design System**:
-              - **MiuixCard & MiuixGroupCard**: Continuous squircle curvature (20dp), translucent obsidian titanium backgrounds, specular borders, and interactive spring press feedback.
-              - **MiuixPreferenceItem & MiuixSwitchPreference**: Position-aware grouping with hairline dividers.
-              - **MiuixStatusBadge**: Sleek capsule badges with glowing micro-indicators.
-            - **Design Philosophy Citations**: Dedicated in-app credits citing Kyant0, compose-miuix-ui (yukonga), and SukiSU-Ultra with 1-tap repository link copying.
-            - **Permanent Release Keystore Signing**: Deterministic V1/V2/V3/V4 signatures ensuring seamless direct in-place updates.
+              - Continuous squircle curvature (20dp), translucent obsidian titanium backgrounds, and position-aware preference rows.
+              - In-app citations card for Kyant0, compose-miuix-ui (yukonga), and SukiSU-Ultra with 1-tap clipboard copying.
+            - **Permanent Release Keystore Signing**: Deterministic V1/V2/V3/V4 signatures ensuring direct in-place updates.
             - Direct `.apk` file distribution (never inside a `.zip`)
-            - Live Keybox Hub synchronization from `https://keybox.hzzmonet.io.vn`
-            - Universal Android Framework Patcher (Android 8.0 - 17, HyperOS 1-4, MIUI, AOSP, OneUI, ColorOS)
-            - MIUIX Liquid Glass Floating Dock with dynamic contrast and light refraction
-            - Integrated Kaorios Toolbox v2.0.6.0 with Play Integrity Fix and hardware Keybox attestation
             
             ### Installation
             1. Download `BruhPatcher.apk` directly from Assets below (no unzipping needed).

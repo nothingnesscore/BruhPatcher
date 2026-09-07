@@ -101,7 +101,7 @@ class InteractiveHighlight(
                     brush = Brush.radialGradient(
                         colors = listOf(
                             Color.White.copy(alpha = 0.18f * progress),
-                            Color(0x6600C7BE).copy(alpha = 0.10f * progress),
+                            Color.White.copy(alpha = 0.06f * progress),
                             Color.Transparent
                         ),
                         center = Offset(clampedX, clampedY),
