@@ -25,20 +25,8 @@
     <path
         android:pathData="M37,30 C45,28 63,28 71,30 C78,32 80,34 80,42 C80,50 80,58 80,66 C80,74 78,76 71,78 C63,80 45,80 37,78 C30,76 28,74 28,66 C28,58 28,50 28,42 C28,34 30,32 37,30 Z"
         android:strokeWidth="1.8"
-        android:fillColor="#150E1E38">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="28"
-                android:startY="28"
-                android:endX="80"
-                android:endY="80"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#00F0FF" />
-                <item android:offset="0.5" android:color="#1677FF" />
-                <item android:offset="1.0" android:color="#7000FF" />
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:strokeColor="#00F0FF"
+        android:fillColor="#150E1E38" />
 
     <!-- HyperOS Fluid Alive Interlocking Bands -->
     <!-- Upper Flowing Ribbon -->
@@ -46,39 +34,16 @@
         android:pathData="M34,44 C34,36 43,33 54,33 C65,33 74,37 74,45 C74,51 68,54 62,54 L52,54"
         android:strokeWidth="2.8"
         android:strokeLineCap="round"
-        android:fillColor="#00000000">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="34"
-                android:startY="33"
-                android:endX="74"
-                android:endY="54"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#00F0FF" />
-                <item android:offset="1.0" android:color="#1677FF" />
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:strokeColor="#00F0FF"
+        android:fillColor="#00000000" />
 
     <!-- Lower Flowing Ribbon -->
     <path
         android:pathData="M74,64 C74,72 65,75 54,75 C43,75 34,71 34,63 C34,57 40,54 46,54 L56,54"
         android:strokeWidth="2.8"
         android:strokeLineCap="round"
-        android:fillColor="#00000000">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="74"
-                android:startY="75"
-                android:endX="34"
-                android:endY="54"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#7000FF" />
-                <item android:offset="0.5" android:color="#1677FF" />
-                <item android:offset="1.0" android:color="#00F0FF" />
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:strokeColor="#1677FF"
+        android:fillColor="#00000000" />
 
     <!-- Patching Data Lines -->
     <path

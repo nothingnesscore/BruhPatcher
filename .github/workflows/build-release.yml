@@ -42,6 +42,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Verify Release Keystore
+        run: |
+          ls -la app/keystore/release.jks
+          keytool -list -v -keystore app/keystore/release.jks -storepass bruhpatcher
+
       - name: Build Release APK
         run: ./gradlew assembleRelease --scan --stacktrace
 

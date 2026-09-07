@@ -28,14 +28,15 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("keystore/release.jks")
-            storePassword = "bruhpatcher"
-            keyAlias = "bruhpatcher"
-            keyPassword = "bruhpatcher"
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
-            enableV4Signing = true
+            val keystoreFile = rootProject.file("app/keystore/release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "bruhpatcher"
+                keyAlias = "bruhpatcher"
+                keyPassword = "bruhpatcher"
+                isV1SigningEnabled = true
+                isV2SigningEnabled = true
+            }
         }
     }
 
