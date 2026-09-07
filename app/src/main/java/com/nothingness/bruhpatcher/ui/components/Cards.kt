@@ -49,9 +49,22 @@ fun DeviceInfoCard(
     deviceInfo: DeviceInfo,
     modifier: Modifier = Modifier
 ) {
+    val shape = RoundedCornerShape(20.dp)
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.14f),
+                        Color(0xFF007AFF).copy(alpha = 0.10f),
+                        Color.White.copy(alpha = 0.04f)
+                    )
+                ),
+                shape = shape
+            ),
+        shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = AppColors.DarkCard
         )
@@ -408,9 +421,12 @@ fun RootStatusCard(
         animationSpec = tween(300), label = "rootIcon"
     )
 
+    val cardShape = RoundedCornerShape(20.dp)
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, iconColor.copy(alpha = 0.25f), cardShape),
+        shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Row(

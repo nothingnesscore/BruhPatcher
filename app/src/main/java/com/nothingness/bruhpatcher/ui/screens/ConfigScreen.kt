@@ -514,7 +514,7 @@ fun ConfigScreen(
                 color = AppColors.TextMuted
             )
 
-            Spacer(modifier = Modifier.height(100.dp)) // Space for Liquid Glass Floating Bar
+            Spacer(modifier = Modifier.height(110.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 }

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,10 +21,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.DataObject
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,11 +48,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.sp
 import com.nothingness.bruhpatcher.R
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixCard
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixCategoryHeader
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixGroupCard
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixItemPosition
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixPreferenceItem
+import com.nothingness.bruhpatcher.ui.components.miuix.MiuixStatusBadge
 import com.nothingness.bruhpatcher.ui.theme.AppColors
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
 
@@ -65,7 +78,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About", fontWeight = FontWeight.Bold) },
+                title = { Text("About & Design", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -87,356 +100,283 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // App info
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+            // App Info Card (MIUIX Alive Design)
+            MiuixCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
-                                contentDescription = "HyperOS Patching Logo",
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                            )
-                            Column {
-                                Text(
-                                    text = "Bruh Patcher",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.TextPrimary
-                                )
-                                Text(
-                                    text = "HyperOS Alive Design Edition",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = AppColors.HyperOsCyan
-                                )
-                            }
-                        }
-                        Text(
-                            text = "v2.0.7",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.HyperOsCyan
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_hyperos_patch_logo),
+                            contentDescription = "HyperOS Patching Logo",
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(14.dp))
                         )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Universal Android Edition (Android 8.0 - 17, AOSP, HyperOS & All ROMs)",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.PrimaryLight
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Bruh Patcher is an all-in-one, universal Android framework patcher supporting Android 8.0 through Android 17 (Baklava / API 37) across all custom and stock OEM ROMs (AOSP, Pixel, Xiaomi MIUI & HyperOS 1-4, Samsung OneUI, OxygenOS, ColorOS, etc.). It is not limited to any single OS or version—it can patch all available features across any supported device. Automates patching on-device with DynamicInstaller and remotely via cloud workflows, featuring Kaorios Toolbox v2.0.6.0 and CorePatch signature bypass.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppColors.TextSecondary
-                    )
-                }
-            }
-
-            // How it works
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "How It Works",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    val steps = listOf(
-                        "1. Select Local DynamicInstaller mode or Cloud mode in Patches tab",
-                        "2. Auto-extract framework JARs with Root or select them manually",
-                        "3. Toggle desired features (Kaorios v2.0.6.0, CorePatch, A17 Fix)",
-                        "4. Tap Start Patching - bytecode hooks are applied with live logs",
-                        "5. Magisk/KSU module is generated and saved directly to Downloads",
-                        "6. Flash module in Magisk / KernelSU / APatch and reboot"
-                    )
-                    
-                    steps.forEach { step ->
-                        Text(
-                            text = step,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = AppColors.TextSecondary,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            // Features
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Supported Features",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    val features = listOf(
-                        "Kaorios Toolbox v2.0.6.0" to "Hardware Keybox attestation, Play Integrity Fix, Game 120 FPS spoof, caller-aware stealth isolation",
-                        "Signature Verification Bypass" to "Disable APK signature checks, digest mismatches, and downgrade restrictions on A13-A17 & HyperOS 4",
-                        "Android 17 Build Reflection Patch" to "Unfinalizes static-final fields in Build & Build\$VERSION for HyperOS 4 / Android 17",
-                        "Disable Secure Flag" to "Enable screenshots, screen recording, and casting in DRM and banking apps",
-                        "HyperOS CN Notification Fix" to "Eliminates push notification freezes and delays on MIUI/HyperOS China ROMs",
-                        "Google Photos Unlimited" to "Enables unlimited original quality cloud backup by spoofing Pixel XL"
-                    )
-                    
-                    features.forEach { (name, desc) ->
-                        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                        Column {
                             Text(
-                                text = name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
+                                text = "Bruh Patcher",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
                                 color = AppColors.TextPrimary
                             )
                             Text(
-                                text = desc,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = AppColors.TextMuted
+                                text = "HyperOS Alive Design • Universal",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AppColors.HyperOsCyan
                             )
                         }
                     }
+                    MiuixStatusBadge(
+                        text = "v2.0.8",
+                        containerColor = Color(0x2200C7BE),
+                        contentColor = AppColors.HyperOsCyan,
+                        showDot = true
+                    )
                 }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Universal Android Framework Patcher (Android 8–17, HyperOS 1–4, AOSP & OEM ROMs)",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.PrimaryLight
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v2.0.6.0, CorePatch signature verification bypass, and NoMount VFS transparent redirection.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary
+                )
             }
 
-            // Feedback & Diagnostics
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Diagnostics & Feedback",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Having errors or patching issues? Tap below to copy a complete diagnostic report (device specs, root status, keybox info, and recent terminal logs) to your clipboard, and paste it directly into your chat or GitHub issue for instant diagnosis and fixes.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppColors.TextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                val report = viewModel.copyDiagnosticReport(context)
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("BruhPatcher Diagnostics", report))
-                                Toast.makeText(context, "Diagnostic report copied to clipboard!", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
-                        ) {
-                            Text("Copy Report")
-                        }
-
-                        OutlinedButton(
-                            onClick = { viewModel.syncLatestKeybox() },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            enabled = !isSyncingKeybox
-                        ) {
-                            if (isSyncingKeybox) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = AppColors.HyperOsCyan
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Syncing...")
-                            } else {
-                                Text("Sync Keybox")
-                            }
-                        }
+            // Design Philosophy & Citations (SukiSU Manager / Kyant0 / compose-miuix-ui)
+            MiuixCategoryHeader(title = "Design Philosophy & Citations")
+            MiuixGroupCard {
+                MiuixPreferenceItem(
+                    title = "Kyant0/AndroidLiquidGlass",
+                    subtitle = "Foundational optical glass physics: SDF squircle curvature, circleMap lens refraction, 7-band chromatic dispersion & damped spring drag.",
+                    icon = Icons.Rounded.ColorLens,
+                    iconTint = Color(0xFF00F0FF),
+                    iconBackground = Color(0x2000F0FF),
+                    position = MiuixItemPosition.TOP,
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/Kyant0/AndroidLiquidGlass"))
+                        Toast.makeText(context, "Copied Kyant0 GitHub URL!", Toast.LENGTH_SHORT).show()
                     }
-
-                    if (keyboxStatus != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Keybox Hub: ${keyboxStatus?.status?.uppercase()} (${keyboxStatus?.strongCount} Strong / ${keyboxStatus?.totalKeys} Keys)",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AppColors.HyperOsCyan
-                        )
+                )
+                MiuixPreferenceItem(
+                    title = "compose-miuix-ui (yukonga)",
+                    subtitle = "Compose Multiplatform port of Liquid Glass navbar (IosLiquidGlassNavigationBar) & top.yukonga.miuix.kmp design guidelines.",
+                    icon = Icons.Rounded.Layers,
+                    iconTint = Color(0xFF1677FF),
+                    iconBackground = Color(0x201677FF),
+                    position = MiuixItemPosition.MIDDLE,
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/compose-miuix-ui/miuix"))
+                        Toast.makeText(context, "Copied compose-miuix-ui GitHub URL!", Toast.LENGTH_SHORT).show()
                     }
-                }
+                )
+                MiuixPreferenceItem(
+                    title = "SukiSU-Ultra (SukiSU Manager)",
+                    subtitle = "Production FloatingBottomBar with AGSL InteractiveHighlight bloom, DampedDragAnimation (78/56 pressed scale), & MIUIX Alive Design.",
+                    icon = Icons.Rounded.Hub,
+                    iconTint = Color(0xFF7000FF),
+                    iconBackground = Color(0x207000FF),
+                    position = MiuixItemPosition.BOTTOM,
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/SukiSU-Ultra/SukiSU-Ultra"))
+                        Toast.makeText(context, "Copied SukiSU-Ultra GitHub URL!", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
 
-            // NoMount VFS Engine Status & Auto-Recovery
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+            // Diagnostics & Feedback
+            MiuixCategoryHeader(title = "Diagnostics & Troubleshooting")
+            MiuixCard {
+                Text(
+                    text = "Diagnostics & Live Reporting",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Generate and copy a diagnostic dump (device build props, root status, keybox hub, and recent terminal logs) to your clipboard for easy debugging and GitHub issues.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val report = viewModel.copyDiagnosticReport(context)
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("BruhPatcher Diagnostics", report))
+                            Toast.makeText(context, "Diagnostic report copied to clipboard!", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
                     ) {
-                        Text(
-                            text = "NoMount VFS Engine",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
-                        )
-
-                        val statusText = when {
-                            !isNoMountInstalled -> "Not Detected"
-                            isNoMountGuardTripped -> "Tripped (Disabled)"
-                            else -> "Active & Mounting"
-                        }
-                        val statusBg = when {
-                            !isNoMountInstalled -> AppColors.TextMuted.copy(alpha = 0.2f)
-                            isNoMountGuardTripped -> AppColors.Error.copy(alpha = 0.2f)
-                            else -> AppColors.Success.copy(alpha = 0.2f)
-                        }
-                        val statusColor = when {
-                            !isNoMountInstalled -> AppColors.TextMuted
-                            isNoMountGuardTripped -> AppColors.Error
-                            else -> AppColors.Success
-                        }
-
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = statusColor,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(statusBg)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        Text("Copy Report")
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Bruh Patcher generates modules 100% compatible with NoMount (maxsteeel/nomount & Bouteillepleine/NoMount-Suite) using transparent VFS path redirection. Legacy bind-mounts and mount_mirrors calls have been eliminated.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextSecondary
-                    )
-
-                    if (isNoMountGuardTripped) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "⚠️ NoMount bootloop protection triggered on a previous crash and disabled mounting. Tap 'Re-arm Guard' below to reset bootcount and remove disable flags.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppColors.Error,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    OutlinedButton(
+                        onClick = { viewModel.syncLatestKeybox() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isSyncingKeybox
                     ) {
-                        Button(
-                            onClick = { viewModel.resetNoMountGuard() },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            enabled = !isResettingNoMount,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isNoMountGuardTripped) AppColors.Error else AppColors.HyperOsBlue
+                        if (isSyncingKeybox) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = AppColors.HyperOsCyan
                             )
-                        ) {
-                            if (isResettingNoMount) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = AppColors.TextPrimary
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Re-arming...")
-                            } else {
-                                Text("Re-arm Guard")
-                            }
-                        }
-
-                        OutlinedButton(
-                            onClick = { viewModel.refreshNoMountStatus() },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Refresh Status")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Syncing...")
+                        } else {
+                            Text("Sync Keybox")
                         }
                     }
                 }
-            }
 
-            // Credits
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Credits & Developers",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
-                    )
+                if (keyboxStatus != null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Bruh Patcher: nothingnesscore",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Kaorios Toolbox: hzzmonetvn",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppColors.TextSecondary
-                    )
-                    Text(
-                        text = "FrameworkPatcher base: Jefino9488",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppColors.TextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "GitHub: github.com/nothingnesscore/BruhPatcher",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = "Keybox Hub: ${keyboxStatus?.status?.uppercase()} (${keyboxStatus?.strongCount} Strong / ${keyboxStatus?.totalKeys} Keys)",
+                        style = MaterialTheme.typography.labelSmall,
                         color = AppColors.HyperOsCyan
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(100.dp)) // Space for Liquid Glass Floating Bar
+            // NoMount VFS Engine Status
+            MiuixCategoryHeader(title = "Virtual Filesystem (NoMount)")
+            MiuixCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "NoMount VFS Engine",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.TextPrimary
+                    )
+
+                    val statusText = when {
+                        !isNoMountInstalled -> "Not Detected"
+                        isNoMountGuardTripped -> "Tripped"
+                        else -> "Active"
+                    }
+                    val statusColor = when {
+                        !isNoMountInstalled -> AppColors.TextMuted
+                        isNoMountGuardTripped -> AppColors.Error
+                        else -> AppColors.Success
+                    }
+
+                    MiuixStatusBadge(
+                        text = statusText,
+                        contentColor = statusColor,
+                        containerColor = statusColor.copy(alpha = 0.15f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Modules are built with full NoMount (maxsteeel/nomount & Bouteillepleine/NoMount-Suite) compatibility using transparent VFS path redirection. Bind-mount collisions are completely avoided.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppColors.TextSecondary
+                )
+
+                if (isNoMountGuardTripped) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "⚠️ Bootloop protection triggered. Tap 'Re-arm Guard' below to reset the counter and re-enable mounting.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppColors.Error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = { viewModel.resetNoMountGuard() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isResettingNoMount,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isNoMountGuardTripped) AppColors.Error else AppColors.HyperOsBlue
+                        )
+                    ) {
+                        if (isResettingNoMount) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = AppColors.TextPrimary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Re-arming...")
+                        } else {
+                            Text("Re-arm Guard")
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.refreshNoMountStatus() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Refresh Status")
+                    }
+                }
+            }
+
+            // Project Credits
+            MiuixCategoryHeader(title = "Credits & Maintainers")
+            MiuixGroupCard {
+                MiuixPreferenceItem(
+                    title = "Bruh Patcher Maintainer",
+                    subtitle = "nothingnesscore",
+                    icon = Icons.Rounded.Code,
+                    iconTint = AppColors.HyperOsBlue,
+                    position = MiuixItemPosition.TOP
+                )
+                MiuixPreferenceItem(
+                    title = "Kaorios Toolbox v2.0.6.0",
+                    subtitle = "hzzmonetvn (Hardware Keybox attestation, stealth isolation)",
+                    icon = Icons.Rounded.Security,
+                    iconTint = AppColors.HyperOsCyan,
+                    position = MiuixItemPosition.MIDDLE
+                )
+                MiuixPreferenceItem(
+                    title = "FrameworkPatcher Base",
+                    subtitle = "Jefino9488",
+                    icon = Icons.Rounded.DataObject,
+                    iconTint = Color(0xFFAF52DE),
+                    position = MiuixItemPosition.BOTTOM
+                )
+            }
+
+            Spacer(modifier = Modifier.height(110.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 }

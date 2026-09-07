@@ -323,6 +323,8 @@ fun ProgressScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(100.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 

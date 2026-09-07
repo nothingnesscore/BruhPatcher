@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version tag for release (e.g., v2.0.0)'
         required: true
-        default: 'v2.0.7'
+        default: 'v2.0.8'
 
 permissions:
   contents: write
@@ -58,15 +58,16 @@ jobs:
         run: |
           echo "### ❌ Build Failure Log" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          tail -n 150 build.log >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          tail -n 120 build.log >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload Build Reports on Failure
-        if: failure()
+      - name: Upload Build Artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-reports
+          name: build-outputs
           path: |
+            app/build/outputs/apk/
             build.log
             app/build/reports/
 
@@ -78,7 +79,7 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=v2.0.7-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            echo "VERSION=v2.0.8-ci-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Sign APK with Release Key
@@ -130,14 +131,19 @@ jobs:
             
             ### What's New
             - Built from commit ${{ github.sha }}
-            - **Permanent Release Signature (Seamless In-Place Updates)**: Release APKs are now signed with the permanent project release keystore (V1, V2, V3, and V4 signing schemes). No more signature mismatch errors (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`) when installing new versions over older builds.
-            - **HyperOS Based Patching Logo & Alive UI Theme**: High-tech HyperOS adaptive launcher icon (obsidian superellipse, glowing cyan `#00F0FF` / electric blue `#1677FF` nexus) and rich in-app branding across Dashboard and Settings.
-            - **Self-Contained Standalone Binaries**: Bundled standalone `zip`, `zipalign`, `aapt`, `bash`, and `busybox` binaries across `arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86` with automatic multi-path discovery and `aapt add` fallback.
-            - **NoMount VFS Engine Compatibility**: Generated modules are 100% compatible with NoMount (`maxsteeel/nomount` & `Bouteillepleine/NoMount-Suite`) VFS path redirection.
-            - **NoMount Auto-Recovery & Guard Re-arming**: Automatically detects tripped NoMount metamodules on flash with 1-tap reset.
-            - **Universal Android Framework Patcher**: Full support from Android 8.0 through Android 17 (Baklava / API 37) and HyperOS 1-4.
+            - **SukiSU Liquid Glass Floating Bottom Navbar**: High-fidelity floating liquid glass navigation bar adapted from SukiSU Manager (`FloatingBottomBar.kt`), `compose-miuix-ui` (`IosLiquidGlassNavigationBar.kt`), and `Kyant0/AndroidLiquidGlass`.
+              - **DampedDragAnimation**: Continuous spring-damped tab dragging (`stiffness = 1000f, damping = 1.0f`) with 78/56 scale pop during touch and velocity inertia tracking.
+              - **Sliding Indicator Pill**: Translucent cobalt-to-purple liquid pill sliding dynamically behind active tabs.
+              - **Interactive Specular Bloom**: Touch-driven specular highlight tracking pointer coordinates via AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26-32.
+              - **Multi-layer Optical Refraction & Dispersion**: Dual-peak Fresnel specular highlights along top/bottom rims and chromatic aberration prismatic border.
+              - **Live Status Pulse**: Glowing green indicator orb on the Terminal tab during active patching.
+            - **MIUIX / HyperOS Alive Design System**:
+              - **MiuixCard & MiuixGroupCard**: Continuous squircle curvature (20dp), translucent obsidian titanium backgrounds, specular borders, and interactive spring press feedback.
+              - **MiuixPreferenceItem & MiuixSwitchPreference**: Position-aware grouping with hairline dividers.
+              - **MiuixStatusBadge**: Sleek capsule badges with glowing micro-indicators.
+            - **Design Philosophy Citations**: Dedicated in-app credits citing Kyant0, compose-miuix-ui (yukonga), and SukiSU-Ultra with 1-tap repository link copying.
+            - **Permanent Release Keystore Signing**: Deterministic V1/V2/V3/V4 signatures ensuring seamless direct in-place updates.
             - Direct `.apk` file distribution (never inside a `.zip`)
-            - 1-Tap Diagnostic & Stacktrace feedback reporting for instant issue fixing
             - Live Keybox Hub synchronization from `https://keybox.hzzmonet.io.vn`
             - Universal Android Framework Patcher (Android 8.0 - 17, HyperOS 1-4, MIUI, AOSP, OneUI, ColorOS)
             - MIUIX Liquid Glass Floating Dock with dynamic contrast and light refraction

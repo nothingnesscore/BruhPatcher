@@ -19,11 +19,16 @@ It is **not limited to Android 17 or HyperOS 4**—it is engineered to patch **a
 
 ## ✨ Key Features & Patches
 
-### 🪞 1. MIUIX Liquid Glass Floating Dock
-- **Optical Light Refraction**: Custom shader reproducing ambient light bending through a curved convex glass lens with dynamic diagonal glare and top-rim Fresnel lens reflection.
-- **Prismatic Chromatic Dispersion**: Outer border features iridescent spectral refraction (cyan `#00C7BE` to electric blue `#007AFF` to violet `#7C3AED`).
-- **Dynamic Contrast Support**: Intelligently adjusts surface opacity, border luminance, and active item bloom according to theme and ambient backgrounds for crisp WCAG contrast.
-- **Fluid Spring Dock Navigation**: Four smooth interactive tabs (**Status**, **Patches**, **Terminal**, **Settings**) with spring physics and live pulse indicators.
+### 🪞 1. SukiSU-Grade MIUIX Liquid Glass Floating Navbar
+- **Architecture & Lineage**:
+  - **Kyant0/AndroidLiquidGlass** (Apache 2.0): Foundational SDF optical squircle distance fields, circle map convex refraction, 7-band chromatic dispersion, and spring inertia.
+  - **compose-miuix-ui** (Apache 2.0 by yukonga): Compose Multiplatform port (`IosLiquidGlassNavigationBar`) and MIUIX design system.
+  - **SukiSU-Ultra / SukiSU Manager** (Apache 2.0): Production-hardened `FloatingBottomBar`, `InteractiveHighlight`, and `DampedDragAnimation`.
+- **Damped Spring Drag Physics**: Features `DampedDragAnimation` (`stiffness = 1000f, damping = 1.0f`) with dynamic 78/56 scale expansion during touch, velocity inertia tracking, and rubber-band edge elasticity.
+- **Sliding Indicator Pill**: Translucent cobalt-to-purple liquid glass indicator sliding smoothly behind tabs.
+- **Interactive Specular Bloom**: Touch-driven specular highlight tracking pointer coordinates via AGSL RuntimeShader on Android 13+ and radial gradient fallback on API 26-32.
+- **Multi-layer Optical Refraction**: Dual-peak Fresnel lens specular highlights along top/bottom rims and chromatic aberration prismatic border.
+- **Live Status Pulse**: Glowing green indicator orb on the Terminal tab during active patching.
 
 ### 🛡️ 2. Integrated Kaorios Toolbox Engine (v2.0.6.0)
 - **Play Integrity Fix & Hardware Attestation**:

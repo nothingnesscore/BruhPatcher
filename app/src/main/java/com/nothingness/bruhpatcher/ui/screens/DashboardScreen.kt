@@ -179,25 +179,14 @@ fun DashboardScreen(
                                 )
                             }
                         }
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(AppColors.HyperOsBlue, AppColors.HyperOsCyan)
-                                    ),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "MIUIX GLASS",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = androidx.compose.ui.graphics.Color.White
-                            )
-                        }
+                        com.nothingness.bruhpatcher.ui.components.miuix.MiuixStatusBadge(
+                            text = "MIUIX GLASS",
+                            containerColor = Color(0x33007AFF),
+                            contentColor = AppColors.HyperOsCyan,
+                            showDot = true
+                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "Universal Android Framework Patcher (Android 8–17, HyperOS 1–4, AOSP & All OEM ROMs)",
                         style = MaterialTheme.typography.bodyMedium,
@@ -298,7 +287,7 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(100.dp)) // Space for Liquid Glass Floating Bar
+            Spacer(modifier = Modifier.height(110.dp)) // Space for Liquid Glass Floating Bar
         }
     }
 }
