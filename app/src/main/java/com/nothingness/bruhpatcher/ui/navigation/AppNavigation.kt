@@ -17,12 +17,15 @@ import androidx.navigation.compose.rememberNavController
 import com.nothingness.bruhpatcher.model.PatchingState
 import com.nothingness.bruhpatcher.ui.components.LiquidGlassFloatingBar
 import com.nothingness.bruhpatcher.ui.components.LiquidNavDestination
+import com.nothingness.bruhpatcher.ui.components.liquid.BarBlurHost
+import com.nothingness.bruhpatcher.ui.components.liquid.LocalBarBlurBackdrop
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixNavigationBar
 import com.nothingness.bruhpatcher.ui.screens.ConfigScreen
 import com.nothingness.bruhpatcher.ui.screens.DashboardScreen
 import com.nothingness.bruhpatcher.ui.screens.ProgressScreen
 import com.nothingness.bruhpatcher.ui.screens.SettingsScreen
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 sealed class Screen(val route: String) {
     data object Dashboard : Screen("dashboard")
@@ -63,84 +66,98 @@ fun AppNavigation(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Dashboard.route,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            composable(Screen.Dashboard.route) {
-                DashboardScreen(
-                    viewModel = viewModel,
-                    onNavigateToConfig = {
-                        navController.navigate(Screen.Config.route)
-                    },
-                    onNavigateToSettings = {
-                        navController.navigate(Screen.Settings.route)
-                    },
-                    onNavigateToProgress = {
-                        navController.navigate(Screen.Progress.route) {
-                            popUpTo(Screen.Dashboard.route)
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.Config.route) {
-                ConfigScreen(
-                    viewModel = viewModel,
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
-                    onStartPatching = {
-                        navController.navigate(Screen.Progress.route) {
-                            popUpTo(Screen.Dashboard.route)
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.Progress.route) {
-                ProgressScreen(
-                    viewModel = viewModel,
-                    onNavigateBack = {
-                        navController.popBackStack(Screen.Dashboard.route, false)
-                    },
-                    onComplete = {
-                        navController.popBackStack(Screen.Dashboard.route, false)
-                    }
-                )
-            }
-
-            composable(Screen.Settings.route) {
-                SettingsScreen(
-                    viewModel = viewModel,
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-        }
-
-        if (useLiquidGlassNavbar) {
-            // MIUIX Liquid Glass Floating Bar overlay with light refraction & dynamic contrast
-            LiquidGlassFloatingBar(
-                currentRoute = currentRoute,
-                isPatchingActive = isPatchingActive,
-                isHighDynamicContrast = true,
-                onNavigate = onNavigateToDestination,
+    BarBlurHost(
+        liquidGlassEnabled = useLiquidGlassNavbar
+    ) {
+        val backdrop = LocalBarBlurBackdrop.current
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-            )
-        } else {
-            // Standard docked MIUIX Navigation Bar (HyperOS Alive Design)
-            MiuixNavigationBar(
-                currentRoute = currentRoute,
-                isPatchingActive = isPatchingActive,
-                onNavigate = onNavigateToDestination,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+                    .fillMaxSize()
+                    .then(
+                        if (backdrop != null && useLiquidGlassNavbar) Modifier.layerBackdrop(backdrop)
+                        else Modifier
+                    )
+            ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Dashboard.route,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    composable(Screen.Dashboard.route) {
+                        DashboardScreen(
+                            viewModel = viewModel,
+                            onNavigateToConfig = {
+                                navController.navigate(Screen.Config.route)
+                            },
+                            onNavigateToSettings = {
+                                navController.navigate(Screen.Settings.route)
+                            },
+                            onNavigateToProgress = {
+                                navController.navigate(Screen.Progress.route) {
+                                    popUpTo(Screen.Dashboard.route)
+                                }
+                            }
+                        )
+                    }
+
+                    composable(Screen.Config.route) {
+                        ConfigScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            },
+                            onStartPatching = {
+                                navController.navigate(Screen.Progress.route) {
+                                    popUpTo(Screen.Dashboard.route)
+                                }
+                            }
+                        )
+                    }
+
+                    composable(Screen.Progress.route) {
+                        ProgressScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = {
+                                navController.popBackStack(Screen.Dashboard.route, false)
+                            },
+                            onComplete = {
+                                navController.popBackStack(Screen.Dashboard.route, false)
+                            }
+                        )
+                    }
+
+                    composable(Screen.Settings.route) {
+                        SettingsScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (useLiquidGlassNavbar) {
+                // MIUIX Liquid Glass Floating Bar overlay with real-time backdrop blur & light refraction
+                LiquidGlassFloatingBar(
+                    currentRoute = currentRoute,
+                    isPatchingActive = isPatchingActive,
+                    isHighDynamicContrast = true,
+                    onNavigate = onNavigateToDestination,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                )
+            } else {
+                // Standard docked MIUIX Navigation Bar (HyperOS Alive Design)
+                MiuixNavigationBar(
+                    currentRoute = currentRoute,
+                    isPatchingActive = isPatchingActive,
+                    onNavigate = onNavigateToDestination,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         }
     }
 }

@@ -3,11 +3,17 @@ package com.nothingness.bruhpatcher.ui.components.liquid
 // Adapted from Kyant0/AndroidLiquidGlass (Apache 2.0)
 // and SukiSU-Ultra (manager/app/src/main/java/com/sukisu/ultra/ui/component/miuix/animation/)
 
+import android.os.SystemClock
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
@@ -22,10 +28,44 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFirstOrNull
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.blur.highlight.BloomStroke
+import top.yukonga.miuix.kmp.blur.highlight.Highlight
+import top.yukonga.miuix.kmp.blur.highlight.LightPosition
+import top.yukonga.miuix.kmp.blur.sensor.rememberDeviceTilt
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+@Composable
+fun rememberGravityHighlight(base: Highlight, extraDegrees: Float): Highlight {
+    val style = base.style as? BloomStroke ?: return base
+    val tilt by rememberDeviceTilt()
+    val primary = remember(tilt, style.primaryLight, extraDegrees) {
+        val magnitudeSquared = tilt.gravityX * tilt.gravityX + tilt.gravityY * tilt.gravityY
+        val (x, y) = if (magnitudeSquared > 0.01f) {
+            val inverseMagnitude = 1f / sqrt(magnitudeSquared)
+            tilt.gravityX * inverseMagnitude to tilt.gravityY * inverseMagnitude
+        } else {
+            0f to -1f
+        }
+        val radians = extraDegrees * PI / 180.0
+        val rotatedX = cos(radians).toFloat() * x - sin(radians).toFloat() * y
+        val rotatedY = sin(radians).toFloat() * x + cos(radians).toFloat() * y
+        val currentP = style.primaryLight ?: top.yukonga.miuix.kmp.blur.highlight.LightSource(
+            position = LightPosition(0.5f, 0.7f, -0.05f),
+            color = androidx.compose.ui.graphics.Color.White,
+            intensity = 1f
+        )
+        currentP.copy(
+            position = LightPosition(0.5f + rotatedX, 0.7f + rotatedY, currentP.position.z),
+        )
+    }
+    return remember(base, primary) { base.copy(style = style.copy(primaryLight = primary)) }
+}
 
 /**
  * Spring-based damped drag animation controller for the Liquid Glass indicator pill.
@@ -60,6 +100,7 @@ class DampedDragAnimation(
     private val scaleXAnimation = Animatable(initialScale, 0.001f)
     private val scaleYAnimation = Animatable(initialScale, 0.001f)
 
+    private val mutex = MutatorMutex()
     private val velocityTracker = VelocityTracker()
 
     val value: Float get() = valueAnimation.value
@@ -72,6 +113,7 @@ class DampedDragAnimation(
     val modifier: Modifier = Modifier.pointerInput(Unit) {
         inspectDragGestures(
             onDragStart = { down ->
+                velocityTracker.resetTracking()
                 onDragStarted(down.position)
                 press()
             },
@@ -97,7 +139,6 @@ class DampedDragAnimation(
     }
 
     fun press() {
-        velocityTracker.resetTracking()
         animationScope.launch {
             launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
             launch { scaleXAnimation.animateTo(pressedScale, scaleXAnimationSpec) }
@@ -107,11 +148,6 @@ class DampedDragAnimation(
 
     fun release() {
         animationScope.launch {
-            awaitFrame()
-            if (value != targetValue) {
-                val threshold = (valueRange.endInclusive - valueRange.start) * 0.025f
-                snapshotFlow { valueAnimation.value }.first { abs(it - valueAnimation.targetValue) < threshold }
-            }
             launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
             launch { scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec) }
             launch { scaleYAnimation.animateTo(initialScale, scaleYAnimationSpec) }
@@ -121,25 +157,34 @@ class DampedDragAnimation(
     fun updateValue(value: Float) {
         val target = value.coerceIn(valueRange)
         animationScope.launch {
-            launch { valueAnimation.animateTo(target, valueAnimationSpec) { updateVelocity() } }
+            valueAnimation.snapTo(target)
+            updateVelocity()
         }
     }
 
     fun animateToValue(value: Float) {
         animationScope.launch {
-            press()
-            val target = value.coerceIn(valueRange)
-            launch { valueAnimation.animateTo(target, valueAnimationSpec) }
-            if (velocity != 0f) {
-                launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
+            mutex.mutate {
+                val target = value.coerceIn(valueRange)
+                launch {
+                    pressProgressAnimation.animateTo(0.6f, pressProgressAnimationSpec)
+                    pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec)
+                }
+                launch {
+                    scaleXAnimation.animateTo(1.08f, scaleXAnimationSpec)
+                    scaleXAnimation.animateTo(initialScale, scaleXAnimationSpec)
+                }
+                if (velocityAnimation.value != 0f) {
+                    launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
+                }
+                valueAnimation.animateTo(target, valueAnimationSpec)
             }
-            release()
         }
     }
 
     private fun updateVelocity() {
         velocityTracker.addPosition(
-            System.currentTimeMillis(),
+            SystemClock.uptimeMillis(),
             Offset(value, 0f)
         )
         val range = valueRange.endInclusive - valueRange.start
