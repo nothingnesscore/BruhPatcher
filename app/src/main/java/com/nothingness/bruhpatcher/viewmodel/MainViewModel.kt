@@ -55,6 +55,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val useLiquidGlassNavbar: StateFlow<Boolean> = settingsRepository.useLiquidGlassNavbar
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    val themeEngine: StateFlow<com.nothingness.bruhpatcher.ui.theme.ThemeEngine> = settingsRepository.themeEngine
+        .stateIn(viewModelScope, SharingStarted.Eagerly, com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX)
+
+    fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
+        viewModelScope.launch {
+            settingsRepository.setThemeEngine(engine)
+        }
+    }
+
     private val workflowRepository = WorkflowRepository()
     private val uploadRepository: UploadRepository by lazy {
         UploadRepository(ApiKeyManager.getPixeldrainApiKey())

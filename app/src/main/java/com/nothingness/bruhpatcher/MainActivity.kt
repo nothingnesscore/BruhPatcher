@@ -36,8 +36,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: MainViewModel = viewModel()
             val useDynamicColor by viewModel.useDynamicColor.collectAsState()
+            val themeEngine by viewModel.themeEngine.collectAsState()
 
-            BruhPatcherTheme(
+            com.nothingness.bruhpatcher.ui.theme.AutoPatcherTheme(
+                engine = themeEngine,
                 darkTheme = true,
                 dynamicColor = useDynamicColor
             ) {

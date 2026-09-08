@@ -21,6 +21,7 @@ object SettingsKeys {
     val PIXELDRAIN_API_KEY = stringPreferencesKey("pixeldrain_api_key")
     val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
     val USE_LIQUID_GLASS_NAVBAR = booleanPreferencesKey("use_liquid_glass_navbar")
+    val THEME_ENGINE = stringPreferencesKey("theme_engine")
 }
 
 class SettingsRepository(private val context: Context) {
@@ -35,6 +36,21 @@ class SettingsRepository(private val context: Context) {
 
     val useLiquidGlassNavbar: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[SettingsKeys.USE_LIQUID_GLASS_NAVBAR] ?: true
+    }
+
+    val themeEngine: Flow<com.nothingness.bruhpatcher.ui.theme.ThemeEngine> = context.dataStore.data.map { preferences ->
+        val raw = preferences[SettingsKeys.THEME_ENGINE]
+        try {
+            if (raw != null) com.nothingness.bruhpatcher.ui.theme.ThemeEngine.valueOf(raw) else com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+        } catch (_: Exception) {
+            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+        }
+    }
+
+    suspend fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
+        context.dataStore.edit { preferences ->
+            preferences[SettingsKeys.THEME_ENGINE] = engine.name
+        }
     }
 
     suspend fun setPixeldrainApiKey(apiKey: String) {

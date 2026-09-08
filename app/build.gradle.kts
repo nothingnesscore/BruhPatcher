@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.nothingness.bruhpatcher"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.nothingness.bruhpatcher"
@@ -57,6 +57,10 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs = listOf(
+            "-Xskip-metadata-version-check",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
     }
     buildFeatures {
         compose = true
@@ -80,6 +84,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.miuix.ui)
 
     // Root access (libsu)
     implementation(libs.libsu.core)

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.DataObject
+import androidx.compose.material.icons.rounded.FormatPaint
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Security
@@ -137,7 +138,7 @@ fun SettingsScreen(
                         }
                     }
                     MiuixStatusBadge(
-                        text = "v2.3.0",
+                        text = "v2.4.0",
                         containerColor = AppColors.HyperOsCyan.copy(alpha = 0.15f),
                         contentColor = AppColors.HyperOsCyan,
                         showDot = true
@@ -160,19 +161,36 @@ fun SettingsScreen(
 
             // Appearance & Navigation Controls
             MiuixCategoryHeader(title = "Appearance & Navigation")
+            val currentThemeEngine by viewModel.themeEngine.collectAsState()
             MiuixGroupCard {
+                MiuixPreferenceItem(
+                    title = "UI Theme Engine",
+                    subtitle = "${currentThemeEngine.label} • ${if (currentThemeEngine == com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX) "Xiaomi HyperOS 4 Alive Design" else "Google Material 3 MD3"}",
+                    icon = Icons.Rounded.FormatPaint,
+                    iconTint = AppColors.HyperOsIndigo,
+                    position = MiuixItemPosition.TOP,
+                    onClick = {
+                        val next = if (currentThemeEngine == com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX) {
+                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3
+                        } else {
+                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+                        }
+                        viewModel.setThemeEngine(next)
+                        Toast.makeText(context, "Switched Theme Engine to ${next.label}", Toast.LENGTH_SHORT).show()
+                    }
+                )
                 MiuixSwitchPreference(
                     title = "Monet Dynamic Color",
-                    subtitle = "Harmonize interface palette dynamically with HyperOS wallpaper accent tones (Android 12+)",
+                    subtitle = "Harmonize interface palette dynamically with system wallpaper accent tones (Android 12+ / Monet)",
                     icon = Icons.Rounded.ColorLens,
                     iconTint = AppColors.HyperOsBlue,
                     checked = useDynamicColor,
                     onCheckedChange = { viewModel.setDynamicColor(it) },
-                    position = MiuixItemPosition.TOP
+                    position = MiuixItemPosition.MIDDLE
                 )
                 MiuixSwitchPreference(
                     title = "Liquid Glass Floating Navbar",
-                    subtitle = "Switch between floating iOS/SukiSU optical glass pill and docked MIUIX navigation bar",
+                    subtitle = "Switch between floating optical refraction glass bar and docked MIUIX navigation bar",
                     icon = Icons.Rounded.Layers,
                     iconTint = AppColors.HyperOsCyan,
                     checked = useLiquidGlassNavbar,

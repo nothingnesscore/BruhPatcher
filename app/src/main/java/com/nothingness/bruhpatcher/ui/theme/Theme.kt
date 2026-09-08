@@ -10,6 +10,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
 private val DarkColorScheme = darkColorScheme(
     primary = AppColors.Primary,
@@ -54,12 +57,13 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun BruhPatcherTheme(
+fun AutoPatcherTheme(
+    engine: ThemeEngine = ThemeEngine.HYPEROS_MIUIX,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true, // Enabled by default for Monet / Dynamic Color on Android 12+ & HyperOS
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
+    val m3ColorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -68,14 +72,50 @@ fun BruhPatcherTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    when (engine) {
+        ThemeEngine.HYPEROS_MIUIX -> {
+            val colorSchemeMode = when {
+                dynamicColor && darkTheme -> ColorSchemeMode.MonetDark
+                dynamicColor && !darkTheme -> ColorSchemeMode.MonetLight
+                darkTheme -> ColorSchemeMode.Dark
+                else -> ColorSchemeMode.Light
+            }
+            val controller = ThemeController(
+                colorSchemeMode = colorSchemeMode,
+                isDark = darkTheme
+            )
+            MiuixTheme(controller = controller) {
+                // Also provide MaterialTheme underneath for seamless compatibility with standard icons / components
+                MaterialTheme(
+                    colorScheme = m3ColorScheme,
+                    typography = Typography,
+                    content = content
+                )
+            }
+        }
+        ThemeEngine.AOSP_MATERIAL3 -> {
+            MaterialTheme(
+                colorScheme = m3ColorScheme,
+                typography = Typography,
+                content = content
+            )
+        }
+    }
 }
 
-// Alias for backward compatibility
+// Backward compatibility wrappers
+@Composable
+fun BruhPatcherTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) = AutoPatcherTheme(
+    engine = ThemeEngine.HYPEROS_MIUIX,
+    darkTheme = darkTheme,
+    dynamicColor = dynamicColor,
+    content = content
+)
+
 @Composable
 fun FrameworkForgeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
