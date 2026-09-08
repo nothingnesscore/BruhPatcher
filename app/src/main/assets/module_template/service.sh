@@ -2,11 +2,13 @@
 # Bruh Patcher / KaoriOS - Late Start Service & Property Spoofing
 MODDIR=${0%/*}
 
-# Wait for boot completion
-until [ "$(getprop sys.boot_completed)" = "1" ]; do
+# Wait for boot completion (unless explicitly skipped during recovery/action flashing)
+if [ -z "$SKIP_BOOT_WAIT" ]; then
+    until [ "$(getprop sys.boot_completed)" = "1" ]; do
+        sleep 1
+    done
     sleep 1
-done
-sleep 1
+fi
 
 # =========================================================================
 # Locate resetprop tool
@@ -85,10 +87,12 @@ if [ -n "$NM_BIN" ] && "$NM_BIN" version >/dev/null 2>&1; then
 fi
 
 # =========================================================================
-# Install Kaorios Toolbox APK if present as user app
+# Install Kaorios Toolbox APK if present and not yet registered
 # =========================================================================
-if [ -f "$MODDIR/system/product/priv-app/KaoriosToolbox/KaoriosToolbox.apk" ]; then
-    pm install -r "$MODDIR/system/product/priv-app/KaoriosToolbox/KaoriosToolbox.apk" >/dev/null 2>&1
-elif [ -f "$MODDIR/system/priv-app/KaoriosToolbox/KaoriosToolbox.apk" ]; then
-    pm install -r "$MODDIR/system/priv-app/KaoriosToolbox/KaoriosToolbox.apk" >/dev/null 2>&1
+if ! pm path com.kousei.kaorios >/dev/null 2>&1; then
+    if [ -f "$MODDIR/system/product/priv-app/KaoriosToolbox/KaoriosToolbox.apk" ]; then
+        pm install -r "$MODDIR/system/product/priv-app/KaoriosToolbox/KaoriosToolbox.apk" >/dev/null 2>&1
+    elif [ -f "$MODDIR/system/priv-app/KaoriosToolbox/KaoriosToolbox.apk" ]; then
+        pm install -r "$MODDIR/system/priv-app/KaoriosToolbox/KaoriosToolbox.apk" >/dev/null 2>&1
+    fi
 fi

@@ -91,8 +91,11 @@ if [ -n "$FRAMEWORK" ]; then
             {
                 print $0
                 if (!done && /MessageDigest;->isEqual/) { found = 1 }
-                else if (found && !done && /move-result v0/) {
-                    print "    const/4 v0, 0x1"
+                else if (found && !done && /move-result (v[0-9]+)/) {
+                    clean_line = $0
+                    match(clean_line, /move-result (v[0-9]+)/, m)
+                    reg = m[1]
+                    print "    const/4 " reg ", 0x1"
                     done = 1; found = 0
                 }
             }
@@ -108,12 +111,35 @@ if [ -n "$FRAMEWORK" ]; then
             {
                 print $0
                 if (!done && /MessageDigest;->isEqual/) { found = 1 }
-                else if (found && !done && /move-result v0/) {
-                    print "    const/4 v0, 0x1"
+                else if (found && !done && /move-result (v[0-9]+)/) {
+                    clean_line = $0
+                    match(clean_line, /move-result (v[0-9]+)/, m)
+                    reg = m[1]
+                    print "    const/4 " reg ", 0x1"
                     done = 1; found = 0
                 }
             }
             ' "$v3_file" > "${v3_file}.tmp" && mv "${v3_file}.tmp" "$v3_file"
+        fi
+
+        # V4 Signature Verification (Android 11-17)
+        echo "[*] Patch 4.3: Bypass V4 Signature Verification..."
+        v4_file=$(find "$FW_WORK_DIR" -name "ApkSignatureSchemeV4Verifier.smali" -type f | head -1)
+        if [ -n "$v4_file" ]; then
+            awk '
+            BEGIN { found = 0; done = 0 }
+            {
+                print $0
+                if (!done && /MessageDigest;->isEqual/) { found = 1 }
+                else if (found && !done && /move-result (v[0-9]+)/) {
+                    clean_line = $0
+                    match(clean_line, /move-result (v[0-9]+)/, m)
+                    reg = m[1]
+                    print "    const/4 " reg ", 0x1"
+                    done = 1; found = 0
+                }
+            }
+            ' "$v4_file" > "${v4_file}.tmp" && mv "${v4_file}.tmp" "$v4_file"
         fi
 
         # ApkSignatureVerifier patches
@@ -132,8 +158,11 @@ if [ -n "$FRAMEWORK" ]; then
             {
                 print $0
                 if (!done && /MessageDigest;->isEqual/) { found = 1 }
-                else if (found && !done && /move-result v7/) {
-                    print "    const/4 v7, 0x1"
+                else if (found && !done && /move-result (v[0-9]+)/) {
+                    clean_line = $0
+                    match(clean_line, /move-result (v[0-9]+)/, m)
+                    reg = m[1]
+                    print "    const/4 " reg ", 0x1"
                     done = 1; found = 0
                 }
             }
@@ -149,7 +178,7 @@ if [ -n "$FRAMEWORK" ]; then
             /\.method private static.*verifyMessageDigest\(\[B\[B\)Z/ {
                 in_target_method = 1; skip_body = 1
                 print $0
-                print "    .registers 2"
+                print "    .locals 1"
                 print ""
                 print "    const/4 v0, 0x1"
                 print ""
@@ -195,24 +224,35 @@ if [ -n "$SERVICES" ]; then
     if [ -d "$SVC_WORK_DIR" ]; then
         echo "[*] Applying patches to services.jar..."
 
+        # 1. Downgrade bypass across Android 10-17
         echo "[*] Patch 1.1: Disable checkDowngrade..."
+        smali_kit -c -m "checkDowngrade" -re "$return_void" -d "$SVC_WORK_DIR" -name "InstallPackageHelper.smali"
         smali_kit -c -m "checkDowngrade" -re "$return_void" -d "$SVC_WORK_DIR" -name "PackageManagerServiceUtils.smali"
+        smali_kit -c -m "checkDowngrade" -re "$return_void" -d "$SVC_WORK_DIR" -name "PackageManagerService.smali"
 
+        # 2. Signature verification bypass (must return TRUE on success!)
         echo "[*] Patch 1.2: Bypass verifySignatures..."
-        smali_kit -c -m "verifySignatures" -re "$return_false" -d "$SVC_WORK_DIR" -name "PackageManagerServiceUtils.smali"
+        smali_kit -c -m "verifySignatures" -re "$return_true" -d "$SVC_WORK_DIR" -name "PackageManagerServiceUtils.smali"
+        smali_kit -c -m "verifySignatures" -re "$return_true" -d "$SVC_WORK_DIR" -name "InstallPackageHelper.smali"
 
+        # 3. Signature compare bypass (returns 0 for SIGNATURE_MATCH)
         echo "[*] Patch 1.3: Bypass compareSignatures..."
         smali_kit -c -m "compareSignatures" -re "$return_false" -d "$SVC_WORK_DIR" -name "PackageManagerServiceUtils.smali"
+        smali_kit -c -m "compareSignatures" -re "$return_false" -d "$SVC_WORK_DIR" -name "PackageManagerService.smali"
 
+        # 4. Compat signature matching
         echo "[*] Patch 1.4: Force matchSignaturesCompat..."
         smali_kit -c -m "matchSignaturesCompat" -re "$return_true" -d "$SVC_WORK_DIR" -name "PackageManagerServiceUtils.smali"
 
+        # 5. KeySet verification
         echo "[*] Patch 2.1: Skip KeySet verification..."
         smali_kit -c -m "shouldCheckUpgradeKeySetLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "KeySetManagerService.smali"
 
+        # 6. Shared User Leaving Check
         echo "[*] Patch 3.1: Bypass Shared User Leaving Check..."
         smali_kit -c -m "adjustScanFlags" -bl "if-eqz v3," "    const/4 v3, 0x1" -d "$SVC_WORK_DIR" -name "InstallPackageHelper.smali"
 
+        # 7. Reconciliation Bypass
         echo "[*] Patch 4.1: Enable Reconciliation Bypass..."
         smali_kit -c -m "<clinit>" -rim "const/4 v0, 0x0" "const/4 v0, 0x1" -d "$SVC_WORK_DIR" -name "ReconcilePackageUtils.smali"
 
@@ -241,7 +281,7 @@ if [ -n "$MIUI_SERVICES" ]; then
         smali_kit -c -m "verifyIsolationViolation" -re "$return_void" -d "$MIUI_WORK_DIR" -name "PackageManagerServiceImpl.smali"
 
         echo "[*] Patch 2: Allow Critical System App Updates..."
-        smali_kit -c -m "canBeUpdate" -re "$return_void" -d "$MIUI_WORK_DIR" -name "PackageManagerServiceImpl.smali"
+        smali_kit -c -m "canBeUpdate" -re "$return_true" -d "$MIUI_WORK_DIR" -name "PackageManagerServiceImpl.smali"
 
         if [ "$MIUI_STANDALONE" -eq 1 ]; then
             echo "[*] Recompiling miui-services.jar..."

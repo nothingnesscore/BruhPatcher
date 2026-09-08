@@ -10,7 +10,7 @@ echo "=== Bruh Patcher / KaoriOS Action ==="
 
 if [ -f "$MODDIR/service.sh" ]; then
     echo "[*] Triggering property reset..."
-    . "$MODDIR/service.sh"
+    SKIP_BOOT_WAIT=1 . "$MODDIR/service.sh"
 else
     echo "[-] Warning: service.sh not found in $MODDIR"
 fi

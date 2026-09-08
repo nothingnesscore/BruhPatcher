@@ -57,8 +57,24 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /(\.registers|\.locals)/ {
-            print $0
+        in_target && /^\s*\.locals\s+([0-9]+)/ {
+            loc = $2
+            if (loc < 1) loc = 1
+            print "    .locals " loc
+            print "    invoke-static {p1, p2}, Landroid/security/kaorios/KaoriosHook;->hasSystemFeature(Ljava/lang/String;I)Ljava/lang/Boolean;"
+            print "    move-result-object v0"
+            print "    if-eqz v0, :cond_kaorios_feature_stock"
+            print "    invoke-virtual {v0}, Ljava/lang/Boolean;->booleanValue()Z"
+            print "    move-result v0"
+            print "    return v0"
+            print "    :cond_kaorios_feature_stock"
+            in_target = 0
+            next
+        }
+        in_target && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2
+            if (regs < 4) regs = 4
+            print "    .registers " regs
             print "    invoke-static {p1, p2}, Landroid/security/kaorios/KaoriosHook;->hasSystemFeature(Ljava/lang/String;I)Ljava/lang/Boolean;"
             print "    move-result-object v0"
             print "    if-eqz v0, :cond_kaorios_feature_stock"
@@ -75,7 +91,7 @@ if [ -d "$FW_DIR" ]; then
         echo "    Hooked: $apm_file"
     fi
 
-    # 3. AndroidKeyStoreKeyPairGeneratorSpi.smali - Software KeyGen Hook
+    # 3. AndroidKeyStoreKeyPairGeneratorSpi.smali - Software KeyGen Hook (Upstream Toolbox-docs guide specification)
     keygen_file=$(find "$FW_DIR" -name "AndroidKeyStoreKeyPairGeneratorSpi.smali" -type f | head -1)
     if [ -n "$keygen_file" ]; then
         echo "  -> Hooking AndroidKeyStoreKeyPairGeneratorSpi.generateKeyPair()..."
@@ -86,12 +102,28 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /(\.registers|\.locals)/ {
-            print $0
+        in_target && /^\s*\.registers\s+([0-9]+)/ {
+            orig_regs = $2
+            new_regs = orig_regs + 1
+            target_reg = "v" (new_regs - 2)
+            print "    .registers " new_regs
             print "    invoke-static {p0}, Landroid/security/kaorios/KaoriosHook;->initGenerateSoftwareKeyPair(Ljava/lang/Object;)Ljava/security/KeyPair;"
-            print "    move-result-object v0"
-            print "    if-eqz v0, :cond_kaorios_gen_stock"
-            print "    return-object v0"
+            print "    move-result-object " target_reg
+            print "    if-eqz " target_reg ", :cond_kaorios_gen_stock"
+            print "    return-object " target_reg
+            print "    :cond_kaorios_gen_stock"
+            in_target = 0
+            next
+        }
+        in_target && /^\s*\.locals\s+([0-9]+)/ {
+            orig_loc = $2
+            new_loc = orig_loc + 1
+            target_reg = "v" orig_loc
+            print "    .locals " new_loc
+            print "    invoke-static {p0}, Landroid/security/kaorios/KaoriosHook;->initGenerateSoftwareKeyPair(Ljava/lang/Object;)Ljava/security/KeyPair;"
+            print "    move-result-object " target_reg
+            print "    if-eqz " target_reg ", :cond_kaorios_gen_stock"
+            print "    return-object " target_reg
             print "    :cond_kaorios_gen_stock"
             in_target = 0
             next
@@ -165,8 +197,24 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_get && !hooked && /(\.registers|\.locals)/ {
-            print $0
+        in_get && !hooked && /^\s*\.locals\s+([0-9]+)/ {
+            loc = $2
+            if (loc < 1) loc = 1
+            print "    .locals " loc
+            print "    invoke-static {p1, p2, p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_nvc_stock"
+            print "    const/4 v0, 0x0"
+            print "    return-object v0"
+            print "    :cond_kaorios_nvc_stock"
+            hooked = 1
+            in_get = 0
+            next
+        }
+        in_get && !hooked && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2
+            if (regs < 5) regs = 5
+            print "    .registers " regs
             print "    invoke-static {p1, p2, p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
             print "    move-result v0"
             print "    if-eqz v0, :cond_kaorios_nvc_stock"
@@ -190,8 +238,29 @@ if [ -d "$FW_DIR" ]; then
             awk '
             BEGIN { in_target = 0; hooked = 0 }
             /\.method public static.*getString\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;\)Ljava\/lang\/String;/ { in_target = 1; print $0; next }
-            in_target && !hooked && /(\.registers|\.locals)/ {
-                print $0
+            in_target && !hooked && /^\s*\.locals\s+([0-9]+)/ {
+                loc = $2
+                if (loc < 2) loc = 2
+                print "    .locals " loc
+                print "    invoke-static {}, Landroid/provider/Settings\$Config;->getContentResolver()Landroid/content/ContentResolver;"
+                print "    move-result-object v0"
+                print "    if-eqz v0, :cond_kaorios_hidedev"
+                print "    invoke-virtual {v0}, Landroid/content/ContentResolver;->getPackageName()Ljava/lang/String;"
+                print "    move-result-object v1"
+                print "    invoke-static {v0, v1, p1}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatus(Landroid/content/ContentResolver;Ljava/lang/String;Ljava/lang/String;)Z"
+                print "    move-result v1"
+                print "    if-eqz v1, :cond_kaorios_hidedev"
+                print "    const-string p1, \"0\""
+                print "    return-object p1"
+                print "    :cond_kaorios_hidedev"
+                hooked = 1
+                in_target = 0
+                next
+            }
+            in_target && !hooked && /^\s*\.registers\s+([0-9]+)/ {
+                regs = $2
+                if (regs < 4) regs = 4
+                print "    .registers " regs
                 print "    invoke-static {}, Landroid/provider/Settings\$Config;->getContentResolver()Landroid/content/ContentResolver;"
                 print "    move-result-object v0"
                 print "    if-eqz v0, :cond_kaorios_hidedev"
@@ -237,29 +306,173 @@ if [ -d "$SVC_DIR" ]; then
         echo "    Hooked: $sys_file"
     fi
 
-    # 6. WindowState.smali - Dynamic FLAG_SECURE Hook (Controlled via KaoriosToolbox app toggle)
-    ws_file=$(find "$SVC_DIR" -name "WindowState.smali" -type f | head -1)
-    if [ -n "$ws_file" ] && ! grep -q "KaoriosHook;->isSecureFlag" "$ws_file"; then
-        echo "  -> Hooking WindowState.isSecureLocked()..."
+    # 6. Dynamic FLAG_SECURE Hooks (Upstream Toolbox-docs Disable_Secure_Flag.md)
+    # 6a. DevicePolicyCacheImpl.smali - isScreenCaptureAllowed(I)Z
+    dpc_file=$(find "$SVC_DIR" -name "DevicePolicyCacheImpl.smali" -type f | head -1)
+    if [ -n "$dpc_file" ] && ! grep -q "KaoriosHook;->isSecureFlag" "$dpc_file"; then
+        echo "  -> Hooking DevicePolicyCacheImpl.isScreenCaptureAllowed()..."
         awk '
         BEGIN { in_method = 0; hooked = 0 }
-        /\.method.*isSecureLocked\(\)Z/ { in_method = 1; print $0; next }
-        in_method && !hooked && /(\.registers|\.locals)/ {
-            print $0
+        /\.method.*isScreenCaptureAllowed\(I\)Z/ { in_method = 1; print $0; next }
+        in_method && !hooked && /^\s*\.locals\s+([0-9]+)/ {
+            loc = $2; if (loc < 1) loc = 1
+            print "    .locals " loc
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
             print "    move-result v0"
-            print "    if-eqz v0, :cond_kaorios_sec_stock"
-            print "    const/4 v0, 0x0"
+            print "    if-eqz v0, :cond_kaorios_dpc"
+            print "    const/4 v0, 0x1"
             print "    return v0"
-            print "    :cond_kaorios_sec_stock"
-            hooked = 1
-            in_method = 0
-            next
+            print "    :cond_kaorios_dpc"
+            hooked = 1; in_method = 0; next
+        }
+        in_method && !hooked && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2; if (regs < 3) regs = 3
+            print "    .registers " regs
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_dpc"
+            print "    const/4 v0, 0x1"
+            print "    return v0"
+            print "    :cond_kaorios_dpc"
+            hooked = 1; in_method = 0; next
         }
         in_method && /\.end method/ { in_method = 0 }
         { print $0 }
-        ' "$ws_file" > "${ws_file}.tmp" && mv "${ws_file}.tmp" "$ws_file" 2>/dev/null || rm -f "${ws_file}.tmp"
-        echo "    Hooked: $ws_file"
+        ' "$dpc_file" > "${dpc_file}.tmp" && mv "${dpc_file}.tmp" "$dpc_file" 2>/dev/null || rm -f "${dpc_file}.tmp"
+        echo "    Hooked: $dpc_file"
+    fi
+
+    # 6b. WindowState.smali & WindowStateAnimator.smali - isSecureLocked()Z & setSecureLocked(Z)V
+    for w_file in $(find "$SVC_DIR" -name "WindowState.smali" -o -name "WindowStateAnimator.smali" 2>/dev/null); do
+        if [ -f "$w_file" ] && ! grep -q "KaoriosHook;->isSecureFlag" "$w_file"; then
+            echo "  -> Hooking $(basename "$w_file") for dynamic FLAG_SECURE..."
+            awk '
+            BEGIN { in_secure = 0; in_set = 0; hooked_sec = 0; hooked_set = 0 }
+            /\.method.*isSecureLocked\(\)Z/ { in_secure = 1; print $0; next }
+            in_secure && !hooked_sec && /^\s*\.locals\s+([0-9]+)/ {
+                loc = $2; if (loc < 1) loc = 1
+                print "    .locals " loc
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_sec_stock"
+                print "    const/4 v0, 0x0"
+                print "    return v0"
+                print "    :cond_kaorios_sec_stock"
+                hooked_sec = 1; in_secure = 0; next
+            }
+            in_secure && !hooked_sec && /^\s*\.registers\s+([0-9]+)/ {
+                regs = $2; if (regs < 2) regs = 2
+                print "    .registers " regs
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_sec_stock"
+                print "    const/4 v0, 0x0"
+                print "    return v0"
+                print "    :cond_kaorios_sec_stock"
+                hooked_sec = 1; in_secure = 0; next
+            }
+            in_secure && /\.end method/ { in_secure = 0 }
+
+            /\.method.*setSecureLocked\(Z\)V/ { in_set = 1; print $0; next }
+            in_set && !hooked_set && /^\s*\.locals\s+([0-9]+)/ {
+                loc = $2; if (loc < 1) loc = 1
+                print "    .locals " loc
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_set_stock"
+                print "    return-void"
+                print "    :cond_kaorios_set_stock"
+                hooked_set = 1; in_set = 0; next
+            }
+            in_set && !hooked_set && /^\s*\.registers\s+([0-9]+)/ {
+                regs = $2; if (regs < 3) regs = 3
+                print "    .registers " regs
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_set_stock"
+                print "    return-void"
+                print "    :cond_kaorios_set_stock"
+                hooked_set = 1; in_set = 0; next
+            }
+            in_set && /\.end method/ { in_set = 0 }
+            { print $0 }
+            ' "$w_file" > "${w_file}.tmp" && mv "${w_file}.tmp" "$w_file" 2>/dev/null || rm -f "${w_file}.tmp"
+            echo "    Hooked: $w_file"
+        fi
+    done
+
+    # 6c. WindowManagerService - notAllowCaptureDisplay
+    for wms_file in $(find "$SVC_DIR" -name "WindowManagerService*.smali" 2>/dev/null); do
+        if [ -f "$wms_file" ] && grep -q "notAllowCaptureDisplay" "$wms_file" && ! grep -q "KaoriosHook;->isSecureFlag" "$wms_file"; then
+            echo "  -> Hooking notAllowCaptureDisplay in $(basename "$wms_file")..."
+            awk '
+            BEGIN { in_method = 0; hooked = 0 }
+            /\.method.*notAllowCaptureDisplay/ { in_method = 1; print $0; next }
+            in_method && !hooked && /^\s*\.locals\s+([0-9]+)/ {
+                loc = $2; if (loc < 1) loc = 1
+                print "    .locals " loc
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_nacd"
+                print "    const/4 v0, 0x0"
+                print "    return v0"
+                print "    :cond_kaorios_nacd"
+                hooked = 1; in_method = 0; next
+            }
+            in_method && !hooked && /^\s*\.registers\s+([0-9]+)/ {
+                regs = $2; if (regs < 3) regs = 3
+                print "    .registers " regs
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_nacd"
+                print "    const/4 v0, 0x0"
+                print "    return v0"
+                print "    :cond_kaorios_nacd"
+                hooked = 1; in_method = 0; next
+            }
+            in_method && /\.end method/ { in_method = 0 }
+            { print $0 }
+            ' "$wms_file" > "${wms_file}.tmp" && mv "${wms_file}.tmp" "$wms_file" 2>/dev/null || rm -f "${wms_file}.tmp"
+            echo "    Hooked: $wms_file"
+        fi
+    done
+
+    # 6d. HyperOS WindowManagerServiceImpl in miui-services.jar (if workspace present)
+    if [ -n "$MIUI_SERVICES_WORKSPACE" ] && [ -d "$MIUI_SERVICES_WORKSPACE" ]; then
+        for miui_wms in $(find "$MIUI_SERVICES_WORKSPACE" -name "WindowManagerServiceImpl*.smali" 2>/dev/null); do
+            if [ -f "$miui_wms" ] && grep -q "notAllowCaptureDisplay" "$miui_wms" && ! grep -q "KaoriosHook;->isSecureFlag" "$miui_wms"; then
+                echo "  -> Hooking HyperOS WindowManagerServiceImpl.notAllowCaptureDisplay()..."
+                awk '
+                BEGIN { in_method = 0; hooked = 0 }
+                /\.method.*notAllowCaptureDisplay/ { in_method = 1; print $0; next }
+                in_method && !hooked && /^\s*\.locals\s+([0-9]+)/ {
+                    loc = $2; if (loc < 1) loc = 1
+                    print "    .locals " loc
+                    print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                    print "    move-result v0"
+                    print "    if-eqz v0, :cond_kaorios_nacd"
+                    print "    const/4 v0, 0x0"
+                    print "    return v0"
+                    print "    :cond_kaorios_nacd"
+                    hooked = 1; in_method = 0; next
+                }
+                in_method && !hooked && /^\s*\.registers\s+([0-9]+)/ {
+                    regs = $2; if (regs < 3) regs = 3
+                    print "    .registers " regs
+                    print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                    print "    move-result v0"
+                    print "    if-eqz v0, :cond_kaorios_nacd"
+                    print "    const/4 v0, 0x0"
+                    print "    return v0"
+                    print "    :cond_kaorios_nacd"
+                    hooked = 1; in_method = 0; next
+                }
+                in_method && /\.end method/ { in_method = 0 }
+                { print $0 }
+                ' "$miui_wms" > "${miui_wms}.tmp" && mv "${miui_wms}.tmp" "$miui_wms" 2>/dev/null || rm -f "${miui_wms}.tmp"
+                echo "    Hooked: $miui_wms"
+            fi
+        done
     fi
 
 else

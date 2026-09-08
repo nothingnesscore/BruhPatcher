@@ -20,13 +20,10 @@ fi
 build_file=$(find "$FW_DIR" -name "Build.smali" -type f | head -1)
 if [ -n "$build_file" ]; then
     echo "[*] Patching Build.smali..."
-    # Target fields in Build.smali: remove final and append = null
+    # Target fields in Build.smali: remove final from static fields
     awk '
     /\.field public static final.*(BRAND|BRAND_FOR_ATTESTATION|DEVICE|DEVICE_FOR_ATTESTATION|FINGERPRINT|HARDWARE|ID|MANUFACTURER|MANUFACTURER_FOR_ATTESTATION|MODEL|MODEL_FOR_ATTESTATION|PRODUCT|PRODUCT_FOR_ATTESTATION|TAGS|TIME|TYPE|USER):/ {
         sub(" static final ", " static ")
-        if (!/=/) {
-            $0 = $0 " = null"
-        }
         print $0
         next
     }
@@ -56,5 +53,7 @@ if [ -n "$version_file" ]; then
 else
     echo "[!] Warning: Build\$VERSION.smali not found"
 fi
+
+command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "framework.jar"
 
 echo "[*] Android 17 / HyperOS 4 Build Reflection Patch complete."

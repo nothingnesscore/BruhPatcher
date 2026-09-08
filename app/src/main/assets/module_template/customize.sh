@@ -113,9 +113,9 @@ rm -f /data/data/com.google.android.gms/cache/pif.prop /data/data/com.google.and
     /data/data/com.google.android.gms/cache/pif.json /data/data/com.google.android.gms/pif.json
 rm -rf /data/system/package_cache/*
 
-# Run service tasks immediately to stage properties
+# Run service tasks immediately to stage properties (skip boot wait during flashing)
 if [ -f "$MODPATH/service.sh" ]; then
-    . "$MODPATH/service.sh" 2>/dev/null || true
+    SKIP_BOOT_WAIT=1 . "$MODPATH/service.sh" 2>/dev/null || true
 fi
 
 ui_print " "

@@ -38,6 +38,11 @@ return_true='
     return v0
 '
 
+return_void='
+    .locals 0
+    return-void
+'
+
 # ==================== SERVICES.JAR ====================
 if [ "$SVC_STANDALONE" -eq 1 ]; then
     echo "[*] Decompiling services.jar..."
@@ -50,6 +55,9 @@ if [ -d "$SVC_WORK_DIR" ]; then
     echo "[*] Patching WindowState.isSecureLocked()..."
     smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowState.smali"
     smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowStateAnimator.smali"
+
+    echo "[*] Patching WindowState.setSecureLocked()..."
+    smali_kit -c -m "setSecureLocked" -re "$return_void" -d "$SVC_WORK_DIR" -name "WindowState.smali"
 
     echo "[*] Patching notAllowCaptureDisplay()..."
     smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowManagerService*.smali"
