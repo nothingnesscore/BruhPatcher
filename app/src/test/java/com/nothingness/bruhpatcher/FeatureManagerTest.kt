@@ -12,7 +12,7 @@ class FeatureManagerTest {
     @Test
     fun testAllFeaturesCountAndDefaults() {
         val features = Feature.getAllFeatures()
-        assertEquals(6, features.size)
+        assertEquals(4, features.size)
 
         // Core patches default to enabled
         val sigBypass = features.first { it.id == "disable_signature_verification" }
@@ -23,30 +23,20 @@ class FeatureManagerTest {
 
         val secureFlag = features.first { it.id == "disable_secure_flag" }
         assertTrue(secureFlag.isEnabled)
-    }
 
-    @Test
-    fun testMiuiFeaturesFiltering() {
-        // Without MIUI services, CN_NOTIFICATION_fix should be disabled
-        val nonMiuiFeatures = FeatureManager.getAvailableFeatures(hasMiuiServices = false)
-        val cnFixNonMiui = nonMiuiFeatures.first { it.id == "cn_notification_fix" }
-        assertFalse(cnFixNonMiui.isEnabled)
-
-        // With MIUI services, it retains its initial state
-        val miuiFeatures = FeatureManager.getAvailableFeatures(hasMiuiServices = true)
-        val cnFixMiui = miuiFeatures.first { it.id == "cn_notification_fix" }
-        assertEquals(Feature.CN_NOTIFICATION_FIX.isEnabled, cnFixMiui.isEnabled)
+        val a17Unfinalize = features.first { it.id == "android17_build_unfinalize" }
+        assertTrue(a17Unfinalize.isEnabled)
     }
 
     @Test
     fun testUpdateFeature() {
         val initial = Feature.getAllFeatures()
-        val updated = FeatureManager.updateFeature(initial, "google_photos_unlimited", true)
-        val photosFeature = updated.first { it.id == "google_photos_unlimited" }
-        assertTrue(photosFeature.isEnabled)
+        val updated = FeatureManager.updateFeature(initial, "android17_build_unfinalize", false)
+        val a17Feature = updated.first { it.id == "android17_build_unfinalize" }
+        assertFalse(a17Feature.isEnabled)
 
-        val disabledAgain = FeatureManager.updateFeature(updated, "google_photos_unlimited", false)
-        assertFalse(disabledAgain.first { it.id == "google_photos_unlimited" }.isEnabled)
+        val enabledAgain = FeatureManager.updateFeature(updated, "android17_build_unfinalize", true)
+        assertTrue(enabledAgain.first { it.id == "android17_build_unfinalize" }.isEnabled)
     }
 
     @Test
@@ -66,7 +56,7 @@ class FeatureManagerTest {
         val features = listOf(
             Feature.DISABLE_SIGNATURE_VERIFICATION.copy(isEnabled = true),
             Feature.KAORIOS_TOOLBOX.copy(isEnabled = true),
-            Feature.GOOGLE_PHOTOS_UNLIMITED.copy(isEnabled = false)
+            Feature.ANDROID17_BUILD_UNFINALIZE.copy(isEnabled = false)
         )
         val featureIds = FeatureManager.buildFeatureString(features)
         assertEquals("disable_signature_verification,kaorios_toolbox", featureIds)
@@ -81,8 +71,6 @@ class FeatureManagerTest {
         assertTrue(featureIds.contains("disable_secure_flag"))
         assertTrue(featureIds.contains("kaorios_toolbox"))
         assertTrue(featureIds.contains("android17_build_unfinalize"))
-        assertTrue(featureIds.contains("cn_notification_fix"))
-        assertTrue(featureIds.contains("google_photos_unlimited"))
-        assertEquals("6 features selected", FeatureManager.getEnabledFeaturesSummary(allFeatures))
+        assertEquals("4 features selected", FeatureManager.getEnabledFeaturesSummary(allFeatures))
     }
 }

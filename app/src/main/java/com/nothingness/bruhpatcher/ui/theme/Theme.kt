@@ -58,12 +58,25 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun AutoPatcherTheme(
-    engine: ThemeEngine = ThemeEngine.HYPEROS_MIUIX,
+    engine: ThemeEngine = ThemeEngine.AUTO,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    amoledMode: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val m3ColorScheme = when {
+    val effectiveEngine = androidx.compose.runtime.remember(engine) {
+        if (engine == ThemeEngine.AUTO) {
+            if (com.nothingness.bruhpatcher.core.SystemInspector.isHyperOsDevice()) {
+                ThemeEngine.HYPEROS_MIUIX
+            } else {
+                ThemeEngine.AOSP_MATERIAL3
+            }
+        } else {
+            engine
+        }
+    }
+
+    val baseM3Scheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -72,8 +85,19 @@ fun AutoPatcherTheme(
         else -> LightColorScheme
     }
 
-    when (engine) {
-        ThemeEngine.HYPEROS_MIUIX -> {
+    val m3ColorScheme = if (darkTheme && amoledMode) {
+        baseM3Scheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceVariant = Color(0xFF121216),
+            outlineVariant = Color(0xFF20202A)
+        )
+    } else {
+        baseM3Scheme
+    }
+
+    when (effectiveEngine) {
+        ThemeEngine.HYPEROS_MIUIX, ThemeEngine.AUTO -> {
             val colorSchemeMode = when {
                 dynamicColor && darkTheme -> ColorSchemeMode.MonetDark
                 dynamicColor && !darkTheme -> ColorSchemeMode.MonetLight
@@ -108,11 +132,13 @@ fun AutoPatcherTheme(
 fun BruhPatcherTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    amoledMode: Boolean = false,
     content: @Composable () -> Unit
 ) = AutoPatcherTheme(
-    engine = ThemeEngine.HYPEROS_MIUIX,
+    engine = ThemeEngine.AUTO,
     darkTheme = darkTheme,
     dynamicColor = dynamicColor,
+    amoledMode = amoledMode,
     content = content
 )
 
@@ -121,4 +147,8 @@ fun FrameworkForgeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
-) = BruhPatcherTheme(darkTheme, dynamicColor, content)
+) = BruhPatcherTheme(
+    darkTheme = darkTheme,
+    dynamicColor = dynamicColor,
+    content = content
+)

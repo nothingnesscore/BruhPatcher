@@ -79,6 +79,7 @@ fun SettingsScreen(
     val isResettingNoMount by viewModel.isResettingNoMount.collectAsState()
     val useDynamicColor by viewModel.useDynamicColor.collectAsState()
     val useLiquidGlassNavbar by viewModel.useLiquidGlassNavbar.collectAsState()
+    val useAmoledMode by viewModel.useAmoledMode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -165,15 +166,19 @@ fun SettingsScreen(
             MiuixGroupCard {
                 MiuixPreferenceItem(
                     title = "UI Theme Engine",
-                    subtitle = "${currentThemeEngine.label} • ${if (currentThemeEngine == com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX) "Xiaomi HyperOS 4 Alive Design" else "Google Material 3 MD3"}",
+                    subtitle = "${currentThemeEngine.label} • ${when (currentThemeEngine) {
+                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO -> "Auto-detects HyperOS or AOSP"
+                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX -> "Xiaomi HyperOS 4 Alive Design"
+                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3 -> "Google Material 3 MD3"
+                    }}",
                     icon = Icons.Rounded.FormatPaint,
                     iconTint = AppColors.HyperOsIndigo,
                     position = MiuixItemPosition.TOP,
                     onClick = {
-                        val next = if (currentThemeEngine == com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX) {
-                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3
-                        } else {
-                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+                        val next = when (currentThemeEngine) {
+                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3
+                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3 -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO
                         }
                         viewModel.setThemeEngine(next)
                         Toast.makeText(context, "Switched Theme Engine to ${next.label}", Toast.LENGTH_SHORT).show()
@@ -186,6 +191,15 @@ fun SettingsScreen(
                     iconTint = AppColors.HyperOsBlue,
                     checked = useDynamicColor,
                     onCheckedChange = { viewModel.setDynamicColor(it) },
+                    position = MiuixItemPosition.MIDDLE
+                )
+                MiuixSwitchPreference(
+                    title = "Pure Black AMOLED Mode",
+                    subtitle = "Apply deep #000000 black to surfaces and backgrounds in dark theme to conserve battery on OLED displays",
+                    icon = Icons.Rounded.AutoAwesome,
+                    iconTint = AppColors.HyperOsPurple,
+                    checked = useAmoledMode,
+                    onCheckedChange = { viewModel.setAmoledMode(it) },
                     position = MiuixItemPosition.MIDDLE
                 )
                 MiuixSwitchPreference(

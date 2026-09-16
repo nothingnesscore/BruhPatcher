@@ -6,6 +6,7 @@ package com.nothingness.bruhpatcher.ui.theme
  * - AOSP_MATERIAL3: Standard Google Material 3 / Material You for generic AOSP and non-Xiaomi OEM ROMs.
  */
 enum class ThemeEngine(val label: String, val description: String) {
+    AUTO("Auto Detect", "Automatically applies HyperOS MIUIX on Xiaomi devices or Material 3 on generic AOSP"),
     HYPEROS_MIUIX("HyperOS MIUIX", "Authentic Xiaomi HyperOS Alive Design with continuous squircle cards and MIUI animations"),
     AOSP_MATERIAL3("AOSP Material 3", "Clean Android 15/16/17 Material You design with Google dynamic color palettes")
 }

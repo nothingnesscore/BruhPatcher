@@ -201,10 +201,11 @@ if [ -d "$FW_DIR" ]; then
             loc = $2
             if (loc < 1) loc = 1
             print "    .locals " loc
-            print "    invoke-static {p1, p2, p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    if-eqz p2, :cond_kaorios_nvc_stock"
+            print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
             print "    move-result v0"
             print "    if-eqz v0, :cond_kaorios_nvc_stock"
-            print "    const/4 v0, 0x0"
+            print "    const-string v0, \"0\""
             print "    return-object v0"
             print "    :cond_kaorios_nvc_stock"
             hooked = 1
@@ -215,10 +216,11 @@ if [ -d "$FW_DIR" ]; then
             regs = $2
             if (regs < 5) regs = 5
             print "    .registers " regs
-            print "    invoke-static {p1, p2, p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+            print "    if-eqz p2, :cond_kaorios_nvc_stock"
+            print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
             print "    move-result v0"
             print "    if-eqz v0, :cond_kaorios_nvc_stock"
-            print "    const/4 v0, 0x0"
+            print "    const-string v0, \"0\""
             print "    return-object v0"
             print "    :cond_kaorios_nvc_stock"
             hooked = 1
@@ -473,6 +475,30 @@ if [ -d "$SVC_DIR" ]; then
                 echo "    Hooked: $miui_wms"
             fi
         done
+    fi
+
+    # 7. AppsFilterBase.smali - App list hiding per caller
+    apps_filter=$(find "$SVC_DIR" -name "AppsFilterBase.smali" -o -name "AppsFilterImpl.smali" 2>/dev/null | head -1)
+    if [ -n "$apps_filter" ] && ! grep -q "KaoriosHook;->shouldHideAppList" "$apps_filter"; then
+        echo "  -> Hooking AppsFilterBase for app list isolation..."
+        awk '
+        BEGIN { in_target = 0; hooked = 0 }
+        /\.method.*shouldFilterApplication/ { in_target = 1; print $0; next }
+        in_target && !hooked && /invoke-interface.*PackageStateInternal;->getPackageName/ {
+            print $0
+            print "    const/4 v0, 0x0"
+            print "    invoke-static {v0, v2}, Landroid/security/kaorios/KaoriosHook;->shouldHideAppList(Landroid/content/ContentResolver;Ljava/lang/String;)Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_filter_skip"
+            print "    const/4 v0, 0x1"
+            print "    return v0"
+            print "    :cond_kaorios_filter_skip"
+            hooked = 1
+        }
+        in_target && /\.end method/ { in_target = 0 }
+        { print $0 }
+        ' "$apps_filter" > "${apps_filter}.tmp" && mv "${apps_filter}.tmp" "$apps_filter" 2>/dev/null || rm -f "${apps_filter}.tmp"
+        echo "    Hooked: $apps_filter"
     fi
 
 else

@@ -55,12 +55,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val useLiquidGlassNavbar: StateFlow<Boolean> = settingsRepository.useLiquidGlassNavbar
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    val useAmoledMode: StateFlow<Boolean> = settingsRepository.useAmoledMode
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val themeEngine: StateFlow<com.nothingness.bruhpatcher.ui.theme.ThemeEngine> = settingsRepository.themeEngine
-        .stateIn(viewModelScope, SharingStarted.Eagerly, com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO)
 
     fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
         viewModelScope.launch {
             settingsRepository.setThemeEngine(engine)
+        }
+    }
+
+    fun setAmoledMode(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAmoledMode(enabled)
         }
     }
 
@@ -832,12 +841,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Applies the complete recommended AutoPatcher preset:
-     * - CorePatch (Signature Verification)
+     * - CorePatch (Signature Verification & Downgrade Limits)
      * - Kaorios Toolbox v2.0.6.0
-     * - Android 17 Build Reflection Unfinalize
-     * - HyperOS CN Notification Fix (if HyperOS/MIUI)
      * - Disable Secure Flag
-     * - Google Photos Unlimited
+     * - Android 17 Build Reflection Unfinalize
      */
     fun applyAutoPatcherPreset() {
         val info = _deviceInfo.value
@@ -846,9 +853,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "disable_signature_verification" -> true
                 "kaorios_toolbox" -> true
                 "disable_flag_secure" -> true
-                "google_photos_unlimited" -> true
                 "android17_build_unfinalize" -> true
-                "cn_notification_fix" -> info.isHyperOS || info.hasMiuiServicesJar
                 else -> feature.isEnabled
             }
             feature.copy(isEnabled = shouldEnable)
@@ -859,9 +864,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Feature.DISABLE_SIGNATURE_VERIFICATION.id -> true
                 Feature.KAORIOS_TOOLBOX.id -> true
                 Feature.DISABLE_SECURE_FLAG.id -> true
-                Feature.GOOGLE_PHOTOS_UNLIMITED.id -> true
                 Feature.ANDROID17_BUILD_UNFINALIZE.id -> true
-                Feature.CN_NOTIFICATION_FIX.id -> info.isHyperOS || info.hasMiuiServicesJar
                 else -> feature.isEnabled
             }
             feature.copy(isEnabled = shouldEnable)

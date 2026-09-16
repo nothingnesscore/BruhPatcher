@@ -5,9 +5,7 @@ package com.nothingness.bruhpatcher.model
  */
 enum class FeatureCategory(val title: String) {
     CORE_SECURITY("Core Security & Bypass"),
-    PLAY_INTEGRITY("Play Integrity & Spoofing"),
-    HYPEROS_TWEAKS("HyperOS & Xiaomi Tweaks"),
-    PRIVACY_MEDIA("Media & System Tweaks")
+    PLAY_INTEGRITY("Play Integrity & Device Spoofing")
 }
 
 /**
@@ -53,33 +51,15 @@ data class Feature(
             displayName = "Android 17 Build Reflection Patch",
             description = "Unfinalizes static final fields on Build and Build\$VERSION for HyperOS 4 & Android 17 (Baklava)",
             category = FeatureCategory.PLAY_INTEGRITY,
-            isDefault = false,
-            requiresAndroid17 = false // Can be applied proactively or on A17
-        )
-
-        val CN_NOTIFICATION_FIX = Feature(
-            id = "cn_notification_fix",
-            displayName = "HyperOS CN Notification Fix",
-            description = "Eliminates push notification delays and unfreezes background push services on China ROMs",
-            category = FeatureCategory.HYPEROS_TWEAKS,
-            requiresMiui = true
-        )
-
-        val GOOGLE_PHOTOS_UNLIMITED = Feature(
-            id = "google_photos_unlimited",
-            displayName = "Google Photos Unlimited Backup",
-            description = "Enables unlimited original-quality photo & video cloud backup in Google Photos by spoofing Pixel XL",
-            category = FeatureCategory.PRIVACY_MEDIA,
-            isDefault = false
+            isDefault = true,
+            requiresAndroid17 = false
         )
 
         fun getAllFeatures(): List<Feature> = listOf(
             DISABLE_SIGNATURE_VERIFICATION.copy(isEnabled = true),
             DISABLE_SECURE_FLAG.copy(isEnabled = true),
             KAORIOS_TOOLBOX.copy(isEnabled = true),
-            ANDROID17_BUILD_UNFINALIZE,
-            CN_NOTIFICATION_FIX,
-            GOOGLE_PHOTOS_UNLIMITED
+            ANDROID17_BUILD_UNFINALIZE.copy(isEnabled = true)
         )
     }
 }

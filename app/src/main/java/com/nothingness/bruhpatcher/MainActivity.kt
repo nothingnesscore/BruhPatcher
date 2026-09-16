@@ -37,11 +37,13 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = viewModel()
             val useDynamicColor by viewModel.useDynamicColor.collectAsState()
             val themeEngine by viewModel.themeEngine.collectAsState()
+            val useAmoledMode by viewModel.useAmoledMode.collectAsState()
 
             com.nothingness.bruhpatcher.ui.theme.AutoPatcherTheme(
                 engine = themeEngine,
-                darkTheme = true,
-                dynamicColor = useDynamicColor
+                darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+                dynamicColor = useDynamicColor,
+                amoledMode = useAmoledMode
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

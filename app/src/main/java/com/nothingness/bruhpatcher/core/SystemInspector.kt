@@ -156,4 +156,36 @@ object SystemInspector {
 
         return paths
     }
+
+    /**
+     * Synchronously checks whether the current device is running HyperOS/MIUI for UI theme selection
+     */
+    fun isHyperOsDevice(): Boolean {
+        return try {
+            val miOs = getSystemPropertySync("ro.mi.os.version.name")
+            val miui = getSystemPropertySync("ro.miui.ui.version.name")
+            val blur = getSystemPropertySync("ro.miui.has_real_blur")
+            val man = Build.MANUFACTURER
+            !miOs.isNullOrBlank() ||
+                miui?.startsWith("V816", ignoreCase = true) == true ||
+                miui?.contains("Hyper", ignoreCase = true) == true ||
+                blur != null ||
+                man.equals("Xiaomi", ignoreCase = true) ||
+                man.equals("Redmi", ignoreCase = true) ||
+                man.equals("POCO", ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun getSystemPropertySync(property: String): String? {
+        return try {
+            val clazz = Class.forName("android.os.SystemProperties")
+            val getMethod = clazz.getMethod("get", String::class.java)
+            val value = getMethod.invoke(null, property) as? String
+            value?.takeIf { it.isNotBlank() }
+        } catch (_: Exception) {
+            null
+        }
+    }
 }

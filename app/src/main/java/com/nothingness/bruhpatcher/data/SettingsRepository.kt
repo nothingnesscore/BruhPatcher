@@ -21,6 +21,7 @@ object SettingsKeys {
     val PIXELDRAIN_API_KEY = stringPreferencesKey("pixeldrain_api_key")
     val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
     val USE_LIQUID_GLASS_NAVBAR = booleanPreferencesKey("use_liquid_glass_navbar")
+    val USE_AMOLED_MODE = booleanPreferencesKey("use_amoled_mode")
     val THEME_ENGINE = stringPreferencesKey("theme_engine")
 }
 
@@ -38,18 +39,28 @@ class SettingsRepository(private val context: Context) {
         preferences[SettingsKeys.USE_LIQUID_GLASS_NAVBAR] ?: true
     }
 
+    val useAmoledMode: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[SettingsKeys.USE_AMOLED_MODE] ?: false
+    }
+
     val themeEngine: Flow<com.nothingness.bruhpatcher.ui.theme.ThemeEngine> = context.dataStore.data.map { preferences ->
         val raw = preferences[SettingsKeys.THEME_ENGINE]
         try {
-            if (raw != null) com.nothingness.bruhpatcher.ui.theme.ThemeEngine.valueOf(raw) else com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+            if (raw != null) com.nothingness.bruhpatcher.ui.theme.ThemeEngine.valueOf(raw) else com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO
         } catch (_: Exception) {
-            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
+            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO
         }
     }
 
     suspend fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
         context.dataStore.edit { preferences ->
             preferences[SettingsKeys.THEME_ENGINE] = engine.name
+        }
+    }
+
+    suspend fun setAmoledMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SettingsKeys.USE_AMOLED_MODE] = enabled
         }
     }
 
