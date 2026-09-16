@@ -22,11 +22,11 @@ data class Feature(
     val requiresAndroid17: Boolean = false
 ) {
     companion object {
-        val DISABLE_SIGNATURE_VERIFICATION = Feature(
-            id = "disable_signature_verification",
-            displayName = "Disable Signature Verification",
-            description = "Bypasses APK signature, digest checks, and app downgrade limits (CorePatch A13-A17 & HyperOS 4)",
-            category = FeatureCategory.CORE_SECURITY,
+        val GOOGLE_PHOTOS_UNLIMITED = Feature(
+            id = "google_photos_unlimited",
+            displayName = "Google Photos Unlimited Backup",
+            description = "Unlocks unlimited original-quality cloud backup in Google Photos by spoofing Pixel capability flags",
+            category = FeatureCategory.PLAY_INTEGRITY,
             isDefault = true
         )
 
@@ -56,7 +56,7 @@ data class Feature(
         )
 
         fun getAllFeatures(): List<Feature> = listOf(
-            DISABLE_SIGNATURE_VERIFICATION.copy(isEnabled = true),
+            GOOGLE_PHOTOS_UNLIMITED.copy(isEnabled = true),
             DISABLE_SECURE_FLAG.copy(isEnabled = true),
             KAORIOS_TOOLBOX.copy(isEnabled = true),
             ANDROID17_BUILD_UNFINALIZE.copy(isEnabled = true)

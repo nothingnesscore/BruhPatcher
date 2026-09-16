@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.FormatPaint
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Security
-import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,6 +71,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     val keyboxStatus by viewModel.keyboxStatus.collectAsState()
     val isSyncingKeybox by viewModel.isSyncingKeybox.collectAsState()
     val isNoMountInstalled by viewModel.isNoMountInstalled.collectAsState()
@@ -91,12 +92,12 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.DarkBackground,
-                    titleContentColor = AppColors.TextPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
-        containerColor = AppColors.DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -129,19 +130,19 @@ fun SettingsScreen(
                                 text = "Bruh Patcher",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColors.TextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "HyperOS Alive Design • Universal",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = AppColors.HyperOsCyan
+                                color = primaryColor
                             )
                         }
                     }
                     MiuixStatusBadge(
                         text = "v2.4.0",
-                        containerColor = AppColors.HyperOsCyan.copy(alpha = 0.15f),
-                        contentColor = AppColors.HyperOsCyan,
+                        containerColor = primaryColor.copy(alpha = 0.15f),
+                        contentColor = primaryColor,
                         showDot = true
                     )
                 }
@@ -150,13 +151,13 @@ fun SettingsScreen(
                     text = "Universal Android Framework Patcher (Android 8–17, HyperOS 1–4, AOSP & OEM ROMs)",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = AppColors.PrimaryLight
+                    color = primaryColor
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v2.0.6.0, CorePatch signature verification bypass, and NoMount VFS transparent redirection.",
+                    text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v2.0.6.0, Google Photos Unlimited Backup, and NoMount VFS transparent redirection.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AppColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -172,7 +173,7 @@ fun SettingsScreen(
                         com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3 -> "Google Material 3 MD3"
                     }}",
                     icon = Icons.Rounded.FormatPaint,
-                    iconTint = AppColors.HyperOsIndigo,
+                    iconTint = primaryColor,
                     position = MiuixItemPosition.TOP,
                     onClick = {
                         val next = when (currentThemeEngine) {
@@ -188,7 +189,7 @@ fun SettingsScreen(
                     title = "Monet Dynamic Color",
                     subtitle = "Harmonize interface palette dynamically with system wallpaper accent tones (Android 12+ / Monet)",
                     icon = Icons.Rounded.ColorLens,
-                    iconTint = AppColors.HyperOsBlue,
+                    iconTint = primaryColor,
                     checked = useDynamicColor,
                     onCheckedChange = { viewModel.setDynamicColor(it) },
                     position = MiuixItemPosition.MIDDLE
@@ -197,7 +198,7 @@ fun SettingsScreen(
                     title = "Pure Black AMOLED Mode",
                     subtitle = "Apply deep #000000 black to surfaces and backgrounds in dark theme to conserve battery on OLED displays",
                     icon = Icons.Rounded.AutoAwesome,
-                    iconTint = AppColors.HyperOsPurple,
+                    iconTint = AppColors.HyperOsCyan,
                     checked = useAmoledMode,
                     onCheckedChange = { viewModel.setAmoledMode(it) },
                     position = MiuixItemPosition.MIDDLE
@@ -213,15 +214,15 @@ fun SettingsScreen(
                 )
             }
 
-            // Design Philosophy & Citations (SukiSU Manager / Kyant0 / compose-miuix-ui)
+            // Design Philosophy & Citations
             MiuixCategoryHeader(title = "Design Philosophy & Citations")
             MiuixGroupCard {
                 MiuixPreferenceItem(
                     title = "Kyant0/AndroidLiquidGlass",
                     subtitle = "Foundational optical glass physics: SDF squircle curvature, circleMap lens refraction, 7-band chromatic dispersion & damped spring drag.",
                     icon = Icons.Rounded.ColorLens,
-                    iconTint = Color(0xFF00F0FF),
-                    iconBackground = Color(0x2000F0FF),
+                    iconTint = AppColors.HyperOsCyan,
+                    iconBackground = AppColors.HyperOsCyan.copy(alpha = 0.15f),
                     position = MiuixItemPosition.TOP,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -233,8 +234,8 @@ fun SettingsScreen(
                     title = "compose-miuix-ui (yukonga)",
                     subtitle = "Compose Multiplatform port of Liquid Glass navbar (IosLiquidGlassNavigationBar) & top.yukonga.miuix.kmp design guidelines.",
                     icon = Icons.Rounded.Layers,
-                    iconTint = Color(0xFF1677FF),
-                    iconBackground = Color(0x201677FF),
+                    iconTint = primaryColor,
+                    iconBackground = primaryColor.copy(alpha = 0.15f),
                     position = MiuixItemPosition.MIDDLE,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -244,10 +245,10 @@ fun SettingsScreen(
                 )
                 MiuixPreferenceItem(
                     title = "SukiSU-Ultra (SukiSU Manager)",
-                    subtitle = "Production FloatingBottomBar with AGSL InteractiveHighlight bloom, DampedDragAnimation (78/56 pressed scale), & MIUIX Alive Design.",
+                    subtitle = "Production FloatingBottomBar with AGSL InteractiveHighlight bloom, DampedDragAnimation & MIUIX Alive Design.",
                     icon = Icons.Rounded.Hub,
-                    iconTint = Color(0xFF7000FF),
-                    iconBackground = Color(0x207000FF),
+                    iconTint = primaryColor,
+                    iconBackground = primaryColor.copy(alpha = 0.15f),
                     position = MiuixItemPosition.BOTTOM,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -264,13 +265,13 @@ fun SettingsScreen(
                     text = "Diagnostics & Live Reporting",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Generate and copy a diagnostic dump (device build props, root status, keybox hub, and recent terminal logs) to your clipboard for easy debugging and GitHub issues.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AppColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -287,7 +288,7 @@ fun SettingsScreen(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                     ) {
                         Text("Copy Report")
                     }
@@ -302,7 +303,7 @@ fun SettingsScreen(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = AppColors.HyperOsCyan
+                                color = primaryColor
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Syncing...")
@@ -317,7 +318,7 @@ fun SettingsScreen(
                     Text(
                         text = "Keybox Hub: ${keyboxStatus?.status?.uppercase()} (${keyboxStatus?.strongCount} Strong / ${keyboxStatus?.totalKeys} Keys)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AppColors.HyperOsCyan
+                        color = primaryColor
                     )
                 }
             }
@@ -334,7 +335,7 @@ fun SettingsScreen(
                         text = "NoMount VFS Engine",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     val statusText = when {
@@ -359,7 +360,7 @@ fun SettingsScreen(
                 Text(
                     text = "Modules are built with full NoMount (maxsteeel/nomount & Bouteillepleine/NoMount-Suite) compatibility using transparent VFS path redirection. Bind-mount collisions are completely avoided.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = AppColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 if (isNoMountGuardTripped) {
@@ -383,14 +384,14 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(12.dp),
                         enabled = !isResettingNoMount,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isNoMountGuardTripped) AppColors.Error else AppColors.HyperOsBlue
+                            containerColor = if (isNoMountGuardTripped) AppColors.Error else primaryColor
                         )
                     ) {
                         if (isResettingNoMount) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = AppColors.TextPrimary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Re-arming...")
@@ -416,7 +417,7 @@ fun SettingsScreen(
                     title = "Bruh Patcher Maintainer",
                     subtitle = "nothingnesscore",
                     icon = Icons.Rounded.Code,
-                    iconTint = AppColors.HyperOsBlue,
+                    iconTint = primaryColor,
                     position = MiuixItemPosition.TOP
                 )
                 MiuixPreferenceItem(
@@ -430,7 +431,7 @@ fun SettingsScreen(
                     title = "FrameworkPatcher Base",
                     subtitle = "Jefino9488",
                     icon = Icons.Rounded.DataObject,
-                    iconTint = Color(0xFFAF52DE),
+                    iconTint = primaryColor,
                     position = MiuixItemPosition.BOTTOM
                 )
             }

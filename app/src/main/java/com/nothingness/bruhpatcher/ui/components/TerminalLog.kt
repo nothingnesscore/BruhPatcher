@@ -124,8 +124,9 @@ fun StatusBanner(
     isError: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isError) AppColors.Error.copy(alpha = 0.15f) else AppColors.Primary.copy(alpha = 0.15f)
-    val textColor = if (isError) AppColors.Error else AppColors.Primary
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = if (isError) AppColors.Error.copy(alpha = 0.15f) else primaryColor.copy(alpha = 0.12f)
+    val textColor = if (isError) AppColors.Error else primaryColor
 
     Column(
         modifier = modifier
@@ -144,7 +145,7 @@ fun StatusBanner(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -1,0 +1,27 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Enforce LF line endings for all shell scripts, configs, and text assets
+*.sh text eol=lf
+*.bash text eol=lf
+*.config text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.prop text eol=lf
+core text eol=lf
+setup text eol=lf
+update-binary text eol=lf
+updater-script text eol=lf
+*.kt text eol=lf
+*.java text eol=lf
+*.gradle text eol=lf
+*.md text eol=lf
+
+# Binary files
+*.dex binary
+*.jar binary
+*.apk binary
+*.so binary
+*.zip binary
+*.jks binary

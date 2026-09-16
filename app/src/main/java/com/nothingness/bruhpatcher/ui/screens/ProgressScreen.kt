@@ -42,13 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.content.ClipData
-import android.content.Intent
-import android.net.Uri
-import android.os.StrictMode
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.LaunchedEffect
-import java.io.File
-import com.nothingness.bruhpatcher.core.RootManager
 import com.nothingness.bruhpatcher.model.PatchingState
 import com.nothingness.bruhpatcher.ui.components.ProgressCard
 import com.nothingness.bruhpatcher.ui.components.StatusBanner
@@ -67,6 +61,7 @@ fun ProgressScreen(
     val logs by viewModel.logs.collectAsState()
     val savedLogPath by viewModel.savedLogPath.collectAsState()
     val context = LocalContext.current
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -86,12 +81,12 @@ fun ProgressScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.DarkBackground,
-                    titleContentColor = AppColors.TextPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
-        containerColor = AppColors.DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -151,7 +146,7 @@ fun ProgressScreen(
                                 viewModel.installModuleDirectly(state.filePath)
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                         ) {
                             Text("Install Module")
                         }
@@ -171,7 +166,6 @@ fun ProgressScreen(
                         subtitle = "Installing via Magisk..."
                     )
                 }
-                // Local patching states
                 is PatchingState.InstallingDI -> {
                     StatusBanner(
                         title = "Setting Up",
@@ -204,7 +198,7 @@ fun ProgressScreen(
                                 viewModel.installGeneratedModule(state.filePath)
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                         ) {
                             Text("Install Module")
                         }
@@ -256,7 +250,7 @@ fun ProgressScreen(
                 text = "Log Output",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             TerminalLog(
@@ -288,13 +282,13 @@ fun ProgressScreen(
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
                     Text("Copy Report")
                 }
             }
 
-            // Action buttons
+            // Action buttons on error
             AnimatedVisibility(
                 visible = patchingState is PatchingState.Error,
                 enter = fadeIn(),
@@ -306,7 +300,7 @@ fun ProgressScreen(
                             onClick = { viewModel.startPatching() },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                         ) {
                             Text("Retry", modifier = Modifier.padding(vertical = 4.dp))
                         }
@@ -350,7 +344,7 @@ fun ProgressScreen(
                     Text("Continue")
                 }
             },
-            containerColor = AppColors.DarkSurface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 
@@ -378,7 +372,7 @@ fun ProgressScreen(
                     Text(
                         "A reboot is required to apply changes.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -388,7 +382,7 @@ fun ProgressScreen(
                     onClick = {
                         viewModel.reboot()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
                     Text("Reboot Now")
                 }
@@ -398,7 +392,7 @@ fun ProgressScreen(
                     TextButton(
                         onClick = { viewModel.saveLogs() }
                     ) {
-                        Text("Save Logs", color = AppColors.HyperOsCyan)
+                        Text("Save Logs", color = primaryColor)
                     }
                     TextButton(
                         onClick = {
@@ -411,7 +405,7 @@ fun ProgressScreen(
                     }
                 }
             },
-            containerColor = AppColors.DarkSurface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }

@@ -70,6 +70,10 @@ object DiExecutor {
 
         val diBash = "/data/tmp/di/bin/bash"
         Shell.cmd("chmod -R 755 /data/tmp/di/bin /data/local/di 2>/dev/null || true").exec()
+        Shell.cmd(
+            "dos2unix ${runScript.absolutePath} /data/tmp/di/core /data/tmp/di/smali_workspace.sh /data/local/di/smali_workspace.sh /data/local/di/environment 2>/dev/null || " +
+            "sed -i 's/\\r\$//' ${runScript.absolutePath} /data/tmp/di/core /data/tmp/di/smali_workspace.sh /data/local/di/smali_workspace.sh /data/local/di/environment 2>/dev/null || true"
+        ).exec()
         val isBashExecutable = Shell.cmd("test -x $diBash").exec().isSuccess
         val execCmd = if (isBashExecutable) "$diBash ${runScript.absolutePath}" else "sh ${runScript.absolutePath}"
         val result = Shell.cmd(execCmd)
@@ -341,12 +345,14 @@ object DiExecutor {
             appendLine("exit 0")
         }
 
+        val normalized = scriptContent.replace("\r\n", "\n").replace("\r", "\n")
         val tmpFile = File.createTempFile("run_", ".sh", context.cacheDir)
-        tmpFile.writeText(scriptContent)
+        tmpFile.writeBytes(normalized.toByteArray(Charsets.UTF_8))
 
         Shell.cmd(
             "cp ${tmpFile.absolutePath} ${runScript.absolutePath}",
-            "chmod 755 ${runScript.absolutePath}"
+            "chmod 755 ${runScript.absolutePath}",
+            "sed -i 's/\\r\$//' ${runScript.absolutePath} 2>/dev/null || true"
         ).exec()
 
         tmpFile.delete()

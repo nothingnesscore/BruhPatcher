@@ -1,7 +1,7 @@
 package com.nothingness.bruhpatcher.ui.components.miuix
 
 // MIUIX & HyperOS Alive Design Component System
-// Inspired by compose-miuix-ui (Apache 2.0) and SukiSU-Ultra (Apache 2.0)
+// Fully harmonized with Monet Dynamic Colors and Material 3
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -47,7 +47,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,8 +68,8 @@ enum class MiuixItemPosition {
  * 
  * Features:
  * - Continuous squircle curvature (20dp)
- * - Translucent obsidian glass background
- * - Hairline specular gradient border
+ * - Harmonized dynamic Monet / obsidian background
+ * - Subtle specular border
  * - Interactive spring press bounce feedback
  */
 @Composable
@@ -90,6 +89,7 @@ fun MiuixCard(
     )
 
     val shape = RoundedCornerShape(cornerRadius)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     Box(
         modifier = modifier
@@ -101,25 +101,18 @@ fun MiuixCard(
             .shadow(
                 elevation = 6.dp,
                 shape = shape,
-                ambientColor = Color(0x33000000),
-                spotColor = Color(0x33007AFF)
+                ambientColor = Color.Black.copy(alpha = 0.25f),
+                spotColor = primaryColor.copy(alpha = 0.15f)
             )
             .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF161A26).copy(alpha = 0.90f),
-                        Color(0xFF0F121C).copy(alpha = 0.90f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = listOf(
                         Color.White.copy(alpha = 0.15f),
-                        Color(0xFF007AFF).copy(alpha = 0.12f),
-                        Color.White.copy(alpha = 0.05f)
+                        primaryColor.copy(alpha = 0.12f),
+                        Color.White.copy(alpha = 0.04f)
                     )
                 ),
                 shape = shape
@@ -148,6 +141,7 @@ fun MiuixGroupCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(20.dp)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     Box(
         modifier = modifier
@@ -155,24 +149,17 @@ fun MiuixGroupCard(
             .shadow(
                 elevation = 5.dp,
                 shape = shape,
-                ambientColor = Color(0x26000000),
-                spotColor = Color(0x26007AFF)
+                ambientColor = Color.Black.copy(alpha = 0.20f),
+                spotColor = primaryColor.copy(alpha = 0.12f)
             )
             .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF151924).copy(alpha = 0.88f),
-                        Color(0xFF0D1018).copy(alpha = 0.88f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f))
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = listOf(
                         Color.White.copy(alpha = 0.14f),
-                        Color(0xFF007AFF).copy(alpha = 0.10f),
+                        primaryColor.copy(alpha = 0.10f),
                         Color.White.copy(alpha = 0.04f)
                     )
                 ),
@@ -198,7 +185,7 @@ fun MiuixCategoryHeader(
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.8.sp
         ),
-        color = AppColors.HyperOsBlue,
+        color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp)
     )
 }
@@ -212,8 +199,8 @@ fun MiuixPreferenceItem(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    iconTint: Color = AppColors.HyperOsBlue,
-    iconBackground: Color = Color(0x20007AFF),
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    iconBackground: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
     position: MiuixItemPosition = MiuixItemPosition.MIDDLE,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null
@@ -277,7 +264,7 @@ fun MiuixPreferenceItem(
                             fontWeight = FontWeight.Medium,
                             fontSize = 15.sp
                         ),
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     if (!subtitle.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(2.dp))
@@ -286,7 +273,7 @@ fun MiuixPreferenceItem(
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp
                             ),
-                            color = AppColors.TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -300,7 +287,7 @@ fun MiuixPreferenceItem(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                     contentDescription = null,
-                    tint = AppColors.TextMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.size(14.dp)
                 )
             }
@@ -311,7 +298,7 @@ fun MiuixPreferenceItem(
             HorizontalDivider(
                 modifier = Modifier.padding(start = if (icon != null) 68.dp else 16.dp, end = 16.dp),
                 thickness = 0.5.dp,
-                color = Color.White.copy(alpha = 0.08f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
             )
         }
     }
@@ -328,11 +315,13 @@ fun MiuixSwitchPreference(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    iconTint: Color = AppColors.HyperOsBlue,
-    iconBackground: Color = Color(0x20007AFF),
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    iconBackground: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
     position: MiuixItemPosition = MiuixItemPosition.MIDDLE,
     enabled: Boolean = true
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     MiuixPreferenceItem(
         title = title,
         subtitle = subtitle,
@@ -349,9 +338,9 @@ fun MiuixSwitchPreference(
                 enabled = enabled,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = AppColors.HyperOsBlue,
+                    checkedTrackColor = primaryColor,
                     uncheckedThumbColor = Color.White.copy(alpha = 0.7f),
-                    uncheckedTrackColor = Color(0x33FFFFFF)
+                    uncheckedTrackColor = Color.White.copy(alpha = 0.15f)
                 )
             )
         }
@@ -365,8 +354,8 @@ fun MiuixSwitchPreference(
 fun MiuixStatusBadge(
     text: String,
     modifier: Modifier = Modifier,
-    containerColor: Color = Color(0x221677FF),
-    contentColor: Color = AppColors.HyperOsCyan,
+    containerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+    contentColor: Color = MaterialTheme.colorScheme.primary,
     showDot: Boolean = true,
     dotColor: Color = contentColor
 ) {
@@ -412,20 +401,13 @@ fun MiuixTopAppBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0C0F17).copy(alpha = 0.95f),
-                        Color(0xFF090B10).copy(alpha = 0.85f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
             .border(
                 width = 0.5.dp,
                 brush = Brush.horizontalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.12f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
                         Color.Transparent
                     )
                 ),
@@ -447,8 +429,8 @@ fun MiuixTopAppBar(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0x221677FF))
-                            .border(0.8.dp, Color(0x4400F0FF), RoundedCornerShape(10.dp)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                            .border(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -467,7 +449,7 @@ fun MiuixTopAppBar(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.3).sp
                         ),
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     if (!subtitle.isNullOrBlank()) {
                         Text(
@@ -476,7 +458,7 @@ fun MiuixTopAppBar(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Normal
                             ),
-                            color = AppColors.TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -491,14 +473,6 @@ fun MiuixTopAppBar(
 
 /**
  * Standard MIUIX Bottom Navigation Bar (HyperOS Alive Design)
- * 
- * Clean, docked bottom bar alternative to the floating Liquid Glass bar.
- * Features:
- * - Docked at screen bottom with navigationBarsPadding
- * - Translucent obsidian acrylic background with 0.5dp top border
- * - Active pill indicator with spring animation
- * - Green status dot on Terminal tab when patching is active
- * - Native haptic feedback on tab changes
  */
 @Composable
 fun MiuixNavigationBar(
@@ -510,20 +484,13 @@ fun MiuixNavigationBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xF0141824),
-                        Color(0xF80E111A)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f))
             .border(
                 width = 0.5.dp,
                 brush = Brush.horizontalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.12f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                         Color.Transparent
                     )
                 ),
@@ -569,7 +536,7 @@ private fun MiuixNavItem(
     )
 
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else AppColors.TextMuted,
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
         animationSpec = tween(durationMillis = 200),
         label = "TabContentColor"
     )
@@ -622,7 +589,7 @@ private fun MiuixNavItem(
                         .size(7.dp)
                         .clip(CircleShape)
                         .background(AppColors.Success)
-                        .border(1.dp, Color(0xFF141824), CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape)
                 )
             }
         }
@@ -639,4 +606,3 @@ private fun MiuixNavItem(
         )
     }
 }
-

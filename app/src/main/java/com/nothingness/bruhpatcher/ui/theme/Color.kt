@@ -2,77 +2,67 @@ package com.nothingness.bruhpatcher.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark theme colors
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Default theme accents (used as fallback when Monet dynamic color is disabled)
+val HyperOsBlue = Color(0xFF007AFF)
+val HyperOsCyan = Color(0xFF00C7BE)
+val HyperOsIndigo = Color(0xFF4F75FF)
+val HyperOsSlate = Color(0xFF8E8E93)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
-
-// App-specific colors
+// AppColors object: Clean, modern palette with zero legacy purple/violet gradients
 object AppColors {
-    // Primary accent - Electric blue
-    val Primary = Color(0xFF6366F1)
-    val PrimaryVariant = Color(0xFF4F46E5)
-    val PrimaryLight = Color(0xFF818CF8)
+    // Primary accent - HyperOS Electric Blue
+    val Primary = Color(0xFF007AFF)
+    val PrimaryVariant = Color(0xFF0056B3)
+    val PrimaryLight = Color(0xFF4DA3FF)
 
-    // Background colors
-    val DarkBackground = Color(0xFF0F0F1A)
-    val DarkSurface = Color(0xFF1A1A2E)
-    val DarkSurfaceVariant = Color(0xFF252538)
-    val DarkCard = Color(0xFF1E1E32)
+    // Neutral slate obsidian backgrounds & surfaces (clean fallback for Dark theme)
+    val DarkBackground = Color(0xFF0C0E14)
+    val DarkSurface = Color(0xFF141720)
+    val DarkSurfaceVariant = Color(0xFF1C202C)
+    val DarkCard = Color(0xFF161A24)
 
     // Status colors
-    val Success = Color(0xFF10B981)
-    val SuccessVariant = Color(0xFF059669)
-    val Error = Color(0xFFEF4444)
-    val ErrorVariant = Color(0xFFDC2626)
-    val Warning = Color(0xFFF59E0B)
-    val WarningVariant = Color(0xFFD97706)
-    val Info = Color(0xFF3B82F6)
+    val Success = Color(0xFF30D158)       // Apple / HyperOS Alive Green
+    val SuccessVariant = Color(0xFF248A3D)
+    val Error = Color(0xFFFF453A)         // Apple / HyperOS Alive Red
+    val ErrorVariant = Color(0xFFD70015)
+    val Warning = Color(0xFFFF9F0A)       // Apple / HyperOS Alive Amber
+    val WarningVariant = Color(0xFFC97800)
+    val Info = Color(0xFF0A84FF)
 
     // Text colors
-    val TextPrimary = Color(0xFFF1F5F9)
-    val TextSecondary = Color(0xFF94A3B8)
-    val TextMuted = Color(0xFF64748B)
+    val TextPrimary = Color(0xFFF2F2F7)
+    val TextSecondary = Color(0xFF8E8E93)
+    val TextMuted = Color(0xFF636366)
 
     // Terminal colors
-    val TerminalBackground = Color(0xFF0D0D14)
-    val TerminalText = Color(0xFFE2E8F0)
-    val TerminalSuccess = Color(0xFF22C55E)
-    val TerminalError = Color(0xFFF87171)
-    val TerminalWarning = Color(0xFFFBBF24)
-    val TerminalInfo = Color(0xFF60A5FA)
-    val TerminalExtract = Color(0xFFA78BFA)
-    val TerminalUpload = Color(0xFF2DD4BF)
-    val TerminalRemote = Color(0xFFF472B6)
-    val TerminalDownload = Color(0xFF38BDF8)
+    val TerminalBackground = Color(0xFF0A0C10)
+    val TerminalText = Color(0xFFE5E5EA)
+    val TerminalSuccess = Color(0xFF30D158)
+    val TerminalError = Color(0xFFFF453A)
+    val TerminalWarning = Color(0xFFFF9F0A)
+    val TerminalInfo = Color(0xFF64D2FF)
+    val TerminalExtract = Color(0xFF5E5CE6)
+    val TerminalUpload = Color(0xFF30B0C7)
+    val TerminalRemote = Color(0xFF0A84FF)
+    val TerminalDownload = Color(0xFF40C8E0)
 
-    // Gradient colors
-    val GradientStart = Color(0xFF007AFF) // HyperOS Electric Blue
-    val GradientEnd = Color(0xFF7C3AED)   // Prismatic Violet
-
-    // MIUIX HyperOS Colors
+    // HyperOS Alive Design Accents
     val HyperOsBlue = Color(0xFF007AFF)
     val HyperOsCyan = Color(0xFF00C7BE)
-    val HyperOsIndigo = Color(0xFF5856D6)
-    val HyperOsPurple = Color(0xFFAF52DE)
-    val HyperOsTitanium = Color(0xFF0B0C12)
+    val HyperOsIndigo = Color(0xFF4F75FF)
+    val HyperOsTitanium = Color(0xFF0A0C12)
 
-    // Liquid Glass Floating Bar Colors
-    val LiquidGlassSurface = Color(0x40161A29)
-    val LiquidGlassSurfaceElevated = Color(0x661E2438)
-    val LiquidGlassHighlight = Color(0x60FFFFFF)
-    val LiquidGlassBorder = Color(0x33FFFFFF)
-    val LiquidGlassPrismStart = Color(0x9900C7BE)
-    val LiquidGlassPrismMid = Color(0x99007AFF)
-    val LiquidGlassPrismEnd = Color(0x99AF52DE)
+    // Liquid Glass Floating Bar Colors (Clean Apple optical glass)
+    val LiquidGlassSurface = Color(0x33141722)
+    val LiquidGlassSurfaceElevated = Color(0x551C2030)
+    val LiquidGlassHighlight = Color(0x40FFFFFF)
+    val LiquidGlassBorder = Color(0x2BFFFFFF)
+    val LiquidGlassPillTint = Color(0x26007AFF)
 
     // Dynamic contrast helpers
-    val HighContrastBorder = Color(0x80FFFFFF)
-    val HighContrastGlow = Color(0x4D007AFF)
+    val HighContrastBorder = Color(0x66FFFFFF)
+    val HighContrastGlow = Color(0x33007AFF)
 
     // Root status
     val RootAvailable = Success

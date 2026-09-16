@@ -140,4 +140,42 @@ class LiquidGlassTest {
         assertTrue(extLeftX in 0.5f..1.0f)
         assertTrue(extLeftY in 1.0f..1.5f)
     }
+
+    @Test
+    fun testContinuousSwipePositionInterpolation() {
+        val tabsCount = 4
+        val maxIndex = (tabsCount - 1).toFloat()
+
+        // Test normal swipe between page 0 and page 1
+        val posHalf = 0.5f
+        assertEquals(0.5f, posHalf.coerceIn(0f, maxIndex), 0.0001f)
+
+        // Test boundary clamping when rubber-banding or over-scrolling
+        val overScrollLeft = -0.3f
+        assertEquals(0f, overScrollLeft.coerceIn(0f, maxIndex), 0.0001f)
+
+        val overScrollRight = 3.4f
+        assertEquals(3.0f, overScrollRight.coerceIn(0f, maxIndex), 0.0001f)
+
+        // Test active tab fraction for crossfade color tint
+        fun computeActiveFraction(position: Float, tabIndex: Int): Float {
+            val distance = abs(position - tabIndex).coerceIn(0f, 1f)
+            return 1f - distance
+        }
+
+        // Exactly on tab 0
+        assertEquals(1.0f, computeActiveFraction(0.0f, 0), 0.0001f)
+        assertEquals(0.0f, computeActiveFraction(0.0f, 1), 0.0001f)
+
+        // Midway between tab 0 and tab 1 (50% blend)
+        assertEquals(0.5f, computeActiveFraction(0.5f, 0), 0.0001f)
+        assertEquals(0.5f, computeActiveFraction(0.5f, 1), 0.0001f)
+        assertEquals(0.0f, computeActiveFraction(0.5f, 2), 0.0001f)
+
+        // Exactly on tab 2
+        assertEquals(0.0f, computeActiveFraction(2.0f, 0), 0.0001f)
+        assertEquals(0.0f, computeActiveFraction(2.0f, 1), 0.0001f)
+        assertEquals(1.0f, computeActiveFraction(2.0f, 2), 0.0001f)
+        assertEquals(0.0f, computeActiveFraction(2.0f, 3), 0.0001f)
+    }
 }

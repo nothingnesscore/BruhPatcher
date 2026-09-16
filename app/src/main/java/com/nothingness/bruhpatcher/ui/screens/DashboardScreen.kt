@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Info
@@ -28,7 +27,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +40,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
@@ -82,10 +78,7 @@ fun DashboardScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        // Proceed regardless of result - repository has fallback logic
-        // But we want to try getting permission first
-    }
+    ) { _ -> }
 
     val isLoading = patchingState is PatchingState.CheckingRoot || patchingState is PatchingState.Scanning
 
@@ -106,25 +99,26 @@ fun DashboardScreen(
                         )
                         Text(
                             text = "Bruh Patcher",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refreshDeviceInfo() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Info, contentDescription = "About")
+                        Icon(Icons.Default.Info, contentDescription = "About", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.DarkBackground,
-                    titleContentColor = AppColors.TextPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
-        containerColor = AppColors.DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -218,7 +212,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppColors.Primary
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Row(
@@ -254,7 +248,9 @@ private fun ExistingReleasesSection(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -266,20 +262,20 @@ private fun ExistingReleasesSection(
                     text = "Existing Builds",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onRefreshClick, modifier = Modifier.size(32.dp)) {
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = AppColors.Primary,
+                            color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 2.dp
                         )
                     } else {
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Refresh",
-                            tint = AppColors.TextMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -290,7 +286,7 @@ private fun ExistingReleasesSection(
             Text(
                 text = "Found ${releases.size} compatible build(s) - download and install directly",
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -320,7 +316,9 @@ private fun ReleaseItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.DarkSurfaceVariant.copy(alpha = 0.5f))
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -340,7 +338,7 @@ private fun ReleaseItem(
                     text = release.tagName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = AppColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -348,7 +346,7 @@ private fun ReleaseItem(
                     Text(
                         text = sizeText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

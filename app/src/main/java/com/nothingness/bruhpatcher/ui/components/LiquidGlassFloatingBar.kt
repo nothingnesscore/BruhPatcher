@@ -1,21 +1,15 @@
 package com.nothingness.bruhpatcher.ui.components
 
 // Authentic iOS / HyperOS Liquid Glass Floating Navigation Bar
-// Optical Realism Architecture based on:
-// 1. Kyant0/AndroidLiquidGlass & 1812z/HyperIsland (Apache 2.0 / MIT)
-// 2. compose-miuix-ui (yukonga) real-time LayerBackdrop & RuntimeShader engine
-// 3. Kashif-E/KMPLiquidGlass & SukiSU-Ultra floating capsule physics
-//
-// Real-time Optical Pipeline:
-// - Hardware LayerBackdrop recording captured from underlying App screen
-// - Real AGSL SDF rounded-rect refraction lens with 7-sample chromatic dispersion
-// - Layered composition: base inactive row + active cyan row captured into tabsBackdrop
-// - Slidable indicator pill rendering CombinedBackdrop (background + active tabs through liquid lens)
-// - Dynamic gyro/accelerometer device tilt specular bloom highlights (rememberDeviceTilt)
-// - Kyant0 damped spring physics: 78/56 press ratio, velocity-based inertia, rubber-band edges
+// Refined Apple UI Optical Glass Architecture:
+// - Hardware LayerBackdrop recording captured from underlying app screen
+// - Sliding indicator bubble positioned BEHIND icons/labels for crystal-clear legibility
+// - Direct instant tap responsiveness on all buttons with haptic feedback
+// - Continuous real-time synchronization with HorizontalPager swipe gestures
+// - Precise, subtle refraction (6dp) with minimal chromatic aberration (0.06f)
+// - Damped spring physics without excessive gelatinous wobbling
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,7 +27,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -45,24 +38,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -74,37 +60,27 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastCoerceIn
-import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.util.lerp
-import com.nothingness.bruhpatcher.ui.components.liquid.DampedDragAnimation
-import com.nothingness.bruhpatcher.ui.components.liquid.InteractiveHighlight
+import androidx.compose.ui.graphics.lerp
 import com.nothingness.bruhpatcher.ui.components.liquid.LocalBarBlurBackdrop
 import com.nothingness.bruhpatcher.ui.components.liquid.lens
-import com.nothingness.bruhpatcher.ui.components.liquid.rememberCombinedBackdrop
 import com.nothingness.bruhpatcher.ui.components.liquid.rememberGravityHighlight
 import com.nothingness.bruhpatcher.ui.components.liquid.vibrancy
 import com.nothingness.bruhpatcher.ui.theme.AppColors
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.blur.blur
 import top.yukonga.miuix.kmp.blur.drawBackdrop
 import top.yukonga.miuix.kmp.blur.highlight.BloomStroke
 import top.yukonga.miuix.kmp.blur.highlight.Highlight
 import top.yukonga.miuix.kmp.blur.highlight.LightPosition
 import top.yukonga.miuix.kmp.blur.highlight.LightSource
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
-import kotlin.math.sign
 
 /**
  * Navigation items for the iOS-Style Liquid Glass Floating Bar
@@ -120,36 +96,35 @@ enum class LiquidNavDestination(
     SETTINGS("settings", "Settings", Icons.Rounded.Settings)
 }
 
-private val LocalLiquidTabScale = staticCompositionLocalOf { { 1f } }
-
 private val IndicatorSpecular = Highlight(
     width = 1.dp,
     alpha = 1f,
     style = BloomStroke(
-        color = Color.White.copy(alpha = 0.14f),
+        color = Color.White.copy(alpha = 0.18f),
         innerBlurRadius = 2.dp,
         primaryLight = LightSource(
             position = LightPosition(0.5f, -0.3f, -0.05f),
             color = Color.White,
-            intensity = 1.2f,
+            intensity = 1.1f,
         ),
         secondaryLight = LightSource(
             position = LightPosition(0.5f, 0.8f, -0.5f),
             color = Color.White,
-            intensity = 0.4f,
+            intensity = 0.35f,
         ),
         dualPeak = true,
     ),
 )
 
 /**
- * Authentic Liquid Glass Floating Navigation Bar for HyperOS / Android 17.
+ * Refined Liquid Glass Floating Navigation Bar for HyperOS / Android 17.
  * 
- * Features 3-layer optical liquid glass architecture:
- * - Layer 1: Outer capsule with hardware backdrop blur, SDF lens refraction, and inactive tabs
- * - Layer 2: Active Cyan tab layer captured into tabsBackdrop
- * - Layer 3: Refractive indicator pill rendering combinedBackdrop with dynamic press scaling,
- *            velocity deformation, and chromatic aberration
+ * Features:
+ * - Proper optical layering: Indicator pill is positioned BEHIND icons/labels
+ * - Tapping any tab navigates immediately with haptic feedback
+ * - Real-time synchronization with page swiping via targetPosition parameter
+ * - Clean subtle refraction matching Apple UI guidelines (no wobbly distortion)
+ * - Harmonized dynamic Monet theming in both dark and light modes
  */
 @Composable
 fun LiquidGlassFloatingBar(
@@ -158,6 +133,7 @@ fun LiquidGlassFloatingBar(
     modifier: Modifier = Modifier,
     isPatchingActive: Boolean = false,
     isHighDynamicContrast: Boolean = true,
+    targetPosition: Float? = null,
     items: List<LiquidNavDestination> = listOf(
         LiquidNavDestination.DASHBOARD,
         LiquidNavDestination.CONFIG,
@@ -169,7 +145,6 @@ fun LiquidGlassFloatingBar(
 
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    val animationScope = rememberCoroutineScope()
     val onNavigateUpdated by rememberUpdatedState(onNavigate)
 
     val tabsCount = items.size
@@ -178,100 +153,35 @@ fun LiquidGlassFloatingBar(
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
 
-    // Edge rubber-band elasticity
-    val offsetAnimation = remember { Animatable(0f) }
-    val rubberBandPx = with(density) { 4.dp.toPx() }
-    val panelOffset by remember(rubberBandPx) {
-        derivedStateOf {
-            if (totalWidthPx == 0f) 0f
-            else {
-                val fraction = (offsetAnimation.value / totalWidthPx).fastCoerceIn(-1f, 1f)
-                rubberBandPx * fraction.sign * EaseOut.transform(abs(fraction))
-            }
-        }
-    }
-
-    var currentIndex by remember(selectedIndex) { mutableIntStateOf(selectedIndex) }
-
-    class DragHolder { var animation: DampedDragAnimation? = null }
-    val holder = remember { DragHolder() }
-
-    val dragAnimation = remember(animationScope, tabsCount, density, isLtr) {
-        DampedDragAnimation(
-            animationScope = animationScope,
-            initialValue = selectedIndex.toFloat(),
-            valueRange = 0f..(tabsCount - 1).toFloat(),
-            canDrag = { offset ->
-                val animation = holder.animation ?: return@DampedDragAnimation true
-                if (tabWidthPx == 0f) return@DampedDragAnimation false
-                val padding = with(density) { 4.dp.toPx() }
-                val indicatorX = animation.value * tabWidthPx
-                val touchX = if (isLtr) {
-                    padding + indicatorX + offset.x
-                } else {
-                    totalWidthPx - padding - tabWidthPx - indicatorX + offset.x
-                }
-                touchX in 0f..totalWidthPx
-            },
-            onDragStopped = {
-                val target = targetValue.fastRoundToInt().fastCoerceIn(0, tabsCount - 1)
-                currentIndex = target
-                animateToValue(target.toFloat())
-                animationScope.launch { offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f)) }
-            },
-            onDrag = { _, amount ->
-                if (tabWidthPx > 0f) {
-                    updateValue(
-                        (targetValue + amount.x / tabWidthPx * if (isLtr) 1f else -1f)
-                            .fastCoerceIn(0f, (tabsCount - 1).toFloat())
-                    )
-                    animationScope.launch { offsetAnimation.snapTo(offsetAnimation.value + amount.x) }
-                }
-            }
-        ).also { holder.animation = it }
-    }
-
-    // External route change listener
+    // Damped spring animation when targetPosition is not driving the bubble directly
+    val animatedPosition = remember { Animatable(selectedIndex.toFloat()) }
     LaunchedEffect(selectedIndex) {
-        snapshotFlow { selectedIndex }.collectLatest {
-            currentIndex = it.fastCoerceIn(0, tabsCount - 1)
-        }
-    }
-
-    // Tab selection animation & navigation dispatch
-    LaunchedEffect(dragAnimation) {
-        snapshotFlow { currentIndex }.drop(1).collectLatest { index ->
-            dragAnimation.animateToValue(index.toFloat())
-            onNavigateUpdated(items[index])
-        }
-    }
-
-    val interactiveHighlight = remember(animationScope, tabWidthPx, isLtr) {
-        InteractiveHighlight(
-            animationScope = animationScope,
-            position = { size, _ ->
-                Offset(
-                    x = if (isLtr) (dragAnimation.value + 0.5f) * tabWidthPx + panelOffset
-                    else size.width - (dragAnimation.value + 0.5f) * tabWidthPx + panelOffset,
-                    y = size.height / 2f
+        if (targetPosition == null) {
+            animatedPosition.animateTo(
+                targetValue = selectedIndex.toFloat(),
+                animationSpec = spring(
+                    dampingRatio = 0.85f,
+                    stiffness = 500f
                 )
-            }
-        )
+            )
+        }
     }
+
+    // Direct continuous position when swiping with 0-frame latency; damped spring when discrete
+    val currentBubblePosition = targetPosition ?: animatedPosition.value
 
     val pillShape = CircleShape
     val isDark = MiuixTheme.colorScheme.background.luminance() < 0.5f
     val backdrop = LocalBarBlurBackdrop.current
-    val tabsBackdrop = rememberLayerBackdrop()
-    val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     val baseHighlight = rememberGravityHighlight(IndicatorSpecular, -45f)
     val pillHighlight = rememberGravityHighlight(IndicatorSpecular, 90f)
 
-    val containerColor = if (isDark) {
-        Color(0x3810131C)
+    val capsuleBgColor = if (isDark) {
+        Color(0x3310131A)
     } else {
-        Color(0x44FFFFFF)
+        Color(0x38FFFFFF)
     }
 
     Box(
@@ -284,25 +194,15 @@ fun LiquidGlassFloatingBar(
             modifier = Modifier.width(IntrinsicSize.Min),
             contentAlignment = Alignment.CenterStart
         ) {
-            // ── Layer 1: Base Capsule (Outer Refractive Glass + Base Inactive Tabs) ──
-            Row(
+            // ── Layer 1: Base Capsule (Outer Refractive Glass Frame) ───────────
+            Box(
                 modifier = Modifier
-                    .selectableGroup()
-                    .onGloballyPositioned { coordinates ->
-                        totalWidthPx = coordinates.size.width.toFloat()
-                        tabWidthPx = ((totalWidthPx - with(density) { 8.dp.toPx() }) / tabsCount).coerceAtLeast(0f)
-                    }
-                    .graphicsLayer { translationX = panelOffset }
+                    .matchParentSize()
                     .shadow(
-                        elevation = 12.dp,
+                        elevation = 10.dp,
                         shape = pillShape,
-                        ambientColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.15f),
-                        spotColor = Color.Black.copy(alpha = if (isDark) 0.55f else 0.25f)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
+                        ambientColor = Color.Black.copy(alpha = if (isDark) 0.30f else 0.12f),
+                        spotColor = primaryColor.copy(alpha = if (isDark) 0.25f else 0.10f)
                     )
                     .then(
                         if (backdrop != null) {
@@ -312,16 +212,10 @@ fun LiquidGlassFloatingBar(
                                 effects = {
                                     vibrancy()
                                     blur(4.dp.toPx(), 4.dp.toPx())
-                                    lens(24.dp.toPx(), 24.dp.toPx())
+                                    lens(12.dp.toPx(), 12.dp.toPx())
                                 },
-                                highlight = { baseHighlight.copy(alpha = 0.75f) },
-                                layerBlock = {
-                                    val width = size.width.coerceAtLeast(1f)
-                                    val scale = lerp(1f, 1f + 16.dp.toPx() / width, dragAnimation.pressProgress)
-                                    scaleX = scale
-                                    scaleY = scale
-                                },
-                                onDrawSurface = { drawRect(containerColor) }
+                                highlight = { baseHighlight.copy(alpha = 0.6f) },
+                                onDrawSurface = { drawRect(capsuleBgColor) }
                             )
                         } else {
                             Modifier
@@ -329,8 +223,8 @@ fun LiquidGlassFloatingBar(
                                 .background(
                                     Brush.verticalGradient(
                                         listOf(
-                                            Color(0xE6141721),
-                                            Color(0xF20D0F17)
+                                            if (isDark) Color(0xD9141822) else Color(0xCCFFFFFF),
+                                            if (isDark) Color(0xEB0E1118) else Color(0xB8F2F4F8)
                                         )
                                     )
                                 )
@@ -338,157 +232,70 @@ fun LiquidGlassFloatingBar(
                                     width = 0.8.dp,
                                     brush = Brush.verticalGradient(
                                         listOf(
-                                            Color.White.copy(alpha = 0.26f),
-                                            Color.White.copy(alpha = 0.04f)
+                                            Color.White.copy(alpha = if (isDark) 0.22f else 0.60f),
+                                            Color.White.copy(alpha = 0.05f)
                                         )
                                     ),
                                     shape = pillShape
                                 )
                         }
                     )
-                    .then(interactiveHighlight.modifier)
-                    .height(64.dp)
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CompositionLocalProvider(
-                    LocalLiquidTabScale provides { 1f }
-                ) {
-                    items.forEachIndexed { index, destination ->
-                        LiquidNavItem(
-                            destination = destination,
-                            isPatchingActive = isPatchingActive && destination == LiquidNavDestination.PROGRESS,
-                            tintColor = if (backdrop == null && selectedIndex == index) {
-                                AppColors.HyperOsCyan
-                            } else if (isDark) {
-                                Color(0x8A9EADC0)
-                            } else {
-                                Color(0x8A4A5568)
-                            },
-                            onClick = {
-                                if (currentIndex != index) {
-                                    currentIndex = index
-                                }
-                            },
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 76.dp)
-                                .weight(1f)
-                        )
-                    }
-                }
-            }
+            )
 
-            // ── Layer 2: Active Tab Row (Rendered for tabsBackdrop capture) ─────────
-            // Hidden on direct display via alpha(0f), but recorded into tabsBackdrop
-            // so the indicator pill refracts active cyan tabs through its liquid lens!
-            CompositionLocalProvider(
-                LocalLiquidTabScale provides { lerp(1f, 1.15f, dragAnimation.pressProgress) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .clearAndSetSemantics {}
-                        .alpha(0f)
-                        .layerBackdrop(tabsBackdrop)
-                        .graphicsLayer { translationX = panelOffset }
-                        .height(56.dp)
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    items.forEachIndexed { index, destination ->
-                        LiquidNavItem(
-                            destination = destination,
-                            isPatchingActive = isPatchingActive && destination == LiquidNavDestination.PROGRESS,
-                            tintColor = AppColors.HyperOsCyan,
-                            onClick = {},
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 76.dp)
-                                .weight(1f)
-                        )
-                    }
-                }
-            }
-
-            // ── Layer 3: Refractive Liquid Indicator Pill ──────────────────────────
+            // ── Layer 2: Refractive Liquid Indicator Pill (BEHIND ICONS) ──────
             if (tabWidthPx > 0f) {
+                val currentPillX = (currentBubblePosition.coerceIn(0f, (tabsCount - 1).toFloat())) * tabWidthPx
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
                         .graphicsLayer {
-                            val offset = dragAnimation.value * tabWidthPx
-                            translationX = if (isLtr) offset + panelOffset else -offset + panelOffset
+                            translationX = if (isLtr) currentPillX else -currentPillX
                         }
-                        .then(dragAnimation.modifier)
+                        .width(with(density) { tabWidthPx.toDp() })
+                        .height(56.dp)
                         .then(
                             if (backdrop != null) {
                                 Modifier.drawBackdrop(
-                                    backdrop = combinedBackdrop,
+                                    backdrop = backdrop,
                                     shape = { pillShape },
                                     effects = {
-                                        val progress = dragAnimation.pressProgress
-                                        blur(3.dp.toPx(), 3.dp.toPx())
+                                        blur(2.dp.toPx(), 2.dp.toPx())
                                         lens(
-                                            refractionHeight = lerp(14.dp.toPx(), 20.dp.toPx(), progress),
-                                            refractionAmount = lerp(16.dp.toPx(), 24.dp.toPx(), progress),
+                                            refractionHeight = 6.dp.toPx(),
+                                            refractionAmount = 8.dp.toPx(),
                                             depthEffect = true,
-                                            chromaticAberration = lerp(0.35f, 0.65f, progress),
+                                            chromaticAberration = 0.06f // Subtle, clean Apple optical glass
                                         )
                                     },
-                                    highlight = {
-                                        pillHighlight.copy(
-                                            alpha = lerp(0.40f, 0.95f, dragAnimation.pressProgress)
-                                        )
-                                    },
-                                    layerBlock = {
-                                        scaleX = dragAnimation.scaleX
-                                        scaleY = dragAnimation.scaleY
-                                        val vel = (dragAnimation.velocity / 10f).fastCoerceIn(-0.25f, 0.25f)
-                                        scaleX /= 1f - vel * 0.75f
-                                        scaleY *= 1f - vel * 0.25f
-                                    },
+                                    highlight = { pillHighlight.copy(alpha = 0.55f) },
                                     onDrawSurface = {
-                                        val progress = dragAnimation.pressProgress
-                                        val tintColor = if (isDark) {
-                                            Color.White.copy(alpha = lerp(0.10f, 0.16f, progress))
+                                        val tint = if (isDark) {
+                                            Color.White.copy(alpha = 0.12f)
                                         } else {
-                                            Color.White.copy(alpha = lerp(0.50f, 0.65f, progress))
+                                            Color.White.copy(alpha = 0.50f)
                                         }
-                                        drawRect(tintColor)
-                                        drawRect(
-                                            AppColors.HyperOsCyan.copy(
-                                                alpha = lerp(0.06f, 0.12f, progress)
-                                            )
-                                        )
+                                        drawRect(tint)
+                                        drawRect(primaryColor.copy(alpha = 0.12f))
                                     }
                                 )
                             } else {
                                 Modifier
                                     .clip(pillShape)
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.22f),
-                                                Color.White.copy(alpha = 0.09f)
-                                            )
-                                        ),
-                                        shape = pillShape
-                                    )
+                                    .background(primaryColor.copy(alpha = if (isDark) 0.20f else 0.12f))
                                     .border(
                                         width = 0.8.dp,
                                         brush = Brush.verticalGradient(
                                             listOf(
-                                                Color.White.copy(alpha = 0.55f),
-                                                Color.White.copy(alpha = 0.06f),
-                                                Color.White.copy(alpha = 0.22f)
+                                                Color.White.copy(alpha = 0.40f),
+                                                Color.White.copy(alpha = 0.08f)
                                             )
                                         ),
                                         shape = pillShape
                                     )
                             }
                         )
-                        .height(56.dp)
-                        .width(with(density) { tabWidthPx.toDp() })
                 ) {
-                    // Specular rim streak (subtle physical glass optical reflection)
+                    // Subtle specular rim streak (clean physical glass reflection)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -498,12 +305,45 @@ fun LiquidGlassFloatingBar(
                                 Brush.horizontalGradient(
                                     listOf(
                                         Color.Transparent,
-                                        Color.White.copy(alpha = 0.40f),
-                                        Color.White.copy(alpha = 0.40f),
+                                        Color.White.copy(alpha = 0.35f),
                                         Color.Transparent
                                     )
                                 )
                             )
+                    )
+                }
+            }
+
+            // ── Layer 3: Navigation Tab Items (Rendered CRISPLY ON TOP) ───────
+            Row(
+                modifier = Modifier
+                    .selectableGroup()
+                    .onGloballyPositioned { coordinates ->
+                        totalWidthPx = coordinates.size.width.toFloat()
+                        tabWidthPx = ((totalWidthPx - with(density) { 8.dp.toPx() }) / tabsCount).coerceAtLeast(0f)
+                    }
+                    .height(64.dp)
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { index, destination ->
+                    val distance = abs(currentBubblePosition - index).coerceIn(0f, 1f)
+                    val activeFraction = 1f - distance
+
+                    val inactiveColor = if (isDark) Color(0x9E9EADC0) else Color(0x9E4A5568)
+                    val itemTint = lerp(inactiveColor, primaryColor, activeFraction)
+
+                    LiquidNavItem(
+                        destination = destination,
+                        isPatchingActive = isPatchingActive && destination == LiquidNavDestination.PROGRESS,
+                        tintColor = itemTint,
+                        activeFraction = activeFraction,
+                        onClick = {
+                            onNavigateUpdated(destination)
+                        },
+                        modifier = Modifier
+                            .defaultMinSize(minWidth = 76.dp)
+                            .weight(1f)
                     )
                 }
             }
@@ -512,37 +352,34 @@ fun LiquidGlassFloatingBar(
 }
 
 /**
- * Individual navigation tab item inside the Liquid Glass Bar
+ * Individual navigation tab item inside the Liquid Glass Bar.
+ * Renders directly on top of the indicator bubble with 100% crispness.
  */
 @Composable
 private fun LiquidNavItem(
     destination: LiquidNavDestination,
     isPatchingActive: Boolean,
     tintColor: Color,
+    activeFraction: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
-    val scale = LocalLiquidTabScale.current
+    val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = modifier
-            .selectable(
-                selected = false,
-                interactionSource = null,
+            .fillMaxHeight()
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
                 indication = null,
-                role = Role.Tab,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
-                },
+                }
             )
-            .fillMaxHeight()
-            .graphicsLayer {
-                val value = scale()
-                scaleX = value
-                scaleY = value
-            },
+            .semantics { role = Role.Tab },
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -560,7 +397,7 @@ private fun LiquidNavItem(
                     modifier = Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF30D158)) // Apple System Green
+                        .background(AppColors.Success)
                 )
             }
         }
@@ -569,7 +406,7 @@ private fun LiquidNavItem(
             text = destination.title,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = if (activeFraction > 0.5f) FontWeight.SemiBold else FontWeight.Medium,
                 letterSpacing = 0.1.sp
             ),
             color = tintColor,

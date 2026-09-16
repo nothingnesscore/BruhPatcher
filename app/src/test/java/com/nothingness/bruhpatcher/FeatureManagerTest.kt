@@ -15,8 +15,8 @@ class FeatureManagerTest {
         assertEquals(4, features.size)
 
         // Core patches default to enabled
-        val sigBypass = features.first { it.id == "disable_signature_verification" }
-        assertTrue(sigBypass.isEnabled)
+        val googlePhotos = features.first { it.id == "google_photos_unlimited" }
+        assertTrue(googlePhotos.isEnabled)
 
         val kaorios = features.first { it.id == "kaorios_toolbox" }
         assertTrue(kaorios.isEnabled)
@@ -47,19 +47,19 @@ class FeatureManagerTest {
         val oneEnabled = FeatureManager.updateFeature(allDisabled, "kaorios_toolbox", true)
         assertEquals("Kaorios Toolbox v2.0.6.0", FeatureManager.getEnabledFeaturesSummary(oneEnabled))
 
-        val twoEnabled = FeatureManager.updateFeature(oneEnabled, "disable_signature_verification", true)
+        val twoEnabled = FeatureManager.updateFeature(oneEnabled, "google_photos_unlimited", true)
         assertEquals("2 features selected", FeatureManager.getEnabledFeaturesSummary(twoEnabled))
     }
 
     @Test
     fun testBuildFeatureString() {
         val features = listOf(
-            Feature.DISABLE_SIGNATURE_VERIFICATION.copy(isEnabled = true),
+            Feature.GOOGLE_PHOTOS_UNLIMITED.copy(isEnabled = true),
             Feature.KAORIOS_TOOLBOX.copy(isEnabled = true),
             Feature.ANDROID17_BUILD_UNFINALIZE.copy(isEnabled = false)
         )
         val featureIds = FeatureManager.buildFeatureString(features)
-        assertEquals("disable_signature_verification,kaorios_toolbox", featureIds)
+        assertEquals("google_photos_unlimited,kaorios_toolbox", featureIds)
     }
 
     @Test
@@ -67,7 +67,7 @@ class FeatureManagerTest {
         val allFeatures = Feature.getAllFeatures().map { it.copy(isEnabled = true) }
         val featureIds = FeatureManager.buildFeatureString(allFeatures)
 
-        assertTrue(featureIds.contains("disable_signature_verification"))
+        assertTrue(featureIds.contains("google_photos_unlimited"))
         assertTrue(featureIds.contains("disable_secure_flag"))
         assertTrue(featureIds.contains("kaorios_toolbox"))
         assertTrue(featureIds.contains("android17_build_unfinalize"))

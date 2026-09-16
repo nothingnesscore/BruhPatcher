@@ -32,11 +32,12 @@ fun FeatureCheckbox(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
     val backgroundColor by animateColorAsState(
         targetValue = if (feature.isEnabled) {
-            AppColors.Primary.copy(alpha = 0.1f)
+            primaryColor.copy(alpha = 0.12f)
         } else {
-            AppColors.DarkSurfaceVariant.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         },
         animationSpec = tween(200), label = "featureBg"
     )
@@ -57,9 +58,9 @@ fun FeatureCheckbox(
             onCheckedChange = { if (enabled) onCheckedChange(it) },
             enabled = enabled && (!feature.requiresMiui || feature.isEnabled),
             colors = CheckboxDefaults.colors(
-                checkedColor = AppColors.Primary,
-                uncheckedColor = AppColors.TextMuted,
-                checkmarkColor = AppColors.TextPrimary
+                checkedColor = primaryColor,
+                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary
             )
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -69,17 +70,17 @@ fun FeatureCheckbox(
                     text = feature.displayName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = if (enabled) AppColors.TextPrimary else AppColors.TextMuted
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
                 if (feature.isDefault) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Default",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AppColors.Primary,
+                        color = primaryColor,
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(AppColors.Primary.copy(alpha = 0.2f))
+                            .background(primaryColor.copy(alpha = 0.2f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -99,7 +100,7 @@ fun FeatureCheckbox(
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

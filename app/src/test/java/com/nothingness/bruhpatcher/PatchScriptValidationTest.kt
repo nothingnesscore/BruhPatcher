@@ -46,30 +46,15 @@ class PatchScriptValidationTest {
     }
 
     @Test
-    fun testCorePatchScriptIntegrity() {
-        val corepatchScript = File(featuresDir, "disable_signature_verification.sh")
-        assertTrue("disable_signature_verification.sh should exist", corepatchScript.exists())
-        val content = corepatchScript.readText()
+    fun testGooglePhotosUnlimitedScriptIntegrity() {
+        val photosScript = File(featuresDir, "google_photos_unlimited.sh")
+        assertTrue("google_photos_unlimited.sh should exist", photosScript.exists())
+        val content = photosScript.readText()
 
-        assertTrue(content.contains("collectCertificates"))
-        assertTrue(content.contains("checkCapability"))
-        assertTrue(content.contains("ApkSignatureSchemeV2Verifier"))
-        assertTrue(content.contains("ApkSignatureSchemeV3Verifier"))
-        assertTrue(content.contains("ApkSignatureSchemeV4Verifier"))
-        
-        // Critical: verifySignatures MUST return true on bypass (never return_false!)
-        assertTrue(content.contains("smali_kit -c -m \"verifySignatures\" -re \"\$return_true\""))
-        assertFalse("verifySignatures should never return_false", content.contains("smali_kit -c -m \"verifySignatures\" -re \"\$return_false\""))
-
-        // Critical: checkDowngrade must be patched in InstallPackageHelper for Android 13-17
-        assertTrue(content.contains("smali_kit -c -m \"checkDowngrade\" -re \"\$return_void\" -d \"\$SVC_WORK_DIR\" -name \"InstallPackageHelper.smali\""))
-
-        // canBeUpdate returns boolean, must use return_true
-        assertTrue(content.contains("smali_kit -c -m \"canBeUpdate\" -re \"\$return_true\""))
-        assertFalse("canBeUpdate should not return_void due to Dalvik VerifyError", content.contains("smali_kit -c -m \"canBeUpdate\" -re \"\$return_void\""))
-
-        // Dynamic register capture for digest comparison
-        assertTrue(content.contains("match(clean_line, /move-result (v[0-9]+)/, m)"))
+        assertTrue(content.contains("com.google.android.apps.photos.NEXUS_PRELOAD"))
+        assertTrue(content.contains("com.google.android.feature.PIXEL_2016_EXPERIENCE"))
+        assertTrue(content.contains("hasSystemFeature"))
+        assertTrue(content.contains("persist.sys.pixel.photos=1"))
     }
 
     @Test
@@ -116,5 +101,24 @@ class PatchScriptValidationTest {
         assertTrue("action.sh should exist", actionScript.exists())
         val actionContent = actionScript.readText()
         assertTrue("action.sh should pass SKIP_BOOT_WAIT=1 to service.sh", actionContent.contains("SKIP_BOOT_WAIT=1"))
+    }
+
+    @Test
+    fun testAllAssetsHaveStrictLfEndings() {
+        val assetsDir = File("src/main/assets")
+        assertTrue("assets directory should exist", assetsDir.exists())
+        val textExtensions = setOf("sh", "bash", "config", "txt", "json", "xml", "prop")
+        val specialNames = setOf("core", "setup", "update-binary", "updater-script", ".gitattributes", ".gitignore")
+
+        val crlfFiles = mutableListOf<String>()
+        assetsDir.walkTopDown().forEach { file ->
+            if (file.isFile && (file.extension in textExtensions || file.name in specialNames)) {
+                val bytes = file.readBytes()
+                if (bytes.contains(13.toByte())) {
+                    crlfFiles.add(file.path)
+                }
+            }
+        }
+        assertTrue("Found CRLF in text assets: ${crlfFiles.joinToString()}", crlfFiles.isEmpty())
     }
 }

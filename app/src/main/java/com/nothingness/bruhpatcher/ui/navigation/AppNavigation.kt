@@ -1,19 +1,20 @@
 package com.nothingness.bruhpatcher.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.nothingness.bruhpatcher.model.PatchingState
 import com.nothingness.bruhpatcher.ui.components.LiquidGlassFloatingBar
 import com.nothingness.bruhpatcher.ui.components.LiquidNavDestination
@@ -25,6 +26,8 @@ import com.nothingness.bruhpatcher.ui.screens.DashboardScreen
 import com.nothingness.bruhpatcher.ui.screens.ProgressScreen
 import com.nothingness.bruhpatcher.ui.screens.SettingsScreen
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
+import androidx.navigation.NavHostController
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 sealed class Screen(val route: String) {
@@ -36,33 +39,49 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController? = null,
     viewModel: MainViewModel = viewModel()
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Dashboard.route
     val patchingState by viewModel.patchingState.collectAsState()
-
     val isPatchingActive = patchingState !is PatchingState.Idle &&
             patchingState !is PatchingState.Success &&
             patchingState !is PatchingState.Error
     val useLiquidGlassNavbar by viewModel.useLiquidGlassNavbar.collectAsState()
 
-    val onNavigateToDestination: (LiquidNavDestination) -> Unit = { destination ->
-        val targetRoute = when (destination) {
-            LiquidNavDestination.DASHBOARD -> Screen.Dashboard.route
-            LiquidNavDestination.CONFIG -> Screen.Config.route
-            LiquidNavDestination.PROGRESS -> Screen.Progress.route
-            LiquidNavDestination.SETTINGS -> Screen.Settings.route
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0) { 4 }
+
+    // Derive continuous scroll position for silky smooth 120Hz liquid bubble synchronization
+    val pagerPosition by remember {
+        derivedStateOf {
+            pagerState.currentPage + pagerState.currentPageOffsetFraction
         }
-        if (currentRoute != targetRoute) {
-            navController.navigate(targetRoute) {
-                popUpTo(Screen.Dashboard.route) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+    }
+
+    val currentRoute = when (pagerState.currentPage) {
+        0 -> Screen.Dashboard.route
+        1 -> Screen.Config.route
+        2 -> Screen.Progress.route
+        3 -> Screen.Settings.route
+        else -> Screen.Dashboard.route
+    }
+
+    // Handle system back gesture: return to Dashboard if on another tab
+    BackHandler(enabled = pagerState.currentPage != 0) {
+        coroutineScope.launch {
+            pagerState.animateScrollToPage(0)
+        }
+    }
+
+    val onNavigateToDestination: (LiquidNavDestination) -> Unit = { destination ->
+        val targetPage = when (destination) {
+            LiquidNavDestination.DASHBOARD -> 0
+            LiquidNavDestination.CONFIG -> 1
+            LiquidNavDestination.PROGRESS -> 2
+            LiquidNavDestination.SETTINGS -> 3
+        }
+        coroutineScope.launch {
+            pagerState.animateScrollToPage(targetPage)
         }
     }
 
@@ -79,59 +98,46 @@ fun AppNavigation(
                         else Modifier
                     )
             ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Dashboard.route,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    composable(Screen.Dashboard.route) {
-                        DashboardScreen(
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1
+                ) { page ->
+                    when (page) {
+                        0 -> DashboardScreen(
                             viewModel = viewModel,
                             onNavigateToConfig = {
-                                navController.navigate(Screen.Config.route)
+                                coroutineScope.launch { pagerState.animateScrollToPage(1) }
                             },
                             onNavigateToSettings = {
-                                navController.navigate(Screen.Settings.route)
+                                coroutineScope.launch { pagerState.animateScrollToPage(3) }
                             },
                             onNavigateToProgress = {
-                                navController.navigate(Screen.Progress.route) {
-                                    popUpTo(Screen.Dashboard.route)
-                                }
+                                coroutineScope.launch { pagerState.animateScrollToPage(2) }
                             }
                         )
-                    }
-
-                    composable(Screen.Config.route) {
-                        ConfigScreen(
+                        1 -> ConfigScreen(
                             viewModel = viewModel,
                             onNavigateBack = {
-                                navController.popBackStack()
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
                             },
                             onStartPatching = {
-                                navController.navigate(Screen.Progress.route) {
-                                    popUpTo(Screen.Dashboard.route)
-                                }
+                                coroutineScope.launch { pagerState.animateScrollToPage(2) }
                             }
                         )
-                    }
-
-                    composable(Screen.Progress.route) {
-                        ProgressScreen(
+                        2 -> ProgressScreen(
                             viewModel = viewModel,
                             onNavigateBack = {
-                                navController.popBackStack(Screen.Dashboard.route, false)
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
                             },
                             onComplete = {
-                                navController.popBackStack(Screen.Dashboard.route, false)
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
                             }
                         )
-                    }
-
-                    composable(Screen.Settings.route) {
-                        SettingsScreen(
+                        3 -> SettingsScreen(
                             viewModel = viewModel,
                             onNavigateBack = {
-                                navController.popBackStack()
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
                             }
                         )
                     }
@@ -142,6 +148,7 @@ fun AppNavigation(
                 // MIUIX Liquid Glass Floating Bar overlay with real-time backdrop blur & light refraction
                 LiquidGlassFloatingBar(
                     currentRoute = currentRoute,
+                    targetPosition = pagerPosition,
                     isPatchingActive = isPatchingActive,
                     isHighDynamicContrast = true,
                     onNavigate = onNavigateToDestination,

@@ -26,14 +26,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,7 +56,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nothingness.bruhpatcher.core.FeatureManager
@@ -85,6 +83,7 @@ fun ConfigScreen(
     val isUpdatingFeatures by viewModel.isUpdatingFeatures.collectAsState()
 
     val context = LocalContext.current
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     var currentFileType by remember { mutableStateOf("") }
     
@@ -122,8 +121,6 @@ fun ConfigScreen(
     val enabledFeatures = features.filter { it.isEnabled }
     val featureSummary = FeatureManager.getEnabledFeaturesSummary(features)
     
-    // For local patching, check required JARs based on selected features
-    // For cloud patching, still require framework.jar and services.jar
     val requiredJarsForLocal = if (useLocalPatching) {
         localPatchFeatures.filter { it.isEnabled }
             .flatMap { it.requiredJars }
@@ -142,7 +139,6 @@ fun ConfigScreen(
     val canStartPatching = when (patchingMode) {
         PatchingMode.AUTO_EXTRACT -> {
             if (useLocalPatching) {
-                // Local patching: check only required JARs from features
                 isRootAvailable && requiredJarsForLocal.all { jar ->
                     when (jar) {
                         "framework.jar" -> deviceInfo.hasFrameworkJar
@@ -152,16 +148,13 @@ fun ConfigScreen(
                     }
                 }
             } else {
-                // Cloud patching: requires all standard JARs
                 isRootAvailable && deviceInfo.hasFrameworkJar && deviceInfo.hasServicesJar
             }
         }
         PatchingMode.MANUAL_SELECT -> {
             if (useLocalPatching) {
-                // Local patching: check only required JARs from features
                 requiredJarsForLocal.all { jar -> selectedFiles.containsKey(jar) }
             } else {
-                // Cloud patching: requires framework.jar and services.jar
                 selectedFiles.containsKey("framework.jar") && selectedFiles.containsKey("services.jar")
             }
         }
@@ -177,12 +170,12 @@ fun ConfigScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.DarkBackground,
-                    titleContentColor = AppColors.TextPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
-        containerColor = AppColors.DarkBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -199,7 +192,7 @@ fun ConfigScreen(
                 text = "Source Mode",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.TextPrimary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -210,10 +203,10 @@ fun ConfigScreen(
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                     enabled = isRootAvailable,
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = AppColors.Primary,
-                        activeContentColor = AppColors.TextPrimary,
-                        inactiveContainerColor = AppColors.DarkSurfaceVariant,
-                        inactiveContentColor = AppColors.TextSecondary
+                        activeContainerColor = primaryColor,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text("Auto Extract")
@@ -223,10 +216,10 @@ fun ConfigScreen(
                     onClick = { viewModel.setPatchingMode(PatchingMode.MANUAL_SELECT) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = AppColors.Primary,
-                        activeContentColor = AppColors.TextPrimary,
-                        inactiveContainerColor = AppColors.DarkSurfaceVariant,
-                        inactiveContentColor = AppColors.TextSecondary
+                        activeContainerColor = primaryColor,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text("Manual Select")
@@ -242,7 +235,7 @@ fun ConfigScreen(
                     "Select files manually"
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             AnimatedVisibility(
@@ -293,7 +286,7 @@ fun ConfigScreen(
                 text = "Patching Method",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.TextPrimary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -303,10 +296,10 @@ fun ConfigScreen(
                     onClick = { viewModel.setUseLocalPatching(true) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = AppColors.Primary,
-                        activeContentColor = AppColors.TextPrimary,
-                        inactiveContainerColor = AppColors.DarkSurfaceVariant,
-                        inactiveContentColor = AppColors.TextSecondary
+                        activeContainerColor = primaryColor,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text("Local Patching")
@@ -316,10 +309,10 @@ fun ConfigScreen(
                     onClick = { viewModel.setUseLocalPatching(false) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = AppColors.Primary,
-                        activeContentColor = AppColors.TextPrimary,
-                        inactiveContainerColor = AppColors.DarkSurfaceVariant,
-                        inactiveContentColor = AppColors.TextSecondary
+                        activeContainerColor = primaryColor,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text("Cloud Patching")
@@ -333,7 +326,7 @@ fun ConfigScreen(
                 else
                     "Upload files for cloud patching (works without root)",
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -347,7 +340,7 @@ fun ConfigScreen(
                     text = if (useLocalPatching) "Available Patches" else "Select Features",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -358,7 +351,7 @@ fun ConfigScreen(
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Text("⚡ Auto Preset", fontSize = 12.sp, color = AppColors.HyperOsCyan)
+                        Text("⚡ Auto Preset", fontSize = 12.sp, color = primaryColor)
                     }
 
                     if (useLocalPatching) {
@@ -368,18 +361,18 @@ fun ConfigScreen(
                             enabled = !isUpdatingFeatures
                         ) {
                             if (isUpdatingFeatures) {
-                                androidx.compose.material3.CircularProgressIndicator(
+                                CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     strokeWidth = 2.dp,
-                                    color = AppColors.Primary
+                                    color = primaryColor
                                 )
                             } else {
-                                Icon(Icons.Default.Refresh, contentDescription = "Update Scripts", tint = AppColors.Primary)
+                                Icon(Icons.Default.Refresh, contentDescription = "Update Scripts", tint = primaryColor)
                             }
                         }
                         // Import button
                         IconButton(onClick = { scriptPickerLauncher.launch(arrayOf("*/*")) }) {
-                            Icon(Icons.Default.Add, contentDescription = "Import Script", tint = AppColors.Primary)
+                            Icon(Icons.Default.Add, contentDescription = "Import Script", tint = primaryColor)
                         }
                     }
                 }
@@ -391,14 +384,13 @@ fun ConfigScreen(
                 else 
                     "Choose which patches to apply to your framework",
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useLocalPatching) {
-                    // Show local patch features from features folder
                     localPatchFeatures.forEach { feature ->
                         LocalPatchFeatureItem(
                             feature = feature,
@@ -414,11 +406,10 @@ fun ConfigScreen(
                         Text(
                             text = "No patches found in features folder",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = AppColors.TextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 } else {
-                    // Show cloud features
                     features.forEach { feature ->
                         FeatureCheckbox(
                             feature = feature,
@@ -440,7 +431,7 @@ fun ConfigScreen(
                 Text(
                     text = "Selected:",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AppColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = if (useLocalPatching) {
@@ -449,7 +440,7 @@ fun ConfigScreen(
                     } else featureSummary,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = AppColors.Primary
+                    color = primaryColor
                 )
             }
 
@@ -466,7 +457,7 @@ fun ConfigScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                 enabled = canStartPatching && hasSelectedFeatures
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -523,7 +514,7 @@ fun ConfigScreen(
                 else
                     "Files will be uploaded to the cloud for patching. The resulting NoMount-compatible module will be downloaded and installed.",
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextMuted
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(140.dp)) // Space for Liquid Glass Floating Bar
@@ -543,7 +534,7 @@ private fun FileSelectionCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (selectedFile != null) AppColors.Success.copy(alpha = 0.1f) else AppColors.DarkSurfaceVariant
+            containerColor = if (selectedFile != null) AppColors.Success.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
         Row(
@@ -554,10 +545,10 @@ private fun FileSelectionCard(
                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AppColors.Success, modifier = Modifier.size(24.dp))
             } else {
                 Box(
-                    modifier = Modifier.size(24.dp).clip(RoundedCornerShape(4.dp)).background(AppColors.DarkCard),
+                    modifier = Modifier.size(24.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = AppColors.TextMuted, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -567,7 +558,7 @@ private fun FileSelectionCard(
                         text = fileType,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     if (isRequired) {
                         Spacer(modifier = Modifier.width(6.dp))
@@ -583,13 +574,13 @@ private fun FileSelectionCard(
                     Text(
                         text = "${selectedFile.name} (${selectedFile.size / 1024} KB)",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
                         text = "Tap to select file",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -612,13 +603,15 @@ private fun LocalPatchFeatureItem(
     onCheckedChange: (Boolean) -> Unit,
     onDeleteClick: (() -> Unit)? = null
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (feature.isEnabled) AppColors.Primary.copy(alpha = 0.1f)
-                else AppColors.DarkSurfaceVariant.copy(alpha = 0.5f)
+                if (feature.isEnabled) primaryColor.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             )
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -627,9 +620,9 @@ private fun LocalPatchFeatureItem(
             checked = feature.isEnabled,
             onCheckedChange = onCheckedChange,
             colors = androidx.compose.material3.CheckboxDefaults.colors(
-                checkedColor = AppColors.Primary,
-                uncheckedColor = AppColors.TextMuted,
-                checkmarkColor = AppColors.TextPrimary
+                checkedColor = primaryColor,
+                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary
             )
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -639,17 +632,17 @@ private fun LocalPatchFeatureItem(
                     text = feature.name,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = AppColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (feature.isUserFeature) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "User",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AppColors.Primary,
+                        color = primaryColor,
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(AppColors.Primary.copy(alpha = 0.2f))
+                            .background(primaryColor.copy(alpha = 0.2f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -657,7 +650,7 @@ private fun LocalPatchFeatureItem(
             Text(
                 text = feature.description,
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (onDeleteClick != null) {

@@ -221,6 +221,11 @@ object FeatureManager {
         val updatedDir = File(context.filesDir, UPDATED_STORAGE_PATH)
         updatedDir.listFiles()?.filter { it.name.endsWith(".sh") }?.forEach { file ->
             try {
+                // Ensure strict LF line endings
+                val rawText = file.readText(Charsets.UTF_8)
+                val normalized = rawText.replace("\r\n", "\n").replace("\r", "\n")
+                file.writeBytes(normalized.toByteArray(Charsets.UTF_8))
+
                 val metadata = parseFeatureMetadata(file)
                 val id = file.name.removeSuffix(".sh")
                 
@@ -228,7 +233,8 @@ object FeatureManager {
                 val runtimePath = "$BUILTIN_RUNTIME_DIR/${file.name}"
                 val copyResult = Shell.cmd(
                     "cp ${file.absolutePath} $runtimePath",
-                    "chmod 755 $runtimePath"
+                    "chmod 755 $runtimePath",
+                    "dos2unix $runtimePath 2>/dev/null || sed -i 's/\\r\$//' $runtimePath 2>/dev/null || true"
                 ).exec()
                 
                 if (copyResult.isSuccess) {
@@ -252,11 +258,11 @@ object FeatureManager {
             if (id in processedIds) return@forEach  // Skip if updated version exists
             
             try {
-                // First copy to cache (accessible from app context)
+                // First copy to cache (accessible from app context) with strict LF normalization
                 val cacheFile = File(context.cacheDir, filename)
-                context.assets.open("$BUILTIN_ASSETS_PATH/$filename").use { input ->
-                    cacheFile.outputStream().use { os -> input.copyTo(os) }
-                }
+                val rawText = context.assets.open("$BUILTIN_ASSETS_PATH/$filename").bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val normalized = rawText.replace("\r\n", "\n").replace("\r", "\n")
+                cacheFile.writeBytes(normalized.toByteArray(Charsets.UTF_8))
                 
                 // Parse metadata from cache file
                 val metadata = parseFeatureMetadata(cacheFile)
@@ -265,7 +271,8 @@ object FeatureManager {
                 val runtimePath = "$BUILTIN_RUNTIME_DIR/$filename"
                 val copyResult = Shell.cmd(
                     "cp ${cacheFile.absolutePath} $runtimePath",
-                    "chmod 755 $runtimePath"
+                    "chmod 755 $runtimePath",
+                    "dos2unix $runtimePath 2>/dev/null || sed -i 's/\\r\$//' $runtimePath 2>/dev/null || true"
                 ).exec()
                 
                 // Clean up cache file
@@ -295,13 +302,19 @@ object FeatureManager {
 
         return userDir.listFiles()?.filter { it.name.endsWith(".sh") }?.mapNotNull { file ->
             try {
+                // Ensure strict LF line endings on imported custom scripts
+                val rawText = file.readText(Charsets.UTF_8)
+                val normalized = rawText.replace("\r\n", "\n").replace("\r", "\n")
+                file.writeBytes(normalized.toByteArray(Charsets.UTF_8))
+
                 val metadata = parseFeatureMetadata(file)
                 
                 // Copy to safe runtime directory
                 val runtimePath = "$USER_RUNTIME_DIR/${file.name}"
                 val copyResult = Shell.cmd(
                     "cp ${file.absolutePath} $runtimePath",
-                    "chmod 755 $runtimePath"
+                    "chmod 755 $runtimePath",
+                    "dos2unix $runtimePath 2>/dev/null || sed -i 's/\\r\$//' $runtimePath 2>/dev/null || true"
                 ).exec()
                 
                 if (copyResult.isSuccess) {

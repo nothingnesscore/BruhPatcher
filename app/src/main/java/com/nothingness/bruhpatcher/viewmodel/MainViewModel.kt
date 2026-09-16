@@ -841,7 +841,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Applies the complete recommended AutoPatcher preset:
-     * - CorePatch (Signature Verification & Downgrade Limits)
+     * - Google Photos Unlimited Original Backup
      * - Kaorios Toolbox v2.0.6.0
      * - Disable Secure Flag
      * - Android 17 Build Reflection Unfinalize
@@ -850,7 +850,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val info = _deviceInfo.value
         _localPatchFeatures.value = _localPatchFeatures.value.map { feature ->
             val shouldEnable = when (feature.id) {
-                "disable_signature_verification" -> true
+                "google_photos_unlimited" -> true
                 "kaorios_toolbox" -> true
                 "disable_flag_secure" -> true
                 "android17_build_unfinalize" -> true
@@ -861,7 +861,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _features.value = _features.value.map { feature ->
             val shouldEnable = when (feature.id) {
-                Feature.DISABLE_SIGNATURE_VERIFICATION.id -> true
+                Feature.GOOGLE_PHOTOS_UNLIMITED.id -> true
                 Feature.KAORIOS_TOOLBOX.id -> true
                 Feature.DISABLE_SECURE_FLAG.id -> true
                 Feature.ANDROID17_BUILD_UNFINALIZE.id -> true

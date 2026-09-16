@@ -118,6 +118,7 @@ object DiInstaller {
                 }
             fi
             chmod -R 755 "$DI_BIN"
+            dos2unix "$DI_ROOT/environment" "$DI_ROOT/smali_workspace.sh" "$DI_TMP/smali_workspace.sh" "$DI_TMP/core" 2>/dev/null || sed -i 's/\r$//' "$DI_ROOT/environment" "$DI_ROOT/smali_workspace.sh" "$DI_TMP/smali_workspace.sh" "$DI_TMP/core" 2>/dev/null || true
         """.trimIndent()).exec()
     }
 
@@ -157,13 +158,7 @@ object DiInstaller {
             if (!children.isNullOrEmpty()) {
                 copyFolderFromAssets(context, fullSrc, fullDst)
             } else {
-                val tmp = File.createTempFile("di_", name, context.cacheDir)
-                context.assets.open(fullSrc).use { input ->
-                    tmp.outputStream().use { output -> input.copyTo(output) }
-                }
-                Shell.cmd("cp ${tmp.absolutePath} $fullDst").exec()
-                Shell.cmd("chmod 755 $fullDst").exec()
-                tmp.delete()
+                copyFileFromAssets(context, fullSrc, fullDst)
             }
         }
     }
@@ -171,11 +166,24 @@ object DiInstaller {
     private fun copyFileFromAssets(context: Context, src: String, dst: String) {
         val name = src.substringAfterLast("/")
         val tmp = File.createTempFile("di_", name, context.cacheDir)
-        context.assets.open(src).use { input ->
-            tmp.outputStream().use { output -> input.copyTo(output) }
+        val isText = src.endsWith(".sh") || src.endsWith(".config") || src.endsWith(".txt") ||
+                src.endsWith(".json") || src.endsWith(".xml") || src.endsWith(".prop") ||
+                name == "core" || name == "setup" || name == "environment"
+
+        if (isText) {
+            val text = context.assets.open(src).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+            tmp.writeBytes(normalized.toByteArray(Charsets.UTF_8))
+        } else {
+            context.assets.open(src).use { input ->
+                tmp.outputStream().use { output -> input.copyTo(output) }
+            }
         }
         Shell.cmd("cp ${tmp.absolutePath} $dst").exec()
         Shell.cmd("chmod 755 $dst").exec()
+        if (isText) {
+            Shell.cmd("dos2unix $dst 2>/dev/null || sed -i 's/\\r\$//' $dst 2>/dev/null || true").exec()
+        }
         tmp.delete()
     }
 }

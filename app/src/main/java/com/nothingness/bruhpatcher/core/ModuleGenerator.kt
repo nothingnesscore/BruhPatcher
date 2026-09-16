@@ -244,9 +244,18 @@ object ModuleGenerator {
                     if (subFiles.isEmpty()) {
                         // It's a file
                         val tempFile = File(context.cacheDir, file)
-                        assetManager.open(fullPath).use { input ->
-                            tempFile.outputStream().use { output ->
-                                input.copyTo(output)
+                        val isText = file.endsWith(".sh") || file.endsWith(".prop") || file.endsWith(".xml") ||
+                                file.endsWith(".json") || file.endsWith(".txt") || file.endsWith(".config") ||
+                                file == "update-binary" || file == "updater-script"
+                        if (isText) {
+                            val rawText = assetManager.open(fullPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                            val normalized = rawText.replace("\r\n", "\n").replace("\r", "\n")
+                            tempFile.writeBytes(normalized.toByteArray(Charsets.UTF_8))
+                        } else {
+                            assetManager.open(fullPath).use { input ->
+                                tempFile.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
                             }
                         }
                         val destPath = "${subDir.absolutePath}/$file"
@@ -262,8 +271,9 @@ object ModuleGenerator {
         
         copyAssetDir(TEMPLATE_ASSETS_PATH, workDir)
         
-        // Set proper permissions
+        // Set proper permissions and sanitize line endings
         Shell.cmd("chmod -R 755 ${workDir.absolutePath}").exec()
+        Shell.cmd("find ${workDir.absolutePath} -type f -exec sed -i 's/\\r\$//' {} + 2>/dev/null || true").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/module.prop").exec()
         Shell.cmd("chmod 644 ${workDir.absolutePath}/system.prop").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/action.sh").exec()
@@ -292,7 +302,7 @@ object ModuleGenerator {
             version=v2.4.0_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
-            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & CorePatch [NoMount VFS Compatible]
+            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & Unlimited Google Photos [NoMount VFS Compatible]
             minMagisk=20400
             ksu=1
             minKsu=10904
@@ -302,10 +312,10 @@ object ModuleGenerator {
             maxApi=37
             requireReboot=true
             support=https://github.com/nothingnesscore/BruhPatcher
-        """.trimIndent()
+        """.trimIndent().replace("\r\n", "\n").replace("\r", "\n")
 
         val propFile = File(context.cacheDir, "module.prop")
-        propFile.writeText(moduleProp)
+        propFile.writeBytes(moduleProp.toByteArray(Charsets.UTF_8))
         Shell.cmd("cp ${propFile.absolutePath} ${workDir.absolutePath}/module.prop").exec()
         propFile.delete()
     }

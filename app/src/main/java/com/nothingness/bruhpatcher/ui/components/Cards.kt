@@ -57,6 +57,8 @@ fun DeviceInfoCard(
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(20.dp)
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -64,16 +66,16 @@ fun DeviceInfoCard(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.14f),
-                        Color(0xFF007AFF).copy(alpha = 0.10f),
-                        Color.White.copy(alpha = 0.04f)
+                        Color.White.copy(alpha = 0.16f),
+                        primaryColor.copy(alpha = 0.15f),
+                        Color.White.copy(alpha = 0.05f)
                     )
                 ),
                 shape = shape
             ),
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = AppColors.DarkCard
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
         )
     ) {
         Column(
@@ -91,7 +93,7 @@ fun DeviceInfoCard(
                             .clip(CircleShape)
                             .background(
                                 Brush.linearGradient(
-                                    colors = listOf(AppColors.HyperOsBlue, AppColors.HyperOsPurple)
+                                    colors = listOf(primaryColor, AppColors.HyperOsCyan)
                                 )
                             ),
                         contentAlignment = Alignment.Center
@@ -99,7 +101,7 @@ fun DeviceInfoCard(
                         Icon(
                             imageVector = Icons.Default.PhoneAndroid,
                             contentDescription = null,
-                            tint = AppColors.TextPrimary,
+                            tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -109,12 +111,12 @@ fun DeviceInfoCard(
                             text = deviceInfo.deviceName,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = deviceInfo.deviceCodename,
                             style = MaterialTheme.typography.bodySmall,
-                            color = AppColors.TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -125,16 +127,10 @@ fun DeviceInfoCard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(AppColors.HyperOsBlue.copy(alpha = 0.25f), AppColors.HyperOsCyan.copy(alpha = 0.25f))
-                                    )
-                                )
+                                .background(primaryColor.copy(alpha = 0.15f))
                                 .border(
                                     width = 1.dp,
-                                    brush = Brush.horizontalGradient(
-                                        listOf(AppColors.HyperOsBlue.copy(alpha = 0.6f), AppColors.HyperOsCyan.copy(alpha = 0.6f))
-                                    ),
+                                    color = primaryColor.copy(alpha = 0.4f),
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -143,7 +139,7 @@ fun DeviceInfoCard(
                                 text = deviceInfo.hyperOsVersion ?: "HyperOS 4",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColors.HyperOsCyan
+                                color = primaryColor
                             )
                         }
                     }
@@ -152,15 +148,15 @@ fun DeviceInfoCard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(AppColors.Primary.copy(alpha = 0.2f))
-                                .border(1.dp, AppColors.Primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .background(AppColors.HyperOsCyan.copy(alpha = 0.15f))
+                                .border(1.dp, AppColors.HyperOsCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "Android 17",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColors.PrimaryLight
+                                color = AppColors.HyperOsCyan
                             )
                         }
                     }
@@ -183,7 +179,7 @@ fun DeviceInfoCard(
             Text(
                 text = "Detected Framework JARs",
                 style = MaterialTheme.typography.labelMedium,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             
@@ -212,10 +208,15 @@ fun KaoriosShowcaseCard(
     isSyncingKeybox: Boolean = false,
     onSyncKeybox: (() -> Unit)? = null
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(20.dp)
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -224,12 +225,12 @@ fun KaoriosShowcaseCard(
                     width = 1.dp,
                     brush = Brush.linearGradient(
                         listOf(
-                            Color(0x6600C7BE),
-                            Color(0x33007AFF),
-                            Color(0x667C3AED)
+                            AppColors.HyperOsCyan.copy(alpha = 0.35f),
+                            primaryColor.copy(alpha = 0.35f),
+                            Color.White.copy(alpha = 0.06f)
                         )
                     ),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = shape
                 )
                 .padding(20.dp)
         ) {
@@ -243,25 +244,25 @@ fun KaoriosShowcaseCard(
                         text = "Kaorios Toolbox v2.0.6.0",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Integrated Framework Engine",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.HyperOsCyan
+                        color = primaryColor
                     )
                 }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF00C7BE).copy(alpha = 0.15f))
+                        .background(AppColors.HyperOsCyan.copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "READY",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF00C7BE)
+                        color = AppColors.HyperOsCyan
                     )
                 }
             }
@@ -286,7 +287,7 @@ fun KaoriosShowcaseCard(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(AppColors.HyperOsBlue)
+                            .background(primaryColor)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
@@ -294,25 +295,25 @@ fun KaoriosShowcaseCard(
                             text = title,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = AppColors.TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = desc,
                             style = MaterialTheme.typography.labelSmall,
-                            color = AppColors.TextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            // Keybox Hub (https://keybox.hzzmonet.io.vn) integration box
+            // Keybox Hub integration box
             Spacer(modifier = Modifier.height(12.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(AppColors.DarkBackground.copy(alpha = 0.55f))
-                    .border(1.dp, Color(0xFF00C7BE).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f))
+                    .border(1.dp, primaryColor.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                     .padding(12.dp)
             ) {
                 Row(
@@ -325,7 +326,7 @@ fun KaoriosShowcaseCard(
                             text = "Keybox Hub (keybox.hzzmonet.io.vn)",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.HyperOsCyan
+                            color = primaryColor
                         )
                         val statusSummary = if (keyboxStatus != null) {
                             "Status: ${keyboxStatus.status.uppercase()} (${keyboxStatus.strongCount} Strong / ${keyboxStatus.deviceCount} Device)"
@@ -335,7 +336,7 @@ fun KaoriosShowcaseCard(
                         Text(
                             text = statusSummary,
                             style = MaterialTheme.typography.bodySmall,
-                            color = AppColors.TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -346,7 +347,7 @@ fun KaoriosShowcaseCard(
                             enabled = !isSyncingKeybox,
                             modifier = Modifier.height(34.dp),
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.HyperOsBlue)
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                         ) {
                             if (isSyncingKeybox) {
                                 CircularProgressIndicator(
@@ -383,13 +384,13 @@ private fun InfoItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = AppColors.TextMuted
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = AppColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = if (useMarquee) Modifier.basicMarquee() else Modifier
@@ -432,7 +433,7 @@ fun RootStatusCard(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (isRootAvailable) AppColors.Success.copy(alpha = 0.1f) else AppColors.Error.copy(alpha = 0.1f),
+        targetValue = if (isRootAvailable) AppColors.Success.copy(alpha = 0.12f) else AppColors.Error.copy(alpha = 0.12f),
         animationSpec = tween(300), label = "rootBg"
     )
     val iconColor by animateColorAsState(
@@ -466,13 +467,13 @@ fun RootStatusCard(
                     text = if (isRootAvailable) "Root Available" else "Root Not Available",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (magiskVersion != null) {
                     Text(
                         text = "Magisk $magiskVersion",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -501,20 +502,22 @@ fun ProgressCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.DarkCard)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+        )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.TextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
             LinearProgressIndicator(
@@ -523,14 +526,14 @@ fun ProgressCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = AppColors.Primary,
-                trackColor = AppColors.DarkSurfaceVariant
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "${(animatedProgress * 100).toInt()}%",
                 style = MaterialTheme.typography.labelSmall,
-                color = AppColors.TextMuted
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -540,12 +543,10 @@ fun ProgressCard(
  * 1-Tap AutoPatcher Card for Android 17 / HyperOS 4 (Poco F6 / Redmi Turbo 3 & Universal)
  * 
  * Automatically configures and applies the complete suite of patches:
- * - CorePatch (Signature & Downgrade bypass)
+ * - Google Photos Unlimited Original Backup
  * - KaoriOS Toolbox v2.0.6.0 (Hardware Keybox + 120 FPS + Privacy Stealth)
  * - Android 17 Build Reflection Unfinalize
- * - HyperOS CN Notification Fix
  * - Disable FLAG_SECURE
- * - Google Photos Unlimited Original Backup
  */
 @Composable
 fun AutoPatcherCard(
@@ -556,6 +557,8 @@ fun AutoPatcherCard(
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(20.dp)
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -563,16 +566,16 @@ fun AutoPatcherCard(
                 width = 1.2.dp,
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF00F0FF).copy(alpha = 0.40f),
-                        Color(0xFF007AFF).copy(alpha = 0.35f),
-                        Color(0xFF7C3AED).copy(alpha = 0.20f)
+                        AppColors.HyperOsCyan.copy(alpha = 0.40f),
+                        primaryColor.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.08f)
                     )
                 ),
                 shape = shape
             ),
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF141826)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
         )
     ) {
         Column(
@@ -593,7 +596,7 @@ fun AutoPatcherCard(
                             .clip(CircleShape)
                             .background(
                                 Brush.linearGradient(
-                                    colors = listOf(Color(0xFF007AFF), Color(0xFF00F0FF))
+                                    colors = listOf(primaryColor, AppColors.HyperOsCyan)
                                 )
                             ),
                         contentAlignment = Alignment.Center
@@ -611,7 +614,7 @@ fun AutoPatcherCard(
                             text = "AutoPatcher",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = if (deviceInfo.isPocoF6OrTurbo3) {
@@ -620,7 +623,7 @@ fun AutoPatcherCard(
                                 "HyperOS 4 & Android 17 Suite"
                             },
                             style = MaterialTheme.typography.labelSmall,
-                            color = AppColors.HyperOsCyan
+                            color = primaryColor
                         )
                     }
                 }
@@ -628,15 +631,15 @@ fun AutoPatcherCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF007AFF).copy(alpha = 0.18f))
-                        .border(0.8.dp, Color(0xFF00C7BE).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                        .background(primaryColor.copy(alpha = 0.16f))
+                        .border(0.8.dp, AppColors.HyperOsCyan.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 9.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "1-TAP",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF00F0FF)
+                        color = AppColors.HyperOsCyan
                     )
                 }
             }
@@ -648,7 +651,7 @@ fun AutoPatcherCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF0D101A))
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.65f))
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Column {
@@ -660,12 +663,12 @@ fun AutoPatcherCard(
                         },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Environment: ${deviceInfo.osBadgeText} • API ${deviceInfo.apiLevel} • NoMount VFS",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AppColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -673,12 +676,10 @@ fun AutoPatcherCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             val autoPatches = listOf(
-                "CorePatch" to "Bypasses signature, digest checks & app downgrades",
+                "Google Photos Unlimited" to "Original-quality cloud backup by spoofing Pixel XL",
                 "Kaorios Toolbox v2.0.6.0" to "Play Integrity, Keybox attestation, 120 FPS & stealth",
-                "Android 17 Build Reflection" to "Unfinalizes static final Build fields for spoofing",
-                "HyperOS CN Push Delay Fix" to "Eliminates push delays & unfreezes notification services",
                 "Disable Secure Flag" to "Enables screenshots/recording in banking & DRM apps",
-                "Unlimited Google Photos" to "Original-quality cloud backup by spoofing Pixel XL"
+                "Android 17 Build Reflection" to "Unfinalizes static final Build fields for spoofing"
             )
 
             autoPatches.forEach { (title, desc) ->
@@ -691,7 +692,7 @@ fun AutoPatcherCard(
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color(0xFF00F0FF),
+                        tint = AppColors.HyperOsCyan,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -699,13 +700,13 @@ fun AutoPatcherCard(
                         text = title,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = AppColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "— $desc",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AppColors.TextMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -724,7 +725,7 @@ fun AutoPatcherCard(
                     shape = RoundedCornerShape(12.dp),
                     enabled = isRootAvailable,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppColors.HyperOsBlue
+                        containerColor = primaryColor
                     )
                 ) {
                     Row(
@@ -755,4 +756,3 @@ fun AutoPatcherCard(
         }
     }
 }
-
