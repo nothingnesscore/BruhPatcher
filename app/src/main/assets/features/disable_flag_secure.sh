@@ -1,105 +1,139 @@
 #@name Disable FLAG_SECURE
-#@description Allows screenshots and screen recording in secure/protected apps on AOSP & HyperOS
+#@description Dynamic FLAG_SECURE bypass allowing screenshots, screen recording, and mirroring in secure banking and DRM apps
 #@requires services.jar,miui-services.jar
 
 SERVICES="$SERVICES_JAR"
 MIUI_SERVICES="$MIUI_SERVICES_JAR"
 
-if [ -z "$SERVICES" ]; then
-    echo "[!] ERROR: services.jar not found"
-    return 1
-fi
+echo "[*] Initializing Disable FLAG_SECURE (Dynamic bypass per Disable_Secure_Flag.md)..."
 
 if [ -n "$SERVICES_WORKSPACE" ] && [ -d "$SERVICES_WORKSPACE" ]; then
-    SVC_WORK_DIR="$SERVICES_WORKSPACE"
-    SVC_STANDALONE=0
+    SVC_DIR="$SERVICES_WORKSPACE"
 else
-    SVC_WORK_DIR="$TMP/svc_dc"
-    SVC_STANDALONE=1
+    SVC_DIR="$TMP/smali_workspaces/services"
 fi
 
 if [ -n "$MIUI_SERVICES_WORKSPACE" ] && [ -d "$MIUI_SERVICES_WORKSPACE" ]; then
-    MIUI_WORK_DIR="$MIUI_SERVICES_WORKSPACE"
-    MIUI_STANDALONE=0
+    MIUI_DIR="$MIUI_SERVICES_WORKSPACE"
 else
-    MIUI_WORK_DIR="$TMP/miui_dc"
-    MIUI_STANDALONE=1
+    MIUI_DIR="$TMP/smali_workspaces/miui-services"
 fi
-
-return_false='
-    .locals 1
-    const/4 v0, 0x0
-    return v0
-'
-
-return_true='
-    .locals 1
-    const/4 v0, 0x1
-    return v0
-'
-
-return_void='
-    .locals 0
-    return-void
-'
 
 # ==================== SERVICES.JAR ====================
-if [ "$SVC_STANDALONE" -eq 1 ]; then
-    echo "[*] Decompiling services.jar..."
-    dynamic_apktool -decompile "$SERVICES" -o "$SVC_WORK_DIR"
-fi
+if [ -d "$SVC_DIR" ]; then
+    echo "[*] Applying FLAG_SECURE hooks to services.jar..."
 
-if [ -d "$SVC_WORK_DIR" ]; then
-    echo "[*] Applying FLAG_SECURE patches to services.jar..."
-
-    echo "[*] Patching WindowState.isSecureLocked()..."
-    smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowState.smali"
-    smali_kit -c -m "isSecureLocked" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowStateAnimator.smali"
-
-    echo "[*] Patching WindowState.setSecureLocked()..."
-    smali_kit -c -m "setSecureLocked" -re "$return_void" -d "$SVC_WORK_DIR" -name "WindowState.smali"
-
-    echo "[*] Patching notAllowCaptureDisplay()..."
-    smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$SVC_WORK_DIR" -name "WindowManagerService*.smali"
-
-    echo "[*] Patching DevicePolicyCacheImpl.isScreenCaptureAllowed()..."
-    smali_kit -c -m "isScreenCaptureAllowed" -re "$return_true" -d "$SVC_WORK_DIR" -name "DevicePolicyCacheImpl.smali"
-
-    echo "[*] Patching preventTakingScreenshotToTargetWindow()..."
-    smali_kit -c -m "preventTakingScreenshotToTargetWindow" -re "$return_false" -d "$SVC_WORK_DIR" -name "ScreenshotController*.smali"
-
-    if [ "$SVC_STANDALONE" -eq 1 ]; then
-        echo "[*] Recompiling services.jar..."
-        dynamic_apktool -recompile "$SVC_WORK_DIR" -o "$SERVICES"
-        delete_recursive "$SVC_WORK_DIR"
-    fi
-else
-    echo "[!] FATAL ERROR: services.jar workspace directory not found: $SVC_WORK_DIR"
-    return 1
-fi
-
-# ==================== MIUI-SERVICES.JAR (HYPEROS) ====================
-if [ -n "$MIUI_SERVICES" ]; then
-    if [ "$MIUI_STANDALONE" -eq 1 ]; then
-        echo "[*] Decompiling miui-services.jar..."
-        dynamic_apktool -decompile "$MIUI_SERVICES" -o "$MIUI_WORK_DIR"
+    # 1. DevicePolicyCacheImpl.smali
+    dpci=$(find "$SVC_DIR" -name "DevicePolicyCacheImpl.smali" -type f 2>/dev/null | head -n 1)
+    if [ -n "$dpci" ]; then
+        echo "  -> Hooking DevicePolicyCacheImpl.isScreenCaptureAllowed()..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method public.*isScreenCaptureAllowed\(I\)Z/ {
+            in_target = 1; print $0; next
+        }
+        in_target && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2; if (regs < 2) regs = 2
+            print "    .registers " regs
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_dpc"
+            print "    const/4 v0, 0x1"
+            print "    return v0"
+            print "    :cond_kaorios_dpc"
+            in_target = 0
+            next
+        }
+        in_target && /\.end method/ { in_target = 0 }
+        { print $0 }
+        ' "$dpci" > "${dpci}.tmp" && mv "${dpci}.tmp" "$dpci"
     fi
 
-    if [ -d "$MIUI_WORK_DIR" ]; then
-        echo "[*] Applying FLAG_SECURE patches to miui-services.jar..."
+    # 2. WindowState.smali & WindowStateAnimator.smali
+    for ws in $(find "$SVC_DIR" \( -name "WindowState.smali" -o -name "WindowStateAnimator.smali" \) -type f 2>/dev/null); do
+        echo "  -> Hooking $ws..."
+        awk '
+        BEGIN { in_secure = 0; in_set = 0 }
+        /\.method.*isSecureLocked\(\)Z/ {
+            in_secure = 1; print $0; next
+        }
+        /\.method.*setSecureLocked\(Z\)V/ {
+            in_set = 1; print $0; next
+        }
+        in_secure && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2; if (regs < 2) regs = 2
+            print "    .registers " regs
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_sec"
+            print "    const/4 v0, 0x0"
+            print "    return v0"
+            print "    :cond_kaorios_sec"
+            in_secure = 0
+            next
+        }
+        in_set && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2; if (regs < 2) regs = 2
+            print "    .registers " regs
+            print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+            print "    move-result v0"
+            print "    if-eqz v0, :cond_kaorios_set"
+            print "    return-void"
+            print "    :cond_kaorios_set"
+            in_set = 0
+            next
+        }
+        in_secure && /\.end method/ { in_secure = 0 }
+        in_set && /\.end method/ { in_set = 0 }
+        { print $0 }
+        ' "$ws" > "${ws}.tmp" && mv "${ws}.tmp" "$ws"
+    done
 
-        echo "[*] Patching WindowManagerServiceImpl.notAllowCaptureDisplay()..."
-        smali_kit -c -m "notAllowCaptureDisplay" -re "$return_false" -d "$MIUI_WORK_DIR" -name "WindowManagerServiceImpl.smali"
-
-        if [ "$MIUI_STANDALONE" -eq 1 ]; then
-            echo "[*] Recompiling miui-services.jar..."
-            dynamic_apktool -recompile "$MIUI_WORK_DIR" -o "$MIUI_SERVICES"
-            delete_recursive "$MIUI_WORK_DIR"
+    # 3. WindowManagerService.smali
+    for wms in $(find "$SVC_DIR" -name "WindowManagerService*.smali" -type f 2>/dev/null); do
+        if grep -q "notAllowCaptureDisplay" "$wms" 2>/dev/null; then
+            echo "  -> Hooking notAllowCaptureDisplay in $wms..."
+            awk '
+            /->notAllowCaptureDisplay\(/ {
+                print $0
+                print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
+                print "    move-result v0"
+                print "    if-eqz v0, :cond_kaorios_wms"
+                print "    const/4 v0, 0x0"
+                print "    :cond_kaorios_wms"
+                next
+            }
+            { print $0 }
+            ' "$wms" > "${wms}.tmp" && mv "${wms}.tmp" "$wms"
         fi
-    else
-        echo "[!] FATAL ERROR: miui-services.jar workspace directory not found: $MIUI_WORK_DIR"
-        return 1
-    fi
+    done
+
+    command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "services.jar"
 fi
 
-echo "[*] FLAG_SECURE patch complete."
+# ==================== MIUI-SERVICES.JAR ====================
+if [ -d "$MIUI_DIR" ]; then
+    echo "[*] Applying FLAG_SECURE hooks to miui-services.jar..."
+    for mwms in $(find "$MIUI_DIR" -name "WindowManagerServiceImpl.smali" -type f 2>/dev/null); do
+        echo "  -> Hooking $mwms..."
+        awk '
+        BEGIN { in_target = 0 }
+        /\.method.*notAllowCaptureDisplay\(/ {
+            in_target = 1; print $0; next
+        }
+        in_target && /^\s*\.registers\s+([0-9]+)/ {
+            regs = $2; if (regs < 2) regs = 2
+            print "    .registers " regs
+            print "    const/4 v0, 0x0"
+            print "    return v0"
+            in_target = 0
+            next
+        }
+        in_target && /\.end method/ { in_target = 0 }
+        { print $0 }
+        ' "$mwms" > "${mwms}.tmp" && mv "${mwms}.tmp" "$mwms"
+    done
+    command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "miui-services.jar"
+fi
+
+echo "[+] Disable FLAG_SECURE applied successfully."

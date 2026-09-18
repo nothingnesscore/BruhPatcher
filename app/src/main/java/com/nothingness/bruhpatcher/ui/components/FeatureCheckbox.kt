@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,20 +73,30 @@ fun FeatureCheckbox(
                     fontWeight = FontWeight.Medium,
                     color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
-                if (feature.isDefault) {
-                    Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Step ${feature.stepNumber}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = primaryColor,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(primaryColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+                if (feature.isCorePrerequisite) {
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Default",
+                        text = "Foundation",
                         style = MaterialTheme.typography.labelSmall,
-                        color = primaryColor,
+                        color = AppColors.Warning,
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(primaryColor.copy(alpha = 0.2f))
+                            .background(AppColors.Warning.copy(alpha = 0.18f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
                 if (feature.requiresMiui && !feature.isEnabled) {
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "MIUI Only",
                         style = MaterialTheme.typography.labelSmall,
@@ -102,6 +113,15 @@ fun FeatureCheckbox(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (feature.orderWarning != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = feature.orderWarning,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppColors.Warning,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }

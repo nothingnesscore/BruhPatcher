@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -389,18 +393,103 @@ fun ConfigScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Upstream KaoriOS v3 Patching Sequence Guide Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Rounded.Security,
+                            contentDescription = null,
+                            tint = primaryColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "KaoriOS v3.0.0 Recommended Patching Order",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "• Step 1 (Core Foundation): Patch & boot-test Core first before enabling optional features.\n" +
+                               "• Step 2 (Signature & Downgrade): DSV / CorePatch eliminates APK signature, downgrade, and digest checks.\n" +
+                               "• Step 3 (Privacy & Security): FLAG_SECURE bypass, Developer/ADB stealth, and Caller app hiding.\n" +
+                               "• Step 4 (System Identity): Installer-source spoofing & Settings Provider value filtering.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Prerequisite Dependency Warning
+            val coreMissingWarning = if (useLocalPatching) {
+                val coreEnabled = localPatchFeatures.any { it.id == "kaorios_core" && it.isEnabled }
+                val suppEnabled = localPatchFeatures.any { 
+                    it.isEnabled && (it.id == "hide_developer_adb" || it.id == "hide_installed_apps" || 
+                                     it.id == "installer_source_spoof" || it.id == "settings_filtering")
+                }
+                !coreEnabled && suppEnabled
+            } else {
+                val coreEnabled = features.any { it.id == "kaorios_core" && it.isEnabled }
+                val suppEnabled = features.any { 
+                    it.isEnabled && (it.id == "hide_developer_adb" || it.id == "hide_installed_apps" || 
+                                     it.id == "installer_source_spoof" || it.id == "settings_filtering")
+                }
+                !coreEnabled && suppEnabled
+            }
+
+            if (coreMissingWarning) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AppColors.Warning.copy(alpha = 0.12f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.WarningAmber, contentDescription = null, tint = AppColors.Warning)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "⚠️ Prerequisite Alert: Supplementary KaoriOS features (Hide App, Hide ADB, Settings, Installer Spoof) depend on KaoriOS Core (KaoriosHook). Enabling Step 1 KaoriOS Core is required for them to function.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppColors.Warning,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useLocalPatching) {
-                    localPatchFeatures.forEach { feature ->
-                        LocalPatchFeatureItem(
-                            feature = feature,
-                            onCheckedChange = { enabled ->
-                                viewModel.updateLocalPatchFeature(feature.id, enabled)
-                            },
-                            onDeleteClick = if (feature.isUserFeature) {
-                                { viewModel.deleteUserFeature(feature.id) }
-                            } else null
+                    val groups = localPatchFeatures.groupBy { it.categoryName }
+                    groups.forEach { (catName, catFeatures) ->
+                        Text(
+                            text = catName,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryColor,
+                            modifier = Modifier.padding(top = 10.dp, bottom = 4.dp)
                         )
+                        catFeatures.forEach { feature ->
+                            LocalPatchFeatureItem(
+                                feature = feature,
+                                onCheckedChange = { enabled ->
+                                    viewModel.updateLocalPatchFeature(feature.id, enabled)
+                                },
+                                onDeleteClick = if (feature.isUserFeature) {
+                                    { viewModel.deleteUserFeature(feature.id) }
+                                } else null
+                            )
+                        }
                     }
                     if (localPatchFeatures.isEmpty()) {
                         Text(
@@ -410,14 +499,24 @@ fun ConfigScreen(
                         )
                     }
                 } else {
-                    features.forEach { feature ->
-                        FeatureCheckbox(
-                            feature = feature,
-                            onCheckedChange = { enabled ->
-                                viewModel.updateFeature(feature.id, enabled)
-                            },
-                            enabled = !feature.requiresMiui || (patchingMode == PatchingMode.MANUAL_SELECT && selectedFiles.containsKey("miui-services.jar")) || deviceInfo.hasMiuiServicesJar
+                    val groups = features.groupBy { it.category }
+                    groups.forEach { (category, catFeatures) ->
+                        Text(
+                            text = category.title,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryColor,
+                            modifier = Modifier.padding(top = 10.dp, bottom = 4.dp)
                         )
+                        catFeatures.forEach { feature ->
+                            FeatureCheckbox(
+                                feature = feature,
+                                onCheckedChange = { enabled ->
+                                    viewModel.updateFeature(feature.id, enabled)
+                                },
+                                enabled = !feature.requiresMiui || (patchingMode == PatchingMode.MANUAL_SELECT && selectedFiles.containsKey("miui-services.jar")) || deviceInfo.hasMiuiServicesJar
+                            )
+                        }
                     }
                 }
             }
@@ -613,6 +712,7 @@ private fun LocalPatchFeatureItem(
                 if (feature.isEnabled) primaryColor.copy(alpha = 0.12f)
                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             )
+            .clickable { onCheckedChange(!feature.isEnabled) }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -634,6 +734,28 @@ private fun LocalPatchFeatureItem(
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Step ${feature.stepNumber}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = primaryColor,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(primaryColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+                if (feature.isCorePrerequisite) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Foundation",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AppColors.Warning,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(AppColors.Warning.copy(alpha = 0.18f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
                 if (feature.isUserFeature) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -652,6 +774,15 @@ private fun LocalPatchFeatureItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (feature.orderWarning != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = feature.orderWarning,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppColors.Warning,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
         if (onDeleteClick != null) {
             IconButton(onClick = onDeleteClick) {

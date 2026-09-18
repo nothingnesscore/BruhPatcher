@@ -23,7 +23,7 @@ if [ -n "$build_file" ]; then
     # Target fields in Build.smali: remove final from 16 String fields and append " = null"
     # For TIME:J, remove final without appending " = null"
     awk '
-    /\.field public static.*final.*(BRAND|BRAND_FOR_ATTESTATION|DEVICE|DEVICE_FOR_ATTESTATION|FINGERPRINT|HARDWARE|ID|MANUFACTURER|MANUFACTURER_FOR_ATTESTATION|MODEL|MODEL_FOR_ATTESTATION|PRODUCT|PRODUCT_FOR_ATTESTATION|TAGS|TYPE|USER):Ljava\/lang\/String;/ {
+    /\.field public static.*final.*(BRAND|BRAND_FOR_ATTESTATION|DEVICE|DEVICE_FOR_ATTESTATION|DISPLAY|FINGERPRINT|HARDWARE|HOST|ID|INCREMENTAL|MANUFACTURER|MANUFACTURER_FOR_ATTESTATION|MODEL|MODEL_FOR_ATTESTATION|PRODUCT|PRODUCT_FOR_ATTESTATION|TAGS|TYPE|USER):Ljava\/lang\/String;/ {
         sub(" final ", " ")
         if ($0 !~ /=\s*null/) {
             $0 = $0 " = null"

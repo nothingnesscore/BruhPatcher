@@ -11,50 +11,46 @@ class PatchScriptValidationTest {
     private val moduleTemplateDir = File("src/main/assets/module_template")
 
     @Test
-    fun testKaoriosToolboxScriptIntegrity() {
-        val kaoriosScript = File(featuresDir, "kaorios_toolbox.sh")
-        assertTrue("kaorios_toolbox.sh should exist", kaoriosScript.exists())
-        val content = kaoriosScript.readText()
+    fun testKaoriosCoreScriptIntegrity() {
+        val coreScript = File(featuresDir, "kaorios_core.sh")
+        assertTrue("kaorios_core.sh should exist", coreScript.exists())
+        val content = coreScript.readText()
 
-        // Verify required Kaorios hooks
+        // Verify fundamental KaoriOS v3 hooks
         assertTrue(content.contains("KaoriosHook;->initContext"))
         assertTrue(content.contains("KaoriosHook;->hasSystemFeature"))
         assertTrue(content.contains("KaoriosHook;->initGenerateSoftwareKeyPair"))
         assertTrue(content.contains("KaoriosHook;->CertificateChainIfNeeded"))
         assertTrue(content.contains("KaoriosHook;->initActivityThread"))
-        assertTrue(content.contains("KaoriosHook;->shouldHideDevStatusFromNameValueCache"))
         assertTrue(content.contains("KaoriosHook;->initSystemServer"))
-
-        // Verify dynamic FLAG_SECURE hooks per Toolbox-docs Disable_Secure_Flag.md
-        assertTrue(content.contains("DevicePolicyCacheImpl.smali"))
-        assertTrue(content.contains("isScreenCaptureAllowed"))
-        assertTrue(content.contains("WindowState.smali"))
-        assertTrue(content.contains("setSecureLocked"))
-        assertTrue(content.contains("WindowStateAnimator.smali"))
-        assertTrue(content.contains("notAllowCaptureDisplay"))
-        assertTrue(content.contains("KaoriosHook;->isSecureFlag"))
 
         // Verify register safety (registers + 1, target reg at new_regs - 2)
         assertTrue(content.contains("new_regs = orig_regs + 1"))
         assertTrue(content.contains("target_reg = \"v\" (new_regs - 2)"))
         assertFalse("Should not hardcode .locals 15 overwriting registers", content.contains(".locals 15"))
 
-        // Verify multi-dex direct staging exists
+        // Verify multi-dex payload staging and companion app deployment
         assertTrue(content.contains("classes\${next_dex}.dex"))
         assertTrue(content.contains("Keybox.xml"))
         assertTrue(content.contains("KaoriosToolbox.apk"))
     }
 
     @Test
-    fun testGooglePhotosUnlimitedScriptIntegrity() {
-        val photosScript = File(featuresDir, "google_photos_unlimited.sh")
-        assertTrue("google_photos_unlimited.sh should exist", photosScript.exists())
-        val content = photosScript.readText()
+    fun testCorePatchDsvScriptIntegrity() {
+        val dsvScript = File(featuresDir, "core_patch_dsv.sh")
+        assertTrue("core_patch_dsv.sh should exist", dsvScript.exists())
+        val content = dsvScript.readText()
 
-        assertTrue(content.contains("com.google.android.apps.photos.NEXUS_PRELOAD"))
-        assertTrue(content.contains("com.google.android.feature.PIXEL_2016_EXPERIENCE"))
-        assertTrue(content.contains("hasSystemFeature"))
-        assertTrue(content.contains("persist.sys.pixel.photos=1"))
+        // Verify signature verification and downgrade bypasses across framework, services, and miui-services
+        assertTrue(content.contains("PackageParser.smali"))
+        assertTrue(content.contains("unsafeGetCertsWithoutVerification"))
+        assertTrue(content.contains("SigningDetails.smali"))
+        assertTrue(content.contains("ApkSignatureSchemeV2Verifier.smali"))
+        assertTrue(content.contains("ApkSignatureSchemeV3Verifier.smali"))
+        assertTrue(content.contains("ApkSigningBlockUtils.smali"))
+        assertTrue(content.contains("InstallPackageHelper.smali"))
+        assertTrue(content.contains("checkDowngrade"))
+        assertTrue(content.contains("verifySignatures"))
     }
 
     @Test
@@ -63,11 +59,58 @@ class PatchScriptValidationTest {
         assertTrue("disable_flag_secure.sh should exist", flagSecureScript.exists())
         val content = flagSecureScript.readText()
 
+        assertTrue(content.contains("DevicePolicyCacheImpl.smali"))
+        assertTrue(content.contains("isScreenCaptureAllowed"))
+        assertTrue(content.contains("WindowState.smali"))
         assertTrue(content.contains("isSecureLocked"))
         assertTrue(content.contains("setSecureLocked"))
+        assertTrue(content.contains("WindowStateAnimator.smali"))
         assertTrue(content.contains("notAllowCaptureDisplay"))
-        assertTrue(content.contains("isScreenCaptureAllowed"))
-        assertTrue(content.contains("return_void"))
+        assertTrue(content.contains("KaoriosHook;->isSecureFlag"))
+    }
+
+    @Test
+    fun testHideDeveloperAdbScriptIntegrity() {
+        val devScript = File(featuresDir, "hide_developer_adb.sh")
+        assertTrue("hide_developer_adb.sh should exist", devScript.exists())
+        val content = devScript.readText()
+
+        assertTrue(content.contains("NameValueCache.smali"))
+        assertTrue(content.contains("getStringForUser"))
+        assertTrue(content.contains("KaoriosHook;->shouldHideDevStatusFromNameValueCache"))
+    }
+
+    @Test
+    fun testHideInstalledAppsScriptIntegrity() {
+        val hideAppsScript = File(featuresDir, "hide_installed_apps.sh")
+        assertTrue("hide_installed_apps.sh should exist", hideAppsScript.exists())
+        val content = hideAppsScript.readText()
+
+        assertTrue(content.contains("AppsFilterBase.smali"))
+        assertTrue(content.contains("shouldFilterApplication"))
+        assertTrue(content.contains("KaoriosHook;->shouldHideAppList"))
+    }
+
+    @Test
+    fun testInstallerSourceSpoofScriptIntegrity() {
+        val spoofScript = File(featuresDir, "installer_source_spoof.sh")
+        assertTrue("installer_source_spoof.sh should exist", spoofScript.exists())
+        val content = spoofScript.readText()
+
+        assertTrue(content.contains("ComputerEngine"))
+        assertTrue(content.contains("getInstallerPackageName"))
+        assertTrue(content.contains("KaoriosHook;->filterInstallerPackageName"))
+    }
+
+    @Test
+    fun testSettingsFilteringScriptIntegrity() {
+        val settingsScript = File(featuresDir, "settings_filtering.sh")
+        assertTrue("settings_filtering.sh should exist", settingsScript.exists())
+        val content = settingsScript.readText()
+
+        assertTrue(content.contains("NameValueCache.smali"))
+        assertTrue(content.contains("getStringForUser"))
+        assertTrue(content.contains("KaoriosHook;->filterSettingValue"))
     }
 
     @Test

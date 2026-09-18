@@ -850,10 +850,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val info = _deviceInfo.value
         _localPatchFeatures.value = _localPatchFeatures.value.map { feature ->
             val shouldEnable = when (feature.id) {
-                "google_photos_unlimited" -> true
-                "kaorios_toolbox" -> true
-                "disable_flag_secure" -> true
-                "android17_build_unfinalize" -> true
+                "android17_build_unfinalize",
+                "kaorios_core",
+                "core_patch_dsv",
+                "disable_flag_secure",
+                "hide_developer_adb",
+                "hide_installed_apps",
+                "installer_source_spoof",
+                "settings_filtering" -> true
                 else -> feature.isEnabled
             }
             feature.copy(isEnabled = shouldEnable)
@@ -861,10 +865,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _features.value = _features.value.map { feature ->
             val shouldEnable = when (feature.id) {
-                Feature.GOOGLE_PHOTOS_UNLIMITED.id -> true
-                Feature.KAORIOS_TOOLBOX.id -> true
-                Feature.DISABLE_SECURE_FLAG.id -> true
-                Feature.ANDROID17_BUILD_UNFINALIZE.id -> true
+                Feature.ANDROID17_BUILD_UNFINALIZE.id,
+                Feature.KAORIOS_CORE.id,
+                Feature.CORE_PATCH_DSV.id,
+                Feature.DISABLE_SECURE_FLAG.id,
+                Feature.HIDE_DEVELOPER_ADB.id,
+                Feature.HIDE_INSTALLED_APPS.id,
+                Feature.INSTALLER_SOURCE_SPOOF.id,
+                Feature.SETTINGS_FILTERING.id -> true
                 else -> feature.isEnabled
             }
             feature.copy(isEnabled = shouldEnable)

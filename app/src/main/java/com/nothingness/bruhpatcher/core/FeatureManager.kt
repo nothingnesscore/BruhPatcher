@@ -16,7 +16,7 @@ data class PatchFeature(
 )
 
 /**
- * Represents a local patch feature for UI display (toggleable)
+ * Represents a local patch feature for UI display (toggleable) with sequence step metadata
  */
 data class LocalPatchFeature(
     val id: String,
@@ -24,7 +24,11 @@ data class LocalPatchFeature(
     val description: String,
     val requiredJars: List<String> = listOf("framework.jar"),
     val isEnabled: Boolean = true,
-    val isUserFeature: Boolean = false
+    val isUserFeature: Boolean = false,
+    val stepNumber: Int = 1,
+    val categoryName: String = "Step 1: Core Foundation & A17",
+    val isCorePrerequisite: Boolean = false,
+    val orderWarning: String? = null
 )
 
 /**
@@ -59,6 +63,31 @@ object FeatureManager {
         } catch (_: Exception) {}
     }
 
+    val CANONICAL_FEATURE_ORDER = listOf(
+        "android17_build_unfinalize",
+        "kaorios_core",
+        "core_patch_dsv",
+        "disable_flag_secure",
+        "hide_developer_adb",
+        "hide_installed_apps",
+        "installer_source_spoof",
+        "settings_filtering"
+    )
+
+    fun getFeatureStepInfo(id: String): Triple<Int, String, String?> {
+        return when (id) {
+            "android17_build_unfinalize" -> Triple(1, "Step 1: Core Foundation & A17", null)
+            "kaorios_core" -> Triple(1, "Step 1: Core Foundation & A17", "⚠️ Core Foundation must be patched and boot-tested first before enabling supplementary features!")
+            "core_patch_dsv" -> Triple(2, "Step 2: Signature & Downgrade (CorePatch / DSV)", null)
+            "disable_flag_secure" -> Triple(3, "Step 3: Privacy, Stealth & FLAG_SECURE", null)
+            "hide_developer_adb" -> Triple(3, "Step 3: Privacy, Stealth & FLAG_SECURE", null)
+            "hide_installed_apps" -> Triple(3, "Step 3: Privacy, Stealth & FLAG_SECURE", null)
+            "installer_source_spoof" -> Triple(4, "Step 4: System Identity & Provider Spoofing", null)
+            "settings_filtering" -> Triple(4, "Step 4: System Identity & Provider Spoofing", null)
+            else -> Triple(5, "Custom / User Scripts", null)
+        }
+    }
+
     /**
      * Gets available patch features from assets/updated directory without deploying them
      * Used for UI display in local patching mode
@@ -75,13 +104,18 @@ object FeatureManager {
             try {
                 val metadata = parseFeatureMetadata(file)
                 val id = file.name.removeSuffix(".sh")
+                val (step, cat, warn) = getFeatureStepInfo(id)
                 result.add(LocalPatchFeature(
                     id = id,
                     name = metadata.name,
                     description = metadata.description,
                     requiredJars = metadata.requiredJars,
                     isEnabled = true,
-                    isUserFeature = false  // Updated built-in, not user feature
+                    isUserFeature = false,  // Updated built-in, not user feature
+                    stepNumber = step,
+                    categoryName = cat,
+                    isCorePrerequisite = (id == "kaorios_core"),
+                    orderWarning = warn
                 ))
                 processedIds.add(id)
             } catch (_: Exception) { }
@@ -101,13 +135,18 @@ object FeatureManager {
                 val metadata = parseFeatureMetadata(cacheFile)
                 cacheFile.delete()
                 
+                val (step, cat, warn) = getFeatureStepInfo(id)
                 result.add(LocalPatchFeature(
                     id = id,
                     name = metadata.name,
                     description = metadata.description,
                     requiredJars = metadata.requiredJars,
                     isEnabled = true,
-                    isUserFeature = false
+                    isUserFeature = false,
+                    stepNumber = step,
+                    categoryName = cat,
+                    isCorePrerequisite = (id == "kaorios_core"),
+                    orderWarning = warn
                 ))
                 processedIds.add(id)
             } catch (_: Exception) { }
@@ -121,18 +160,26 @@ object FeatureManager {
             
             try {
                 val metadata = parseFeatureMetadata(file)
+                val (step, cat, warn) = getFeatureStepInfo(id)
                 result.add(LocalPatchFeature(
                     id = id,
                     name = metadata.name,
                     description = metadata.description,
                     requiredJars = metadata.requiredJars,
                     isEnabled = true,
-                    isUserFeature = true
+                    isUserFeature = true,
+                    stepNumber = step,
+                    categoryName = cat,
+                    isCorePrerequisite = false,
+                    orderWarning = warn
                 ))
             } catch (_: Exception) { }
         }
         
-        return result
+        return result.sortedWith(compareBy<LocalPatchFeature> {
+            val idx = CANONICAL_FEATURE_ORDER.indexOf(it.id)
+            if (idx != -1) idx else 100
+        }.thenBy { it.name })
     }
 
     /**
@@ -371,16 +418,20 @@ object FeatureManager {
     }
 
     /**
-     * Gets enabled feature scripts matching the selected UI feature IDs
+     * Gets enabled feature scripts matching the selected UI feature IDs in strict canonical order
      */
     fun getEnabledScripts(context: Context, enabledFeatureIds: List<String>): List<PatchFeature> {
         val allFeatures = deployFeatures(context)
-        return allFeatures.filter { feature ->
+        val matched = allFeatures.filter { feature ->
             enabledFeatureIds.any { id ->
                 feature.id.contains(id, ignoreCase = true) ||
                 feature.name.replace(" ", "_").lowercase().contains(id.lowercase())
             }
         }
+        return matched.sortedWith(compareBy { feature ->
+            val idx = CANONICAL_FEATURE_ORDER.indexOfFirst { feature.id.contains(it, ignoreCase = true) }
+            if (idx != -1) idx else 100
+        })
     }
 
     /**
