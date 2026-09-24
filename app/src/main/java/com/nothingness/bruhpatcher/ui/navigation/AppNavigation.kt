@@ -1,6 +1,7 @@
 package com.nothingness.bruhpatcher.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -80,8 +81,16 @@ fun AppNavigation(
             LiquidNavDestination.PROGRESS -> 2
             LiquidNavDestination.SETTINGS -> 3
         }
-        coroutineScope.launch {
-            pagerState.animateScrollToPage(targetPage)
+        if (pagerState.currentPage != targetPage) {
+            coroutineScope.launch {
+                pagerState.animateScrollToPage(
+                    page = targetPage,
+                    animationSpec = spring(
+                        dampingRatio = 0.82f,
+                        stiffness = 550f
+                    )
+                )
+            }
         }
     }
 

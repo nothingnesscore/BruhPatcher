@@ -32,7 +32,7 @@ if [ -d "$SVC_DIR" ]; then
         /\.method public.*isScreenCaptureAllowed\(I\)Z/ {
             in_target = 1; print $0; next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
@@ -46,7 +46,7 @@ if [ -d "$SVC_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$dpci" > "${dpci}.tmp" && mv "${dpci}.tmp" "$dpci"
+        ' "$dpci" > "${dpci}.tmp" && mv "${dpci}.tmp" "$1" 2>/dev/null || rm -f "${dpci}.tmp"
     fi
 
     # 2. WindowState.smali & WindowStateAnimator.smali
@@ -60,7 +60,7 @@ if [ -d "$SVC_DIR" ]; then
         /\.method.*setSecureLocked\(Z\)V/ {
             in_set = 1; print $0; next
         }
-        in_secure && /^\s*\.registers\s+([0-9]+)/ {
+        in_secure && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
@@ -72,7 +72,7 @@ if [ -d "$SVC_DIR" ]; then
             in_secure = 0
             next
         }
-        in_set && /^\s*\.registers\s+([0-9]+)/ {
+        in_set && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
@@ -86,7 +86,7 @@ if [ -d "$SVC_DIR" ]; then
         in_secure && /\.end method/ { in_secure = 0 }
         in_set && /\.end method/ { in_set = 0 }
         { print $0 }
-        ' "$ws" > "${ws}.tmp" && mv "${ws}.tmp" "$ws"
+        ' "$ws" > "${ws}.tmp" && mv "${ws}.tmp" "$1" 2>/dev/null || rm -f "${ws}.tmp"
     done
 
     # 3. WindowManagerService.smali
@@ -104,7 +104,7 @@ if [ -d "$SVC_DIR" ]; then
                 next
             }
             { print $0 }
-            ' "$wms" > "${wms}.tmp" && mv "${wms}.tmp" "$wms"
+            ' "$wms" > "${wms}.tmp" && mv "${wms}.tmp" "$1" 2>/dev/null || rm -f "${wms}.tmp"
         fi
     done
 
@@ -121,7 +121,7 @@ if [ -d "$MIUI_DIR" ]; then
         /\.method.*notAllowCaptureDisplay\(/ {
             in_target = 1; print $0; next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    const/4 v0, 0x0"
@@ -131,7 +131,7 @@ if [ -d "$MIUI_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$mwms" > "${mwms}.tmp" && mv "${mwms}.tmp" "$mwms"
+        ' "$mwms" > "${mwms}.tmp" && mv "${mwms}.tmp" "$1" 2>/dev/null || rm -f "${mwms}.tmp"
     done
     command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "miui-services.jar"
 fi

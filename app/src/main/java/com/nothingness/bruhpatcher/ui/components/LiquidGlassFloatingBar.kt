@@ -5,20 +5,22 @@ package com.nothingness.bruhpatcher.ui.components
 // - Hardware LayerBackdrop recording captured from underlying app screen
 // - Sliding indicator bubble positioned BEHIND icons/labels for crystal-clear legibility
 // - Direct instant tap responsiveness on all buttons with haptic feedback
-// - Continuous real-time synchronization with HorizontalPager swipe gestures
-// - Precise, subtle refraction (6dp) with minimal chromatic aberration (0.06f)
-// - Damped spring physics without excessive gelatinous wobbling
+// - Swippable & draggable directly on the navbar with real-time bubble tracking
+// - Zoom in liquid bubble iOS spring animation on press and slide
+// - Monochromatic clean frosted glass with dynamic Monet tinting (zero purple/blue/green gradient artifacts)
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -41,20 +43,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -67,7 +71,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.lerp
 import com.nothingness.bruhpatcher.ui.components.liquid.LocalBarBlurBackdrop
 import com.nothingness.bruhpatcher.ui.components.liquid.lens
 import com.nothingness.bruhpatcher.ui.components.liquid.rememberGravityHighlight
@@ -81,6 +84,7 @@ import top.yukonga.miuix.kmp.blur.highlight.LightPosition
 import top.yukonga.miuix.kmp.blur.highlight.LightSource
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Navigation items for the iOS-Style Liquid Glass Floating Bar
@@ -100,17 +104,17 @@ private val IndicatorSpecular = Highlight(
     width = 1.dp,
     alpha = 1f,
     style = BloomStroke(
-        color = Color.White.copy(alpha = 0.18f),
+        color = Color.White.copy(alpha = 0.22f),
         innerBlurRadius = 2.dp,
         primaryLight = LightSource(
             position = LightPosition(0.5f, -0.3f, -0.05f),
             color = Color.White,
-            intensity = 1.1f,
+            intensity = 1.0f,
         ),
         secondaryLight = LightSource(
             position = LightPosition(0.5f, 0.8f, -0.5f),
             color = Color.White,
-            intensity = 0.35f,
+            intensity = 0.3f,
         ),
         dualPeak = true,
     ),
@@ -121,9 +125,10 @@ private val IndicatorSpecular = Highlight(
  * 
  * Features:
  * - Proper optical layering: Indicator pill is positioned BEHIND icons/labels
- * - Tapping any tab navigates immediately with haptic feedback
- * - Real-time synchronization with page swiping via targetPosition parameter
- * - Clean subtle refraction matching Apple UI guidelines (no wobbly distortion)
+ * - 100% Clickable with instant tap responsiveness & haptic feedback
+ * - Swippable & draggable directly on the navbar with fluid live tracking
+ * - iOS-style zoom in liquid bubble spring animation on drag and press
+ * - Clean subtle refraction matching Apple UI guidelines (no chromatic distortion)
  * - Harmonized dynamic Monet theming in both dark and light modes
  */
 @Composable
@@ -144,6 +149,7 @@ fun LiquidGlassFloatingBar(
     if (items.isEmpty()) return
 
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val onNavigateUpdated by rememberUpdatedState(onNavigate)
 
@@ -153,22 +159,56 @@ fun LiquidGlassFloatingBar(
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
 
+    // Direct drag interaction state on the navbar
+    var isNavbarDragging by remember { mutableStateOf(false) }
+    var dragAccumulatedOffsetPx by remember { mutableFloatStateOf(0f) }
+
     // Damped spring animation when targetPosition is not driving the bubble directly
     val animatedPosition = remember { Animatable(selectedIndex.toFloat()) }
     LaunchedEffect(selectedIndex) {
-        if (targetPosition == null) {
+        if (targetPosition == null && !isNavbarDragging) {
             animatedPosition.animateTo(
                 targetValue = selectedIndex.toFloat(),
                 animationSpec = spring(
-                    dampingRatio = 0.85f,
-                    stiffness = 500f
+                    dampingRatio = 0.78f,
+                    stiffness = 520f
                 )
             )
         }
     }
 
-    // Direct continuous position when swiping with 0-frame latency; damped spring when discrete
-    val currentBubblePosition = targetPosition ?: animatedPosition.value
+    // Derive continuous position from navbar drag, page swipe, or animated position
+    val currentBubblePosition = when {
+        isNavbarDragging && tabWidthPx > 0f -> {
+            val dragFraction = if (isLtr) {
+                dragAccumulatedOffsetPx / tabWidthPx
+            } else {
+                -dragAccumulatedOffsetPx / tabWidthPx
+            }
+            (selectedIndex.toFloat() + dragFraction).coerceIn(0f, (tabsCount - 1).toFloat())
+        }
+        targetPosition != null -> targetPosition
+        else -> animatedPosition.value
+    }
+
+    // Zoom in liquid bubble animation (iOS style dynamic bubble expansion on touch/drag)
+    val isBubbleExpanding = isNavbarDragging || (targetPosition != null && abs(targetPosition - selectedIndex) > 0.05f)
+    val bubbleZoomScale by animateFloatAsState(
+        targetValue = if (isNavbarDragging) 1.10f else if (isBubbleExpanding) 1.05f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.65f,
+            stiffness = 420f
+        ),
+        label = "bubbleZoomScale"
+    )
+    val bubbleStretchX by animateFloatAsState(
+        targetValue = if (isNavbarDragging) 1.12f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.70f,
+            stiffness = 450f
+        ),
+        label = "bubbleStretchX"
+    )
 
     val pillShape = CircleShape
     val isDark = MiuixTheme.colorScheme.background.luminance() < 0.5f
@@ -179,19 +219,52 @@ fun LiquidGlassFloatingBar(
     val pillHighlight = rememberGravityHighlight(IndicatorSpecular, 90f)
 
     val capsuleBgColor = if (isDark) {
-        Color(0x3310131A)
+        Color(0x3812151D)
     } else {
-        Color(0x38FFFFFF)
+        Color(0x40FFFFFF)
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier.width(IntrinsicSize.Min),
+            modifier = Modifier
+                .onGloballyPositioned { coordinates ->
+                    totalWidthPx = coordinates.size.width.toFloat()
+                    tabWidthPx = ((totalWidthPx - with(density) { 8.dp.toPx() }) / tabsCount).coerceAtLeast(0f)
+                }
+                .pointerInput(tabsCount, selectedIndex) {
+                    detectHorizontalDragGestures(
+                        onDragStart = {
+                            isNavbarDragging = true
+                            dragAccumulatedOffsetPx = 0f
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            dragAccumulatedOffsetPx += dragAmount
+                        },
+                        onDragEnd = {
+                            if (tabWidthPx > 0f) {
+                                val dragFraction = if (isLtr) dragAccumulatedOffsetPx / tabWidthPx else -dragAccumulatedOffsetPx / tabWidthPx
+                                val targetIdx = (selectedIndex + dragFraction.roundToInt()).coerceIn(0, tabsCount - 1)
+                                if (targetIdx != selectedIndex) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onNavigateUpdated(items[targetIdx])
+                                }
+                            }
+                            isNavbarDragging = false
+                            dragAccumulatedOffsetPx = 0f
+                        },
+                        onDragCancel = {
+                            isNavbarDragging = false
+                            dragAccumulatedOffsetPx = 0f
+                        }
+                    )
+                },
             contentAlignment = Alignment.CenterStart
         ) {
             // ── Layer 1: Base Capsule (Outer Refractive Glass Frame) ───────────
@@ -199,10 +272,10 @@ fun LiquidGlassFloatingBar(
                 modifier = Modifier
                     .matchParentSize()
                     .shadow(
-                        elevation = 10.dp,
+                        elevation = 8.dp,
                         shape = pillShape,
-                        ambientColor = Color.Black.copy(alpha = if (isDark) 0.30f else 0.12f),
-                        spotColor = primaryColor.copy(alpha = if (isDark) 0.25f else 0.10f)
+                        ambientColor = Color.Black.copy(alpha = if (isDark) 0.28f else 0.10f),
+                        spotColor = primaryColor.copy(alpha = if (isDark) 0.20f else 0.08f)
                     )
                     .then(
                         if (backdrop != null) {
@@ -212,30 +285,18 @@ fun LiquidGlassFloatingBar(
                                 effects = {
                                     vibrancy()
                                     blur(4.dp.toPx(), 4.dp.toPx())
-                                    lens(12.dp.toPx(), 12.dp.toPx())
+                                    lens(10.dp.toPx(), 10.dp.toPx())
                                 },
-                                highlight = { baseHighlight.copy(alpha = 0.6f) },
+                                highlight = { baseHighlight.copy(alpha = 0.55f) },
                                 onDrawSurface = { drawRect(capsuleBgColor) }
                             )
                         } else {
                             Modifier
                                 .clip(pillShape)
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            if (isDark) Color(0xD9141822) else Color(0xCCFFFFFF),
-                                            if (isDark) Color(0xEB0E1118) else Color(0xB8F2F4F8)
-                                        )
-                                    )
-                                )
+                                .background(if (isDark) Color(0xEB131720) else Color(0xF2F5F7FA))
                                 .border(
-                                    width = 0.8.dp,
-                                    brush = Brush.verticalGradient(
-                                        listOf(
-                                            Color.White.copy(alpha = if (isDark) 0.22f else 0.60f),
-                                            Color.White.copy(alpha = 0.05f)
-                                        )
-                                    ),
+                                    width = 1.dp,
+                                    color = Color.White.copy(alpha = if (isDark) 0.14f else 0.45f),
                                     shape = pillShape
                                 )
                         }
@@ -250,6 +311,9 @@ fun LiquidGlassFloatingBar(
                         .padding(horizontal = 4.dp)
                         .graphicsLayer {
                             translationX = if (isLtr) currentPillX else -currentPillX
+                            scaleX = bubbleZoomScale * bubbleStretchX
+                            scaleY = bubbleZoomScale / kotlin.math.sqrt(bubbleStretchX.coerceAtLeast(0.5f))
+                            transformOrigin = TransformOrigin(0.5f, 0.5f)
                         }
                         .width(with(density) { tabWidthPx.toDp() })
                         .height(56.dp)
@@ -264,52 +328,39 @@ fun LiquidGlassFloatingBar(
                                             refractionHeight = 6.dp.toPx(),
                                             refractionAmount = 8.dp.toPx(),
                                             depthEffect = true,
-                                            chromaticAberration = 0.06f // Subtle, clean Apple optical glass
+                                            chromaticAberration = 0.0f
                                         )
                                     },
-                                    highlight = { pillHighlight.copy(alpha = 0.55f) },
+                                    highlight = { pillHighlight.copy(alpha = 0.50f) },
                                     onDrawSurface = {
-                                        val tint = if (isDark) {
-                                            Color.White.copy(alpha = 0.12f)
+                                        val frost = if (isDark) {
+                                            Color.White.copy(alpha = 0.10f)
                                         } else {
-                                            Color.White.copy(alpha = 0.50f)
+                                            Color.White.copy(alpha = 0.45f)
                                         }
-                                        drawRect(tint)
-                                        drawRect(primaryColor.copy(alpha = 0.12f))
+                                        drawRect(frost)
+                                        drawRect(primaryColor.copy(alpha = if (isDark) 0.16f else 0.12f))
                                     }
                                 )
                             } else {
                                 Modifier
                                     .clip(pillShape)
-                                    .background(primaryColor.copy(alpha = if (isDark) 0.20f else 0.12f))
+                                    .background(primaryColor.copy(alpha = if (isDark) 0.22f else 0.15f))
                                     .border(
                                         width = 0.8.dp,
-                                        brush = Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.40f),
-                                                Color.White.copy(alpha = 0.08f)
-                                            )
-                                        ),
+                                        color = Color.White.copy(alpha = 0.25f),
                                         shape = pillShape
                                     )
                             }
                         )
                 ) {
-                    // Subtle specular rim streak (clean physical glass reflection)
+                    // Subtle physical glass specular streak
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
                             .padding(horizontal = 14.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
+                            .background(Color.White.copy(alpha = 0.30f))
                     )
                 }
             }
@@ -318,10 +369,6 @@ fun LiquidGlassFloatingBar(
             Row(
                 modifier = Modifier
                     .selectableGroup()
-                    .onGloballyPositioned { coordinates ->
-                        totalWidthPx = coordinates.size.width.toFloat()
-                        tabWidthPx = ((totalWidthPx - with(density) { 8.dp.toPx() }) / tabsCount).coerceAtLeast(0f)
-                    }
                     .height(64.dp)
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -342,7 +389,7 @@ fun LiquidGlassFloatingBar(
                             onNavigateUpdated(destination)
                         },
                         modifier = Modifier
-                            .defaultMinSize(minWidth = 76.dp)
+                            .defaultMinSize(minWidth = 72.dp)
                             .weight(1f)
                     )
                 }
@@ -366,6 +413,13 @@ private fun LiquidNavItem(
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val iconScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else if (activeFraction > 0.5f) 1.08f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 500f),
+        label = "iconScale"
+    )
 
     Column(
         modifier = modifier
@@ -383,7 +437,13 @@ private fun LiquidNavItem(
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(contentAlignment = Alignment.TopEnd) {
+        Box(
+            modifier = Modifier.graphicsLayer {
+                scaleX = iconScale
+                scaleY = iconScale
+            },
+            contentAlignment = Alignment.TopEnd
+        ) {
             Icon(
                 imageVector = destination.icon,
                 contentDescription = destination.title,

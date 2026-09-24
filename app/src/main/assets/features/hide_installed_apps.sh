@@ -29,7 +29,7 @@ for af in $(find "$SVC_DIR" \( -name "AppsFilterBase.smali" -o -name "AppsFilter
         print $0
         next
     }
-    in_target && seen_pkg && /move-result-object\s+(v[0-9]+)/ {
+    in_target && seen_pkg && /move-result-object[ \t]+(v[0-9]+)/ {
         pkg_str_reg = $2
         print $0
         print "    const/4 v0, 0x0"
@@ -45,7 +45,7 @@ for af in $(find "$SVC_DIR" \( -name "AppsFilterBase.smali" -o -name "AppsFilter
     }
     in_target && /\.end method/ { in_target = 0; seen_pkg = 0 }
     { print $0 }
-    ' "$af" > "${af}.tmp" && mv "${af}.tmp" "$af"
+    ' "$af" > "${af}.tmp" && mv "${af}.tmp" "$1" 2>/dev/null || rm -f "${af}.tmp"
     echo "    Hooked: $af"
 done
 
@@ -86,7 +86,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             print $0
             next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             orig_regs = $2
             new_regs = orig_regs + 1
             target_reg = "v" (orig_regs - param_count)
@@ -109,7 +109,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             in_target = 0
             next
         }
-        in_target && /^\s*\.locals\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
             orig_locs = $2
             new_locs = orig_locs + 1
             target_reg = "v" orig_locs
@@ -134,7 +134,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$ce"
+        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$1" 2>/dev/null || rm -f "${ce}.tmp"
         echo "    Hooked: $ce"
     fi
 done

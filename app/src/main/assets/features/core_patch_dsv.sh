@@ -40,23 +40,23 @@ if [ -d "$FW_DIR" ]; then
         /<manifest> specifies bad sharedUserId name/ {
             found_bad_shared = 1
         }
-        found_bad_shared && /if-nez\s+v[0-9]+/ {
+        found_bad_shared && /if-nez[ \t]+v[0-9]+/ {
             print "    const/4 v14, 0x1"
             found_bad_shared = 0
         }
         { print $0 }
-        ' "$pp" > "${pp}.tmp" && mv "${pp}.tmp" "$pp"
+        ' "$pp" > "${pp}.tmp" && mv "${pp}.tmp" "$1" 2>/dev/null || rm -f "${pp}.tmp"
     done
 
     # 2. PackageParser$PackageParserException.smali
     for ppe in $(find "$FW_DIR" -name "PackageParser\$PackageParserException.smali" -type f 2>/dev/null); do
         echo "  -> Patching $ppe..."
         awk '
-        /iput\s+p1,\s+p0,.*->error:I/ {
+        /iput[ \t]+p1,[ \t]+p0,.*->error:I/ {
             print "    const/4 p1, 0x0"
         }
         { print $0 }
-        ' "$ppe" > "${ppe}.tmp" && mv "${ppe}.tmp" "$ppe"
+        ' "$ppe" > "${ppe}.tmp" && mv "${ppe}.tmp" "$1" 2>/dev/null || rm -f "${ppe}.tmp"
     done
 
     # 3. PackageParser$SigningDetails.smali & SigningDetails.smali
@@ -74,7 +74,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             print "    const/4 v0, 0x1"
             print "    return v0"
@@ -83,7 +83,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$sd" > "${sd}.tmp" && mv "${sd}.tmp" "$sd"
+        ' "$sd" > "${sd}.tmp" && mv "${sd}.tmp" "$1" 2>/dev/null || rm -f "${sd}.tmp"
     done
 
     # 4. ApkSignatureSchemeV2Verifier.smali & ApkSignatureSchemeV3Verifier.smali & ApkSigningBlockUtils.smali
@@ -96,14 +96,14 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_equal && /move-result\s+(v[0-9]+)/ {
+        in_equal && /move-result[ \t]+(v[0-9]+)/ {
             reg = $2
             print "    const/4 " reg ", 0x1"
             in_equal = 0
             next
         }
         { print $0 }
-        ' "$v2" > "${v2}.tmp" && mv "${v2}.tmp" "$v2"
+        ' "$v2" > "${v2}.tmp" && mv "${v2}.tmp" "$1" 2>/dev/null || rm -f "${v2}.tmp"
     done
 
     for v3 in $(find "$FW_DIR" -name "ApkSignatureSchemeV3Verifier.smali" -type f 2>/dev/null); do
@@ -115,14 +115,14 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_equal && /move-result\s+(v[0-9]+)/ {
+        in_equal && /move-result[ \t]+(v[0-9]+)/ {
             reg = $2
             print "    const/4 " reg ", 0x1"
             in_equal = 0
             next
         }
         { print $0 }
-        ' "$v3" > "${v3}.tmp" && mv "${v3}.tmp" "$v3"
+        ' "$v3" > "${v3}.tmp" && mv "${v3}.tmp" "$1" 2>/dev/null || rm -f "${v3}.tmp"
     done
 
     for sbu in $(find "$FW_DIR" -name "ApkSigningBlockUtils.smali" -type f 2>/dev/null); do
@@ -134,14 +134,14 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_equal && /move-result\s+(v[0-9]+)/ {
+        in_equal && /move-result[ \t]+(v[0-9]+)/ {
             reg = $2
             print "    const/4 " reg ", 0x1"
             in_equal = 0
             next
         }
         { print $0 }
-        ' "$sbu" > "${sbu}.tmp" && mv "${sbu}.tmp" "$sbu"
+        ' "$sbu" > "${sbu}.tmp" && mv "${sbu}.tmp" "$1" 2>/dev/null || rm -f "${sbu}.tmp"
     done
 
     # 5. ApkSignatureVerifier.smali
@@ -154,7 +154,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_min && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_min && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             print "    const/4 v0, 0x0"
             print "    return v0"
@@ -166,7 +166,7 @@ if [ -d "$FW_DIR" ]; then
             print "    const/4 p3, 0x0"
         }
         { print $0 }
-        ' "$asv" > "${asv}.tmp" && mv "${asv}.tmp" "$asv"
+        ' "$asv" > "${asv}.tmp" && mv "${asv}.tmp" "$1" 2>/dev/null || rm -f "${asv}.tmp"
     done
 
     # 6. StrictJarVerifier.smali & StrictJarFile.smali
@@ -179,7 +179,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_vmd && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_vmd && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             print "    const/4 v0, 0x1"
             print "    return v0"
@@ -188,7 +188,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_vmd && /\.end method/ { in_vmd = 0 }
         { print $0 }
-        ' "$sjv" > "${sjv}.tmp" && mv "${sjv}.tmp" "$sjv"
+        ' "$sjv" > "${sjv}.tmp" && mv "${sjv}.tmp" "$1" 2>/dev/null || rm -f "${sjv}.tmp"
     done
 
     # 7. ParsingPackageUtils.smali
@@ -198,14 +198,14 @@ if [ -d "$FW_DIR" ]; then
         /<manifest> specifies bad sharedUserId name/ {
             found_bad = 1
         }
-        found_bad && /if-eqz\s+(v[0-9]+)/ {
+        found_bad && /if-eqz[ \t]+(v[0-9]+)/ {
             reg = $2
             gsub(/,/, "", reg)
             print "    const/4 " reg ", 0x0"
             found_bad = 0
         }
         { print $0 }
-        ' "$ppu" > "${ppu}.tmp" && mv "${ppu}.tmp" "$ppu"
+        ' "$ppu" > "${ppu}.tmp" && mv "${ppu}.tmp" "$1" 2>/dev/null || rm -f "${ppu}.tmp"
     done
 
     command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "framework.jar"
@@ -235,7 +235,7 @@ if [ -d "$SVC_DIR" ]; then
         /\.method.*matchSignaturesCompat\(/ {
             in_target = 1; target_type = "bool_1"; print $0; next
         }
-        in_target && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             if (target_type == "void") {
                 print "    return-void"
@@ -251,7 +251,7 @@ if [ -d "$SVC_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$pmsu" > "${pmsu}.tmp" && mv "${pmsu}.tmp" "$pmsu"
+        ' "$pmsu" > "${pmsu}.tmp" && mv "${pmsu}.tmp" "$1" 2>/dev/null || rm -f "${pmsu}.tmp"
     done
 
     # 2. KeySetManagerService.smali
@@ -264,7 +264,7 @@ if [ -d "$SVC_DIR" ]; then
             print $0
             next
         }
-        in_target && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             print "    const/4 v0, 0x0"
             print "    return v0"
@@ -273,7 +273,7 @@ if [ -d "$SVC_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$ks" > "${ks}.tmp" && mv "${ks}.tmp" "$ks"
+        ' "$ks" > "${ks}.tmp" && mv "${ks}.tmp" "$1" 2>/dev/null || rm -f "${ks}.tmp"
     done
 
     # 3. InstallPackageHelper.smali (A13-A17)
@@ -286,7 +286,7 @@ if [ -d "$SVC_DIR" ]; then
             print $0
             next
         }
-        in_method && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+        in_method && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
             print $0
             print "    return-void"
             in_method = 0
@@ -299,7 +299,7 @@ if [ -d "$SVC_DIR" ]; then
             next
         }
         { print $0 }
-        ' "$iph" > "${iph}.tmp" && mv "${iph}.tmp" "$iph"
+        ' "$iph" > "${iph}.tmp" && mv "${iph}.tmp" "$1" 2>/dev/null || rm -f "${iph}.tmp"
     done
 
     # 4. ReconcilePackageUtils.smali
@@ -310,7 +310,7 @@ if [ -d "$SVC_DIR" ]; then
             print "    const/4 v0, 0x1"
         }
         { print $0 }
-        ' "$rpu" > "${rpu}.tmp" && mv "${rpu}.tmp" "$rpu"
+        ' "$rpu" > "${rpu}.tmp" && mv "${rpu}.tmp" "$1" 2>/dev/null || rm -f "${rpu}.tmp"
     done
 
     command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "services.jar"
@@ -334,7 +334,7 @@ if [ -d "$MIUI_DIR" ]; then
                 print $0
                 next
             }
-            in_target && /^\s*\.(registers|locals)\s+([0-9]+)/ {
+            in_target && /^[ \t]*\.(registers|locals)[ \t]+([0-9]+)/ {
                 print $0
                 if (return_type == "bool") {
                     print "    const/4 v0, 0x1"
@@ -347,7 +347,7 @@ if [ -d "$MIUI_DIR" ]; then
             }
             in_target && /\.end method/ { in_target = 0 }
             { print $0 }
-            ' "$mf" > "${mf}.tmp" && mv "${mf}.tmp" "$mf"
+            ' "$mf" > "${mf}.tmp" && mv "${mf}.tmp" "$1" 2>/dev/null || rm -f "${mf}.tmp"
         fi
     done
 

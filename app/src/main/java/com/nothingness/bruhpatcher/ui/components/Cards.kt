@@ -64,13 +64,7 @@ fun DeviceInfoCard(
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.16f),
-                        primaryColor.copy(alpha = 0.15f),
-                        Color.White.copy(alpha = 0.05f)
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 shape = shape
             ),
         shape = shape,
@@ -91,11 +85,7 @@ fun DeviceInfoCard(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(primaryColor, AppColors.HyperOsCyan)
-                                )
-                            ),
+                            .background(primaryColor),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -148,15 +138,15 @@ fun DeviceInfoCard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(AppColors.HyperOsCyan.copy(alpha = 0.15f))
-                                .border(1.dp, AppColors.HyperOsCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .background(primaryColor.copy(alpha = 0.15f))
+                                .border(1.dp, primaryColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                                 .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "Android 17",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColors.HyperOsCyan
+                                color = primaryColor
                             )
                         }
                     }
@@ -223,13 +213,7 @@ fun KaoriosShowcaseCard(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    brush = Brush.linearGradient(
-                        listOf(
-                            AppColors.HyperOsCyan.copy(alpha = 0.35f),
-                            primaryColor.copy(alpha = 0.35f),
-                            Color.White.copy(alpha = 0.06f)
-                        )
-                    ),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                     shape = shape
                 )
                 .padding(20.dp)
@@ -241,7 +225,7 @@ fun KaoriosShowcaseCard(
             ) {
                 Column {
                     Text(
-                        text = "Kaorios Toolbox v2.0.6.0",
+                        text = "Kaorios Toolbox v3.0",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -255,14 +239,14 @@ fun KaoriosShowcaseCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(AppColors.HyperOsCyan.copy(alpha = 0.15f))
+                        .background(primaryColor.copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "READY",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = AppColors.HyperOsCyan
+                        color = primaryColor
                     )
                 }
             }
@@ -563,14 +547,8 @@ fun AutoPatcherCard(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = 1.2.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        AppColors.HyperOsCyan.copy(alpha = 0.40f),
-                        primaryColor.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.08f)
-                    )
-                ),
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 shape = shape
             ),
         shape = shape,
@@ -594,11 +572,7 @@ fun AutoPatcherCard(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(primaryColor, AppColors.HyperOsCyan)
-                                )
-                            ),
+                            .background(primaryColor),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -632,14 +606,14 @@ fun AutoPatcherCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(primaryColor.copy(alpha = 0.16f))
-                        .border(0.8.dp, AppColors.HyperOsCyan.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                        .border(0.8.dp, primaryColor.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 9.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "1-TAP",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = AppColors.HyperOsCyan
+                        color = primaryColor
                     )
                 }
             }
@@ -666,7 +640,7 @@ fun AutoPatcherCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Environment: ${deviceInfo.osBadgeText} • API ${deviceInfo.apiLevel} • NoMount VFS",
+                        text = "Environment: ${deviceInfo.osBadgeText} • API ${deviceInfo.apiLevel} • Magisk / KSU",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -677,7 +651,7 @@ fun AutoPatcherCard(
 
             val autoPatches = listOf(
                 "Google Photos Unlimited" to "Original-quality cloud backup by spoofing Pixel XL",
-                "Kaorios Toolbox v2.0.6.0" to "Play Integrity, Keybox attestation, 120 FPS & stealth",
+                "Kaorios Toolbox v3.0" to "Play Integrity, Keybox attestation, 120 FPS & stealth",
                 "Disable Secure Flag" to "Enables screenshots/recording in banking & DRM apps",
                 "Android 17 Build Reflection" to "Unfinalizes static final Build fields for spoofing"
             )
@@ -692,7 +666,7 @@ fun AutoPatcherCard(
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = AppColors.HyperOsCyan,
+                        tint = primaryColor,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))

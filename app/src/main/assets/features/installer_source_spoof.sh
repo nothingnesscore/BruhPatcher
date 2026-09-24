@@ -27,7 +27,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             print $0
             next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             orig_regs = $2
             new_regs = orig_regs + 2
             v_null = "v" (orig_regs - 3)
@@ -35,7 +35,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             print "    .registers " new_regs
             next
         }
-        in_target && /^\s*\.locals\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
             orig_locs = $2
             new_locs = orig_locs + 2
             v_null = "v" orig_locs
@@ -43,7 +43,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             print "    .locals " new_locs
             next
         }
-        in_target && /return-object\s+(v[0-9]+)/ {
+        in_target && /return-object[ \t]+(v[0-9]+)/ {
             ret_reg = $2
             if (v_null == "") {
                 v_null = "v0"
@@ -60,7 +60,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$ce"
+        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$1" 2>/dev/null || rm -f "${ce}.tmp"
         echo "    Hooked: $ce"
     fi
 done

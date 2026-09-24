@@ -145,22 +145,7 @@ half4 main(float2 coord) {
     float2 refractedCoord = coord + d * grad;
     float intensity = chromaticAberration *
         ((abs(centeredCoord.x) * abs(centeredCoord.y)) / max(1.0, halfSize.x * halfSize.y));
-    float2 dispersion = d * grad * intensity;
-    half4 color = half4(0.0);
-    half4 red = content.eval(refractedCoord + dispersion);
-    color.r += red.r / 3.5; color.a += red.a / 7.0;
-    half4 orange = content.eval(refractedCoord + dispersion * (2.0 / 3.0));
-    color.r += orange.r / 3.5; color.g += orange.g / 7.0; color.a += orange.a / 7.0;
-    half4 yellow = content.eval(refractedCoord + dispersion * (1.0 / 3.0));
-    color.r += yellow.r / 3.5; color.g += yellow.g / 3.5; color.a += yellow.a / 7.0;
-    half4 green = content.eval(refractedCoord);
-    color.g += green.g / 3.5; color.a += green.a / 7.0;
-    half4 cyan = content.eval(refractedCoord - dispersion * (1.0 / 3.0));
-    color.g += cyan.g / 3.5; color.b += cyan.b / 3.0; color.a += cyan.a / 7.0;
-    half4 blue = content.eval(refractedCoord - dispersion * (2.0 / 3.0));
-    color.b += blue.b / 3.0; color.a += blue.a / 7.0;
-    half4 purple = content.eval(refractedCoord - dispersion);
-    color.r += purple.r / 7.0; color.b += purple.b / 3.0; color.a += purple.a / 7.0;
-    return color;
+    // Pure, crystal-clear optical refraction with zero artificial color dispersion
+    return content.eval(refractedCoord);
 }
 """

@@ -239,6 +239,27 @@ class PatchScriptValidationTest {
         assertTrue("hide_developer_adb must allocate orig_regs - 4", hideDevScript.contains("orig_regs - 4"))
     }
 
+    @Test
+    fun testNoGnuAwkBackslashSInScripts() {
+        val scripts = featuresDir.listFiles { _, name -> name.endsWith(".sh") } ?: emptyArray()
+        for (script in scripts) {
+            val content = script.readText()
+            assertFalse(
+                "Script ${script.name} must not contain \\s regex tokens (breaks on Android toybox/busybox awk)",
+                content.contains("\\s")
+            )
+        }
+    }
+
+    @Test
+    fun testNoForcedEncryptedCryptoStateInModuleTemplates() {
+        val serviceScript = File(moduleTemplateDir, "service.sh").readText()
+        assertFalse("service.sh must not force ro.crypto.state=encrypted", serviceScript.contains("ro.crypto.state=encrypted"))
+
+        val systemProp = File(moduleTemplateDir, "system.prop").readText()
+        assertFalse("system.prop must not force ro.crypto.state=encrypted", systemProp.contains("ro.crypto.state=encrypted"))
+    }
+
     // =========================================================================
     // DYNAMIC AWK EXECUTION & DALVIK SEMANTIC VALIDATION INFRASTRUCTURE
     // =========================================================================

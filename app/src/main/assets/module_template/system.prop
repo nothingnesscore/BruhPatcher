@@ -6,4 +6,3 @@ ro.control_privapp_permissions=
 
 # KaoriOS spoofing property
 persist.sys.kaorios=kousei
-ro.crypto.state=encrypted

@@ -198,7 +198,7 @@ fun SettingsScreen(
                     title = "Pure Black AMOLED Mode",
                     subtitle = "Apply deep #000000 black to surfaces and backgrounds in dark theme to conserve battery on OLED displays",
                     icon = Icons.Rounded.AutoAwesome,
-                    iconTint = AppColors.HyperOsCyan,
+                    iconTint = primaryColor,
                     checked = useAmoledMode,
                     onCheckedChange = { viewModel.setAmoledMode(it) },
                     position = MiuixItemPosition.MIDDLE
@@ -207,7 +207,7 @@ fun SettingsScreen(
                     title = "Liquid Glass Floating Navbar",
                     subtitle = "Switch between floating optical refraction glass bar and docked MIUIX navigation bar",
                     icon = Icons.Rounded.Layers,
-                    iconTint = AppColors.HyperOsCyan,
+                    iconTint = primaryColor,
                     checked = useLiquidGlassNavbar,
                     onCheckedChange = { viewModel.setLiquidGlassNavbar(it) },
                     position = MiuixItemPosition.BOTTOM
@@ -219,10 +219,10 @@ fun SettingsScreen(
             MiuixGroupCard {
                 MiuixPreferenceItem(
                     title = "Kyant0/AndroidLiquidGlass",
-                    subtitle = "Foundational optical glass physics: SDF squircle curvature, circleMap lens refraction, 7-band chromatic dispersion & damped spring drag.",
+                    subtitle = "Foundational optical glass physics: SDF squircle curvature, circleMap lens refraction & damped spring drag.",
                     icon = Icons.Rounded.ColorLens,
-                    iconTint = AppColors.HyperOsCyan,
-                    iconBackground = AppColors.HyperOsCyan.copy(alpha = 0.15f),
+                    iconTint = primaryColor,
+                    iconBackground = primaryColor.copy(alpha = 0.15f),
                     position = MiuixItemPosition.TOP,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -421,10 +421,10 @@ fun SettingsScreen(
                     position = MiuixItemPosition.TOP
                 )
                 MiuixPreferenceItem(
-                    title = "Kaorios Toolbox v2.0.6.0",
+                    title = "Kaorios Toolbox v3.0",
                     subtitle = "hzzmonetvn (Hardware Keybox attestation, stealth isolation)",
                     icon = Icons.Rounded.Security,
-                    iconTint = AppColors.HyperOsCyan,
+                    iconTint = primaryColor,
                     position = MiuixItemPosition.MIDDLE
                 )
                 MiuixPreferenceItem(

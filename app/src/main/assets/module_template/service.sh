@@ -32,7 +32,6 @@ PROPERTIES="
 ro.boot.verifiedbootstate=green
 ro.boot.veritymode=enforcing
 vendor.boot.vbmeta.device_state=locked
-ro.crypto.state=encrypted
 ro.secureboot.lockstate=locked
 ro.boot.flash.locked=1
 ro.boot.vbmeta.device_state=locked
@@ -59,31 +58,6 @@ if [ -n "$resetprop" ] && [ -x "$resetprop" -o "$resetprop" = "resetprop" ]; the
         $resetprop "$key" "$val" 2>/dev/null
     done
     echo "Done setting properties!"
-fi
-
-# =========================================================================
-# NoMount VFS Verification
-# =========================================================================
-NM_BIN=""
-if command -v nm >/dev/null 2>&1; then
-    NM_BIN="$(command -v nm)"
-elif [ -x /data/adb/nomount/bin/nm ]; then
-    NM_BIN="/data/adb/nomount/bin/nm"
-elif [ -x /data/adb/nomount/nm ]; then
-    NM_BIN="/data/adb/nomount/nm"
-fi
-
-if [ -n "$NM_BIN" ] && "$NM_BIN" version >/dev/null 2>&1; then
-    if ! "$NM_BIN" rule list 2>/dev/null | grep -q "framework.jar"; then
-        [ -f "$MODDIR/system/framework/framework.jar" ] && \
-            "$NM_BIN" rule add /system/framework/framework.jar "$MODDIR/system/framework/framework.jar" 2>/dev/null
-        [ -f "$MODDIR/system/framework/services.jar" ] && \
-            "$NM_BIN" rule add /system/framework/services.jar "$MODDIR/system/framework/services.jar" 2>/dev/null
-        if [ -f "$MODDIR/system/system_ext/framework/miui-services.jar" ]; then
-            "$NM_BIN" rule add /system/system_ext/framework/miui-services.jar "$MODDIR/system/system_ext/framework/miui-services.jar" 2>/dev/null
-            "$NM_BIN" rule add /system_ext/framework/miui-services.jar "$MODDIR/system/system_ext/framework/miui-services.jar" 2>/dev/null
-        fi
-    fi
 fi
 
 # =========================================================================

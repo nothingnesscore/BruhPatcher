@@ -41,7 +41,7 @@ if [ -d "$FW_DIR" ]; then
             in_method = 0
         }
         { print $0 }
-        ' "$inst_file" > "${inst_file}.tmp" && mv "${inst_file}.tmp" "$inst_file"
+        ' "$inst_file" > "${inst_file}.tmp" && mv "${inst_file}.tmp" "$1" 2>/dev/null || rm -f "${inst_file}.tmp"
         echo "    Hooked: $inst_file"
     fi
 
@@ -56,7 +56,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /^\s*\.locals\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
             loc = $2
             if (loc < 1) loc = 1
             print "    .locals " loc
@@ -70,7 +70,7 @@ if [ -d "$FW_DIR" ]; then
             in_target = 0
             next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             regs = $2
             if (regs < 4) regs = 4
             print "    .registers " regs
@@ -86,7 +86,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$apm_file" > "${apm_file}.tmp" && mv "${apm_file}.tmp" "$apm_file"
+        ' "$apm_file" > "${apm_file}.tmp" && mv "${apm_file}.tmp" "$1" 2>/dev/null || rm -f "${apm_file}.tmp"
         echo "    Hooked: $apm_file"
     fi
 
@@ -101,7 +101,7 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             orig_regs = $2
             new_regs = orig_regs + 1
             target_reg = "v" (new_regs - 2)
@@ -116,7 +116,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$keygen_file" > "${keygen_file}.tmp" && mv "${keygen_file}.tmp" "$keygen_file"
+        ' "$keygen_file" > "${keygen_file}.tmp" && mv "${keygen_file}.tmp" "$1" 2>/dev/null || rm -f "${keygen_file}.tmp"
         echo "    Hooked: $keygen_file"
     fi
 
@@ -129,7 +129,7 @@ if [ -d "$FW_DIR" ]; then
         /\.method public.*engineGetCertificateChain\(Ljava\/lang\/String;\)\[Ljava\/security\/cert\/Certificate;/ {
             in_target = 1
         }
-        in_target && /aput-object\s+([^,]+),\s*([^,]+),\s*([^,]+)/ {
+        in_target && /aput-object[ \t]+([^,]+),[ \t]*([^,]+),[ \t]*([^,]+)/ {
             cert_reg = $2
             arr_reg = $3
             idx_reg = $4
@@ -143,7 +143,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$chain_file" > "${chain_file}.tmp" && mv "${chain_file}.tmp" "$chain_file"
+        ' "$chain_file" > "${chain_file}.tmp" && mv "${chain_file}.tmp" "$1" 2>/dev/null || rm -f "${chain_file}.tmp"
         echo "    Hooked: $chain_file"
     fi
 
@@ -154,7 +154,7 @@ if [ -d "$FW_DIR" ]; then
         awk '
         BEGIN { in_target = 0; hooked = 0 }
         /\.method private.*handleBindApplication\(Landroid\/app\/ActivityThread\$AppBindData;\)V/ { in_target = 1 }
-        in_target && !hooked && /iput-object\s+p1,\s*p0,\s*Landroid\/app\/ActivityThread;->mBoundApplication:/ {
+        in_target && !hooked && /iput-object[ \t]+p1,[ \t]*p0,[ \t]*Landroid\/app\/ActivityThread;->mBoundApplication:/ {
             print $0
             print "    invoke-static {p1}, Landroid/security/kaorios/KaoriosHook;->initActivityThread(Ljava/lang/Object;)V"
             hooked = 1
@@ -192,7 +192,7 @@ if [ -d "$SVC_DIR" ]; then
         }
         in_run && /\.end method/ { in_run = 0 }
         { print $0 }
-        ' "$sys_server" > "${sys_server}.tmp" && mv "${sys_server}.tmp" "$sys_server"
+        ' "$sys_server" > "${sys_server}.tmp" && mv "${sys_server}.tmp" "$1" 2>/dev/null || rm -f "${sys_server}.tmp"
         echo "    Hooked: $sys_server"
     fi
 

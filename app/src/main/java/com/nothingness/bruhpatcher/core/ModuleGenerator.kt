@@ -70,7 +70,6 @@ object ModuleGenerator {
 
                     if (name == "miui-services.jar") {
                         Shell.cmd("mkdir -p ${workDir.absolutePath}/system/system_ext/framework").exec()
-                        Shell.cmd("mkdir -p ${workDir.absolutePath}/system_ext/framework").exec()
                     }
 
                     val copyResult = Shell.cmd("cp ${jarFile.absolutePath} $destPath").exec()
@@ -78,13 +77,6 @@ object ModuleGenerator {
                         return@withContext Result.failure(Exception("Failed to copy $name: ${copyResult.err.joinToString()}"))
                     }
                     Shell.cmd("chmod 644 $destPath").exec()
-
-                    // Also mirror to /system_ext/framework for direct VFS path redirection on Android 12+
-                    if (name == "miui-services.jar") {
-                        val mirrorPath = "${workDir.absolutePath}/system_ext/framework/$name"
-                        Shell.cmd("cp ${jarFile.absolutePath} $mirrorPath").exec()
-                        Shell.cmd("chmod 644 $mirrorPath").exec()
-                    }
                 }
             }
             
@@ -302,7 +294,7 @@ object ModuleGenerator {
             version=v2.4.0_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
-            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v2.0.6.0 & Unlimited Google Photos [NoMount VFS Compatible]
+            description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v3.0 & Google Photos Unlimited
             minMagisk=20400
             ksu=1
             minKsu=10904

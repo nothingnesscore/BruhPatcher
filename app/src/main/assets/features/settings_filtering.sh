@@ -34,21 +34,21 @@ if [ -d "$FW_DIR" ]; then
             print $0
             next
         }
-        in_target && /^\s*\.registers\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
             orig_regs = $2
             new_regs = orig_regs + 1
             target_reg = "v" (orig_regs - 4)
             print "    .registers " new_regs
             next
         }
-        in_target && /^\s*\.locals\s+([0-9]+)/ {
+        in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
             orig_locs = $2
             new_locs = orig_locs + 1
             target_reg = "v" orig_locs
             print "    .locals " new_locs
             next
         }
-        in_target && /return-object\s+(v[0-9]+)/ {
+        in_target && /return-object[ \t]+(v[0-9]+)/ {
             ret_reg = $2
             v_ns = (target_reg != "") ? target_reg : "v0"
             print "    const-string " v_ns ", \"system\""
@@ -60,7 +60,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$nvc"
+        ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$1" 2>/dev/null || rm -f "${nvc}.tmp"
         echo "    Hooked: $nvc"
     done
 fi
@@ -75,7 +75,7 @@ for sp in $(find "$FW_DIR" "$SVC_DIR" -name "SettingsProvider.smali" -type f 2>/
         print $0
         next
     }
-    in_target && /^\s*\.registers\s+([0-9]+)/ {
+    in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
         orig_regs = $2
         new_regs = orig_regs + 1
         target_reg = "v" (orig_regs - 4)
@@ -90,7 +90,7 @@ for sp in $(find "$FW_DIR" "$SVC_DIR" -name "SettingsProvider.smali" -type f 2>/
         in_target = 0
         next
     }
-    in_target && /^\s*\.locals\s+([0-9]+)/ {
+    in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
         orig_locs = $2
         new_locs = orig_locs + 1
         target_reg = "v" orig_locs
@@ -107,7 +107,7 @@ for sp in $(find "$FW_DIR" "$SVC_DIR" -name "SettingsProvider.smali" -type f 2>/
     }
     in_target && /\.end method/ { in_target = 0 }
     { print $0 }
-    ' "$sp" > "${sp}.tmp" && mv "${sp}.tmp" "$sp"
+    ' "$sp" > "${sp}.tmp" && mv "${sp}.tmp" "$1" 2>/dev/null || rm -f "${sp}.tmp"
     echo "    Hooked: $sp"
     sp_hooked=1
 done

@@ -108,13 +108,7 @@ fun MiuixCard(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
             .border(
                 width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.15f),
-                        primaryColor.copy(alpha = 0.12f),
-                        Color.White.copy(alpha = 0.04f)
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 shape = shape
             )
             .then(
@@ -156,13 +150,7 @@ fun MiuixGroupCard(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f))
             .border(
                 width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.14f),
-                        primaryColor.copy(alpha = 0.10f),
-                        Color.White.copy(alpha = 0.04f)
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 shape = shape
             )
     ) {
@@ -404,13 +392,7 @@ fun MiuixTopAppBar(
             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
             .border(
                 width = 0.5.dp,
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                        Color.Transparent
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(0.dp)
             )
             .padding(horizontal = 20.dp, vertical = 14.dp)
@@ -487,13 +469,7 @@ fun MiuixNavigationBar(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f))
             .border(
                 width = 0.5.dp,
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                        Color.Transparent
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 shape = RoundedCornerShape(0.dp)
             )
             .navigationBarsPadding()

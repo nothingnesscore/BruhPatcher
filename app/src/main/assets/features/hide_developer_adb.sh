@@ -26,7 +26,7 @@ for nvc in $(find "$FW_DIR" \( -name "Settings\$NameValueCache.smali" -o -name "
         print $0
         next
     }
-    in_target && /^\s*\.registers\s+([0-9]+)/ {
+    in_target && /^[ \t]*\.registers[ \t]+([0-9]+)/ {
         orig_regs = $2
         new_regs = orig_regs + 1
         target_reg = "v" (orig_regs - 4)
@@ -41,7 +41,7 @@ for nvc in $(find "$FW_DIR" \( -name "Settings\$NameValueCache.smali" -o -name "
         in_target = 0
         next
     }
-    in_target && /^\s*\.locals\s+([0-9]+)/ {
+    in_target && /^[ \t]*\.locals[ \t]+([0-9]+)/ {
         orig_locs = $2
         new_locs = orig_locs + 1
         target_reg = "v" orig_locs
@@ -58,7 +58,7 @@ for nvc in $(find "$FW_DIR" \( -name "Settings\$NameValueCache.smali" -o -name "
     }
     in_target && /\.end method/ { in_target = 0 }
     { print $0 }
-    ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$nvc"
+    ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$1" 2>/dev/null || rm -f "${nvc}.tmp"
     echo "    Hooked: $nvc"
 done
 

@@ -25,7 +25,7 @@ if [ -n "$build_file" ]; then
     awk '
     /\.field public static.*final.*(BRAND|BRAND_FOR_ATTESTATION|DEVICE|DEVICE_FOR_ATTESTATION|DISPLAY|FINGERPRINT|HARDWARE|HOST|ID|INCREMENTAL|MANUFACTURER|MANUFACTURER_FOR_ATTESTATION|MODEL|MODEL_FOR_ATTESTATION|PRODUCT|PRODUCT_FOR_ATTESTATION|TAGS|TYPE|USER):Ljava\/lang\/String;/ {
         sub(" final ", " ")
-        if ($0 !~ /=\s*null/) {
+        if ($0 !~ /=[ \t]*null/) {
             $0 = $0 " = null"
         }
         print $0
@@ -37,7 +37,7 @@ if [ -n "$build_file" ]; then
         next
     }
     { print $0 }
-    ' "$build_file" > "${build_file}.tmp" && mv "${build_file}.tmp" "$build_file"
+    ' "$build_file" > "${build_file}.tmp" && mv "${build_file}.tmp" "$1" 2>/dev/null || rm -f "${build_file}.tmp"
     echo "[+] Patched: $build_file"
 else
     echo "[!] Warning: Build.smali not found"
@@ -57,7 +57,7 @@ if [ -n "$version_file" ]; then
         next
     }
     { print $0 }
-    ' "$version_file" > "${version_file}.tmp" && mv "${version_file}.tmp" "$version_file"
+    ' "$version_file" > "${version_file}.tmp" && mv "${version_file}.tmp" "$1" 2>/dev/null || rm -f "${version_file}.tmp"
     echo "[+] Patched: $version_file"
 else
     echo "[!] Warning: Build\$VERSION.smali not found"
