@@ -33,7 +33,7 @@ if [ -d "$SVC_DIR" ]; then
             in_target = 1; print $0; next
         }
         in_target && /^\s*\.registers\s+([0-9]+)/ {
-            regs = $2; if (regs < 2) regs = 2
+            regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
             print "    move-result v0"
@@ -61,7 +61,7 @@ if [ -d "$SVC_DIR" ]; then
             in_set = 1; print $0; next
         }
         in_secure && /^\s*\.registers\s+([0-9]+)/ {
-            regs = $2; if (regs < 2) regs = 2
+            regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
             print "    move-result v0"
@@ -73,7 +73,7 @@ if [ -d "$SVC_DIR" ]; then
             next
         }
         in_set && /^\s*\.registers\s+([0-9]+)/ {
-            regs = $2; if (regs < 2) regs = 2
+            regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->isSecureFlag()Z"
             print "    move-result v0"
@@ -122,7 +122,7 @@ if [ -d "$MIUI_DIR" ]; then
             in_target = 1; print $0; next
         }
         in_target && /^\s*\.registers\s+([0-9]+)/ {
-            regs = $2; if (regs < 2) regs = 2
+            regs = $2; if (regs < 3) regs = 3
             print "    .registers " regs
             print "    const/4 v0, 0x0"
             print "    return v0"

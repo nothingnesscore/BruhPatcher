@@ -34,7 +34,7 @@ data class LocalPatchFeature(
 /**
  * Manages feature discovery and deployment to safe runtime directories
  * 
- * All feature scripts are copied to /data/local/tmp/frameworkforge/features/
+ * All feature scripts are copied to /data/local/tmp/bruhpatcher/features/
  * with proper chmod 755 to ensure they can be executed regardless of SELinux context.
  */
 object FeatureManager {

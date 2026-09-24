@@ -152,15 +152,12 @@ if [ -d "$FW_DIR" ]; then
     if [ -n "$act_file" ]; then
         echo "  -> Hooking ActivityThread.handleBindApplication()..."
         awk '
-        BEGIN { in_target = 0 }
+        BEGIN { in_target = 0; hooked = 0 }
         /\.method private.*handleBindApplication\(Landroid\/app\/ActivityThread\$AppBindData;\)V/ { in_target = 1 }
-        in_target && /invoke-static.*makeApplicationInner/ {
+        in_target && !hooked && /iput-object\s+p1,\s*p0,\s*Landroid\/app\/ActivityThread;->mBoundApplication:/ {
             print $0
-            print "    invoke-static {}, Landroid/app/ActivityThread;->currentPackageName()Ljava/lang/String;"
-            print "    move-result-object v0"
-            print "    invoke-static {}, Landroid/app/ActivityThread;->currentProcessName()Ljava/lang/String;"
-            print "    move-result-object v1"
-            print "    invoke-static {v0, v1}, Landroid/security/kaorios/KaoriosHook;->initActivityThread(Ljava/lang/String;Ljava/lang/String;)V"
+            print "    invoke-static {p1}, Landroid/security/kaorios/KaoriosHook;->initActivityThread(Ljava/lang/Object;)V"
+            hooked = 1
             in_target = 0
             next
         }
@@ -184,9 +181,16 @@ if [ -d "$SVC_DIR" ]; then
     if [ -n "$sys_server" ]; then
         echo "  -> Hooking SystemServer.run()..."
         awk '
-        /Lcom\/android\/server\/SystemServer;->startOtherServices/ {
+        BEGIN { in_run = 0; hooked = 0 }
+        /\.method.*run\(\)V/ { in_run = 1 }
+        in_run && !hooked && /invoke-static.*Landroid\/os\/Looper;->loop\(\)V/ {
             print "    invoke-static {}, Landroid/security/kaorios/KaoriosHook;->initSystemServer()V"
+            hooked = 1
+            print $0
+            in_run = 0
+            next
         }
+        in_run && /\.end method/ { in_run = 0 }
         { print $0 }
         ' "$sys_server" > "${sys_server}.tmp" && mv "${sys_server}.tmp" "$sys_server"
         echo "    Hooked: $sys_server"
@@ -202,9 +206,6 @@ fi
 echo "[*] Bundling KaoriOS Framework DEX into framework.jar multi-dex..."
 
 KAORIOS_ASSET_DIR="/data/local/tmp/bruhpatcher/kaorios"
-if [ ! -d "$KAORIOS_ASSET_DIR" ]; then
-    KAORIOS_ASSET_DIR="/data/local/tmp/frameworkforge/kaorios"
-fi
 
 if [ -f "$KAORIOS_ASSET_DIR/kaorios_framework.dex" ]; then
     echo "[+] Found KaoriOS DEX bytecode: $KAORIOS_ASSET_DIR/kaorios_framework.dex"

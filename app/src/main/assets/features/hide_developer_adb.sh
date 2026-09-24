@@ -20,20 +20,38 @@ fi
 for nvc in $(find "$FW_DIR" \( -name "Settings\$NameValueCache.smali" -o -name "Settings_NameValueCache.smali" \) -type f 2>/dev/null); do
     echo "  -> Hooking $nvc..."
     awk '
-    BEGIN { in_target = 0 }
+    BEGIN { in_target = 0; orig_regs = 0; new_regs = 0; target_reg = "" }
     /\.method.*getStringForUser\(Landroid\/content\/ContentResolver;Ljava\/lang\/String;I\)Ljava\/lang\/String;/ {
         in_target = 1
         print $0
         next
     }
     in_target && /^\s*\.registers\s+([0-9]+)/ {
-        print $0
+        orig_regs = $2
+        new_regs = orig_regs + 1
+        target_reg = "v" (orig_regs - 4)
+        print "    .registers " new_regs
         print "    if-eqz p2, :cond_kaorios_dev_stock"
         print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
-        print "    move-result v0"
-        print "    if-eqz v0, :cond_kaorios_dev_stock"
-        print "    const-string v0, \"0\""
-        print "    return-object v0"
+        print "    move-result " target_reg
+        print "    if-eqz " target_reg ", :cond_kaorios_dev_stock"
+        print "    const-string " target_reg ", \"0\""
+        print "    return-object " target_reg
+        print "    :cond_kaorios_dev_stock"
+        in_target = 0
+        next
+    }
+    in_target && /^\s*\.locals\s+([0-9]+)/ {
+        orig_locs = $2
+        new_locs = orig_locs + 1
+        target_reg = "v" orig_locs
+        print "    .locals " new_locs
+        print "    if-eqz p2, :cond_kaorios_dev_stock"
+        print "    invoke-static/range {p1 .. p3}, Landroid/security/kaorios/KaoriosHook;->shouldHideDevStatusFromNameValueCache(Landroid/content/ContentResolver;Ljava/lang/String;I)Z"
+        print "    move-result " target_reg
+        print "    if-eqz " target_reg ", :cond_kaorios_dev_stock"
+        print "    const-string " target_reg ", \"0\""
+        print "    return-object " target_reg
         print "    :cond_kaorios_dev_stock"
         in_target = 0
         next

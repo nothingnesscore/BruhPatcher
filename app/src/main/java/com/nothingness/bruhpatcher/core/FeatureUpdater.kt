@@ -9,7 +9,7 @@ import org.json.JSONArray
 import java.io.File
 
 /**
- * Updates feature scripts from the FrameworkForgeFeatures GitHub repository
+ * Updates feature scripts from the BruhPatcher GitHub repository
  */
 object FeatureUpdater {
 

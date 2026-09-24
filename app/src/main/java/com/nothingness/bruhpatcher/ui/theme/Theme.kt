@@ -141,14 +141,3 @@ fun BruhPatcherTheme(
     amoledMode = amoledMode,
     content = content
 )
-
-@Composable
-fun FrameworkForgeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) = BruhPatcherTheme(
-    darkTheme = darkTheme,
-    dynamicColor = dynamicColor,
-    content = content
-)
