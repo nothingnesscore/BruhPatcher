@@ -46,7 +46,7 @@ if [ -d "$SVC_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$dpci" > "${dpci}.tmp" && mv "${dpci}.tmp" "$1" 2>/dev/null || rm -f "${dpci}.tmp"
+        ' "$dpci" > "${dpci}.tmp" && mv "${dpci}.tmp" "$dpci" 2>/dev/null || rm -f "${dpci}.tmp"
     fi
 
     # 2. WindowState.smali & WindowStateAnimator.smali
@@ -86,7 +86,7 @@ if [ -d "$SVC_DIR" ]; then
         in_secure && /\.end method/ { in_secure = 0 }
         in_set && /\.end method/ { in_set = 0 }
         { print $0 }
-        ' "$ws" > "${ws}.tmp" && mv "${ws}.tmp" "$1" 2>/dev/null || rm -f "${ws}.tmp"
+        ' "$ws" > "${ws}.tmp" && mv "${ws}.tmp" "$ws" 2>/dev/null || rm -f "${ws}.tmp"
     done
 
     # 3. WindowManagerService.smali
@@ -104,7 +104,7 @@ if [ -d "$SVC_DIR" ]; then
                 next
             }
             { print $0 }
-            ' "$wms" > "${wms}.tmp" && mv "${wms}.tmp" "$1" 2>/dev/null || rm -f "${wms}.tmp"
+            ' "$wms" > "${wms}.tmp" && mv "${wms}.tmp" "$wms" 2>/dev/null || rm -f "${wms}.tmp"
         fi
     done
 
@@ -131,7 +131,7 @@ if [ -d "$MIUI_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$mwms" > "${mwms}.tmp" && mv "${mwms}.tmp" "$1" 2>/dev/null || rm -f "${mwms}.tmp"
+        ' "$mwms" > "${mwms}.tmp" && mv "${mwms}.tmp" "$mwms" 2>/dev/null || rm -f "${mwms}.tmp"
     done
     command -v mark_workspace_modified >/dev/null 2>&1 && mark_workspace_modified "miui-services.jar"
 fi

@@ -60,7 +60,7 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$1" 2>/dev/null || rm -f "${ce}.tmp"
+        ' "$ce" > "${ce}.tmp" && mv "${ce}.tmp" "$ce" 2>/dev/null || rm -f "${ce}.tmp"
         echo "    Hooked: $ce"
     fi
 done

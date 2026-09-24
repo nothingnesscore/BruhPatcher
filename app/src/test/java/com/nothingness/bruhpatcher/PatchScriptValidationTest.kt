@@ -260,6 +260,30 @@ class PatchScriptValidationTest {
         assertFalse("system.prop must not force ro.crypto.state=encrypted", systemProp.contains("ro.crypto.state=encrypted"))
     }
 
+    @Test
+    fun testNoBrokenPositionalArgInMvCommands() {
+        val scripts = featuresDir.listFiles { _, name -> name.endsWith(".sh") } ?: emptyArray()
+        assertTrue("Features directory should contain scripts", scripts.isNotEmpty())
+        val mvToPositionalArgRegex = Regex("""mv\s+["']?\$?[a-zA-Z0-9_{}]+(?:\.tmp)?["']?\s+["']?\$1\b""")
+        for (script in scripts) {
+            val content = script.readText()
+            assertFalse(
+                "Script ${script.name} must not move temp files to \$1 (empty positional argument when sourced)",
+                mvToPositionalArgRegex.containsMatchIn(content)
+            )
+            val tmpMatches = Regex("""> "(\$\{?([a-zA-Z0-9_]+)\}?)\.tmp"\s*&&\s*mv "(\$\{?([a-zA-Z0-9_]+)\}?)\.tmp"\s+"(\$\{?([a-zA-Z0-9_]+)\}?)"""").findAll(content)
+            for (match in tmpMatches) {
+                val srcVar = match.groupValues[2]
+                val destVar = match.groupValues[6]
+                org.junit.Assert.assertEquals(
+                    "In ${script.name}, destination variable should match source variable",
+                    srcVar,
+                    destVar
+                )
+            }
+        }
+    }
+
     // =========================================================================
     // DYNAMIC AWK EXECUTION & DALVIK SEMANTIC VALIDATION INFRASTRUCTURE
     // =========================================================================

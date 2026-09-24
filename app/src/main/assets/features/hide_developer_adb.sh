@@ -58,7 +58,7 @@ for nvc in $(find "$FW_DIR" \( -name "Settings\$NameValueCache.smali" -o -name "
     }
     in_target && /\.end method/ { in_target = 0 }
     { print $0 }
-    ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$1" 2>/dev/null || rm -f "${nvc}.tmp"
+    ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$nvc" 2>/dev/null || rm -f "${nvc}.tmp"
     echo "    Hooked: $nvc"
 done
 

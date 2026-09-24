@@ -60,7 +60,7 @@ if [ -d "$FW_DIR" ]; then
         }
         in_target && /\.end method/ { in_target = 0 }
         { print $0 }
-        ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$1" 2>/dev/null || rm -f "${nvc}.tmp"
+        ' "$nvc" > "${nvc}.tmp" && mv "${nvc}.tmp" "$nvc" 2>/dev/null || rm -f "${nvc}.tmp"
         echo "    Hooked: $nvc"
     done
 fi
@@ -107,7 +107,7 @@ for sp in $(find "$FW_DIR" "$SVC_DIR" -name "SettingsProvider.smali" -type f 2>/
     }
     in_target && /\.end method/ { in_target = 0 }
     { print $0 }
-    ' "$sp" > "${sp}.tmp" && mv "${sp}.tmp" "$1" 2>/dev/null || rm -f "${sp}.tmp"
+    ' "$sp" > "${sp}.tmp" && mv "${sp}.tmp" "$sp" 2>/dev/null || rm -f "${sp}.tmp"
     echo "    Hooked: $sp"
     sp_hooked=1
 done
