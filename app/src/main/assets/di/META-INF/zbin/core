@@ -2896,6 +2896,7 @@ run_jar_appprocess() {
     shift 1;
     
     # Use app_process which properly loads Android runtime with native libraries
+    echo -1000 > /proc/$$/oom_score_adj 2>/dev/null || true
     export CLASSPATH="$file"
     /system/bin/app_process -Xmx${dalvik_memory,,} /system/bin "$main" "$@"
 }

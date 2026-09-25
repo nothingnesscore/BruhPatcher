@@ -146,12 +146,34 @@ recompile_all() {
         
         echo "[*] Recompiling $jar_name..."
         
-        # OOM mitigation: Clear cache before every recompilation to prevent kills
+        # OOM mitigation & LMK protection: clear page caches and set immunity against Android LMKD
         sync
         echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+        echo -1000 > /proc/$$/oom_score_adj 2>/dev/null || true
+        echo -1000 > /proc/self/oom_score_adj 2>/dev/null || true
         
-        # Use dynamic_apktool to recompile with limited threads (-j) and preserve signature (-ps)
-        if dynamic_apktool -recompile "$workspace" -o "$jar_path" -j 2 -ps; then
+        # Adaptive thread limit: Large multi-dex archives (e.g. framework.jar with 6+ dexes and 200k+ classes)
+        # require single-threaded recompilation (-j 1) to eliminate concurrent heap explosion and SIGKILL terminations.
+        local compile_jobs=2
+        if [ "$jar_name" = "framework.jar" ]; then
+            compile_jobs=1
+        fi
+        
+        local compile_success=false
+        if dynamic_apktool -recompile "$workspace" -o "$jar_path" -j "$compile_jobs" -ps; then
+            compile_success=true
+        else
+            echo "[!] First recompilation attempt failed for $jar_name. Cleaning caches and retrying in safe single-thread mode..."
+            sync
+            echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+            sleep 2
+            if dynamic_apktool -recompile "$workspace" -o "$jar_path" -j 1 -ps; then
+                compile_success=true
+                echo "[+] Safe-mode single-thread recompilation succeeded for $jar_name!"
+            fi
+        fi
+
+        if [ "$compile_success" = true ]; then
             echo "[+] Successfully recompiled $jar_name"
             
             # Direct multi-dex injection: if any .extra_dex/*.dex exist for this workspace, bundle them directly

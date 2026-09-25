@@ -92,6 +92,7 @@ object DiExecutor {
         log("Executing job: ${jobDir.name}")
 
         val diBash = "/data/tmp/di/bin/bash"
+        Shell.cmd("echo -1000 > /proc/self/oom_score_adj 2>/dev/null || true").exec()
         Shell.cmd("chmod -R 755 /data/tmp/di/bin /data/local/di 2>/dev/null || true").exec()
         Shell.cmd(
             "dos2unix ${runScript.absolutePath} /data/tmp/di/core /data/tmp/di/smali_workspace.sh /data/local/di/smali_workspace.sh /data/local/di/environment 2>/dev/null || " +
@@ -132,6 +133,8 @@ object DiExecutor {
         val scriptContent = buildString {
             appendLine("#!/data/tmp/di/bin/bash")
             appendLine("set +e")
+            appendLine("echo -1000 > /proc/\$\$/oom_score_adj 2>/dev/null || true")
+            appendLine("echo -1000 > /proc/self/oom_score_adj 2>/dev/null || true")
 
             appendLine("# Job context")
             appendLine("export API_LEVEL=$apiLevel")

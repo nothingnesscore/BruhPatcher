@@ -34,16 +34,20 @@ if [ -d "$FW_DIR" ]; then
     for pp in $(find "$FW_DIR" -name "PackageParser.smali" -type f 2>/dev/null); do
         echo "  -> Patching $pp..."
         awk '
-        /unsafeGetCertsWithoutVerification/ {
+        BEGIN { found_bad_shared = 0 }
+        /invoke-static.*unsafeGetCertsWithoutVerification/ {
             print "    const/4 v1, 0x1"
         }
         /<manifest> specifies bad sharedUserId name/ {
             found_bad_shared = 1
         }
-        found_bad_shared && /if-nez[ \t]+v[0-9]+/ {
-            print "    const/4 v14, 0x1"
+        found_bad_shared && /if-nez[ \t]+(v[0-9]+)/ {
+            reg = $2
+            gsub(/,/, "", reg)
+            print "    const/4 " reg ", 0x1"
             found_bad_shared = 0
         }
+        /\.end method/ { found_bad_shared = 0 }
         { print $0 }
         ' "$pp" > "${pp}.tmp" && mv "${pp}.tmp" "$pp" 2>/dev/null || rm -f "${pp}.tmp"
     done

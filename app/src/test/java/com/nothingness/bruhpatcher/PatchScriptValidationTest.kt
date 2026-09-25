@@ -605,7 +605,43 @@ class PatchScriptValidationTest {
         val result = runAwk(awk, mockSmali)
         assertRegisterSafety(result, paramCount = 4, fallbackLabel = ":cond_kaorios_dev_stock")
     }
+
+    @Test
+    fun testSmaliWorkspaceRecompilationResilience() {
+        val workspaceScript = File("src/main/assets/di/smali_workspace.sh")
+        assertTrue("smali_workspace.sh must exist", workspaceScript.exists())
+        val content = workspaceScript.readText()
+
+        // LMK immunity
+        assertTrue("smali_workspace.sh must configure oom_score_adj immunity", content.contains("echo -1000 > /proc/$$/oom_score_adj"))
+        assertTrue("smali_workspace.sh must drop caches before recompiling", content.contains("echo 3 > /proc/sys/vm/drop_caches"))
+
+        // Adaptive framework jobs
+        assertTrue("framework.jar must recompile in single-thread mode to prevent heap OOM", content.contains("compile_jobs=1"))
+
+        // Safe mode retry
+        assertTrue("smali_workspace.sh must provide fallback single-thread retry", content.contains("dynamic_apktool -recompile \"\$workspace\" -o \"\$jar_path\" -j 1 -ps"))
+    }
+
+    @Test
+    fun testCorePatchPackageParserMethodScopedIntegrity() {
+        val dsvScript = File(featuresDir, "core_patch_dsv.sh")
+        assertTrue("core_patch_dsv.sh must exist", dsvScript.exists())
+        val content = dsvScript.readText()
+
+        // Verify method-scoped boundary in PackageParser awk block
+        assertTrue(content.contains("found_bad_shared = 0"))
+        assertTrue(content.contains("/\\.end method/ { found_bad_shared = 0 }"))
+        assertTrue(content.contains("BEGIN { found_bad_shared = 0 }"))
+    }
+
+    @Test
+    fun testDiCoreLmkProtection() {
+        val coreFile = File("src/main/assets/di/META-INF/zbin/core")
+        assertTrue("core script must exist", coreFile.exists())
+        val content = coreFile.readText()
+
+        // Verify LMK immunity in run_jar_appprocess
+        assertTrue(content.contains("echo -1000 > /proc/$$/oom_score_adj"))
+    }
 }
-
-
-// forced-recompile
