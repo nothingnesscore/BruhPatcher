@@ -58,11 +58,34 @@ object DiExecutor {
 
         val stderrCallback = object : CallbackList<String>() {
             override fun onAddElement(e: String) {
+                val trimmed = e.trim()
                 if (fatalPatterns.any { e.contains(it, ignoreCase = true) }) {
                     fatalErrorDetected = true
                     fatalErrorSnippet = e
+                    log("[ERR] $e")
+                    return
                 }
-                log("[ERR] $e")
+
+                // Identify benign progress / info messages emitted to stderr by Apktool, DI core, and unzip
+                val isApktoolInfo = trimmed.startsWith("I: ")
+                val isDiBanner = trimmed.startsWith("---") ||
+                        trimmed.startsWith("API=") || trimmed.startsWith("ABI=") ||
+                        trimmed.startsWith("ABILONG=") || trimmed.startsWith("PROC=") ||
+                        trimmed.startsWith("arch=") || trimmed.startsWith("arch32=") ||
+                        trimmed.startsWith("is64bit=") || trimmed.startsWith("status=") ||
+                        trimmed.startsWith("encrypted=") || trimmed.startsWith("slot=") ||
+                        trimmed.startsWith("dynamic_partitions=") || trimmed.startsWith("virtual_partitions=") ||
+                        trimmed.startsWith("free_") || trimmed.startsWith("CUSTOM_SETUP=") ||
+                        trimmed.startsWith("TMP=") || trimmed.startsWith("Currently using:") ||
+                        trimmed.startsWith("Changing to:") || trimmed.isEmpty()
+
+                if (isApktoolInfo || isDiBanner) {
+                    log(e)
+                } else if (trimmed.startsWith("W: ") || trimmed.startsWith("[WARN]") || trimmed.contains("warning", ignoreCase = true)) {
+                    log("[WARN] $e")
+                } else {
+                    log("[ERR] $e")
+                }
             }
         }
 

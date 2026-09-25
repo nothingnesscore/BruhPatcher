@@ -17,8 +17,12 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven("https://jitpack.io")
+        // Xposed API — used by lsposed-lgbar module (compileOnly)
+        maven("https://api.xposed.info/")
     }
 }
 
 rootProject.name = "BruhPatcher"
 include(":app")
+// LiquidGlassBar — standalone LSposed module for HyperOS 4 miuix app navigation injection
+include(":lsposed-lgbar")

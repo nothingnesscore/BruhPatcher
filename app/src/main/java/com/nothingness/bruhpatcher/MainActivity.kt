@@ -38,10 +38,17 @@ class MainActivity : ComponentActivity() {
             val useDynamicColor by viewModel.useDynamicColor.collectAsState()
             val themeEngine by viewModel.themeEngine.collectAsState()
             val useAmoledMode by viewModel.useAmoledMode.collectAsState()
+            val themeMode by viewModel.themeMode.collectAsState()
+            val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val isDark = when (themeMode) {
+                com.nothingness.bruhpatcher.data.ThemeMode.SYSTEM -> isSystemDark
+                com.nothingness.bruhpatcher.data.ThemeMode.LIGHT -> false
+                com.nothingness.bruhpatcher.data.ThemeMode.DARK -> true
+            }
 
             com.nothingness.bruhpatcher.ui.theme.AutoPatcherTheme(
                 engine = themeEngine,
-                darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+                darkTheme = isDark,
                 dynamicColor = useDynamicColor,
                 amoledMode = useAmoledMode
             ) {

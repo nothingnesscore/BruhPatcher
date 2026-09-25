@@ -23,6 +23,13 @@ object SettingsKeys {
     val USE_LIQUID_GLASS_NAVBAR = booleanPreferencesKey("use_liquid_glass_navbar")
     val USE_AMOLED_MODE = booleanPreferencesKey("use_amoled_mode")
     val THEME_ENGINE = stringPreferencesKey("theme_engine")
+    val THEME_MODE = stringPreferencesKey("theme_mode")
+}
+
+enum class ThemeMode(val label: String) {
+    SYSTEM("Follow System"),
+    LIGHT("Light Theme"),
+    DARK("Dark Theme")
 }
 
 class SettingsRepository(private val context: Context) {
@@ -52,9 +59,24 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { preferences ->
+        val raw = preferences[SettingsKeys.THEME_MODE]
+        try {
+            if (raw != null) ThemeMode.valueOf(raw) else ThemeMode.SYSTEM
+        } catch (_: Exception) {
+            ThemeMode.SYSTEM
+        }
+    }
+
     suspend fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
         context.dataStore.edit { preferences ->
             preferences[SettingsKeys.THEME_ENGINE] = engine.name
+        }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { preferences ->
+            preferences[SettingsKeys.THEME_MODE] = mode.name
         }
     }
 

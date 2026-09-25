@@ -61,9 +61,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val themeEngine: StateFlow<com.nothingness.bruhpatcher.ui.theme.ThemeEngine> = settingsRepository.themeEngine
         .stateIn(viewModelScope, SharingStarted.Eagerly, com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO)
 
+    val themeMode: StateFlow<com.nothingness.bruhpatcher.data.ThemeMode> = settingsRepository.themeMode
+        .stateIn(viewModelScope, SharingStarted.Eagerly, com.nothingness.bruhpatcher.data.ThemeMode.SYSTEM)
+
     fun setThemeEngine(engine: com.nothingness.bruhpatcher.ui.theme.ThemeEngine) {
         viewModelScope.launch {
             settingsRepository.setThemeEngine(engine)
+        }
+    }
+
+    fun setThemeMode(mode: com.nothingness.bruhpatcher.data.ThemeMode) {
+        viewModelScope.launch {
+            settingsRepository.setThemeMode(mode)
         }
     }
 

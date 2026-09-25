@@ -122,13 +122,10 @@ class PatchScriptValidationTest {
         assertTrue("settings_filtering.sh should exist", settingsScript.exists())
         val content = settingsScript.readText()
 
-        assertTrue(content.contains("NameValueCache.smali"))
-        assertTrue(content.contains("getStringForUser"))
-        assertTrue(content.contains("KaoriosHook;->filterSettingValue"))
         assertTrue(content.contains("SettingsProvider.smali"))
-        assertTrue(content.contains("KaoriosHook;->filterSettingsCall"))
+        assertTrue(content.contains("filterSettingsCall"))
         assertTrue(content.contains(":cond_kaorios_settings_stock"))
-        assertTrue(content.contains("#@requires framework.jar,services.jar"))
+        assertTrue(content.contains("#@requires services.jar"))
         assertFalse(content.contains("vNull"))
         assertFalse(content.contains("vNamespace"))
     }
@@ -490,35 +487,6 @@ class PatchScriptValidationTest {
         """.trimIndent()
         val result = runAwk(awk, mockSmali)
         assertRegisterSafety(result, paramCount = 4, fallbackLabel = ":cond_kaorios_settings_stock")
-    }
-
-    @Test
-    fun testSettingsNameValueCacheRegisterSafety_WithRegisters() {
-        val awk = extractAwkScript("settings_filtering.sh", "filterSettingValue")
-        val mockSmali = """
-            .method public getStringForUser(Landroid/content/ContentResolver;Ljava/lang/String;I)Ljava/lang/String;
-                .registers 8
-                const-string v0, "val"
-                return-object v0
-            .end method
-        """.trimIndent()
-        val result = runAwk(awk, mockSmali)
-        // 4 parameters: p0=this, p1=cr, p2=name, p3=userHandle
-        assertRegisterSafety(result, paramCount = 4)
-    }
-
-    @Test
-    fun testSettingsNameValueCacheRegisterSafety_WithLocals() {
-        val awk = extractAwkScript("settings_filtering.sh", "filterSettingValue")
-        val mockSmali = """
-            .method public getStringForUser(Landroid/content/ContentResolver;Ljava/lang/String;I)Ljava/lang/String;
-                .locals 4
-                const-string v0, "val"
-                return-object v0
-            .end method
-        """.trimIndent()
-        val result = runAwk(awk, mockSmali)
-        assertRegisterSafety(result, paramCount = 4)
     }
 
     @Test

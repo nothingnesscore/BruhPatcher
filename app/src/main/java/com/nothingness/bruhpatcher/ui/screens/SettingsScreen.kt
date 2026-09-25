@@ -6,6 +6,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,26 +25,29 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.FormatPaint
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Security
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nothingness.bruhpatcher.R
+import com.nothingness.bruhpatcher.data.ThemeMode
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixCard
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixCategoryHeader
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixGroupCard
@@ -61,9 +66,14 @@ import com.nothingness.bruhpatcher.ui.components.miuix.MiuixItemPosition
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixPreferenceItem
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixStatusBadge
 import com.nothingness.bruhpatcher.ui.components.miuix.MiuixSwitchPreference
-import com.nothingness.bruhpatcher.ui.theme.AppColors
+import com.nothingness.bruhpatcher.ui.theme.ThemeEngine
 import com.nothingness.bruhpatcher.viewmodel.MainViewModel
 
+/**
+ * Settings & About screen crafted with HyperOS Alive Design / Material 3.
+ * Features dialog selection for Theme Mode and Theme Engine, Monet accents,
+ * AMOLED mode, and credits.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -73,14 +83,138 @@ fun SettingsScreen(
     val context = LocalContext.current
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    val keyboxStatus by viewModel.keyboxStatus.collectAsState()
-    val isSyncingKeybox by viewModel.isSyncingKeybox.collectAsState()
-    val isNoMountInstalled by viewModel.isNoMountInstalled.collectAsState()
-    val isNoMountGuardTripped by viewModel.isNoMountGuardTripped.collectAsState()
-    val isResettingNoMount by viewModel.isResettingNoMount.collectAsState()
     val useDynamicColor by viewModel.useDynamicColor.collectAsState()
     val useLiquidGlassNavbar by viewModel.useLiquidGlassNavbar.collectAsState()
     val useAmoledMode by viewModel.useAmoledMode.collectAsState()
+    val currentThemeEngine by viewModel.themeEngine.collectAsState()
+    val currentThemeMode by viewModel.themeMode.collectAsState()
+
+    var showThemeEngineDialog by remember { mutableStateOf(false) }
+    var showThemeModeDialog by remember { mutableStateOf(false) }
+
+    // Theme Engine Selection Dialog
+    if (showThemeEngineDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeEngineDialog = false },
+            title = {
+                Text(
+                    text = "Select UI Theme Engine",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ThemeEngine.values().forEach { engine ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.setThemeEngine(engine)
+                                    showThemeEngineDialog = false
+                                }
+                                .padding(vertical = 10.dp, horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (currentThemeEngine == engine),
+                                onClick = {
+                                    viewModel.setThemeEngine(engine)
+                                    showThemeEngineDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = engine.label,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = when (engine) {
+                                        ThemeEngine.AUTO -> "Auto-detects HyperOS or AOSP"
+                                        ThemeEngine.HYPEROS_MIUIX -> "Xiaomi HyperOS 4 Alive Design"
+                                        ThemeEngine.AOSP_MATERIAL3 -> "Google Material 3 MD3"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeEngineDialog = false }) {
+                    Text("Close")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // Theme Mode Selection Dialog
+    if (showThemeModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeModeDialog = false },
+            title = {
+                Text(
+                    text = "Select Theme Mode",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ThemeMode.values().forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeModeDialog = false
+                                }
+                                .padding(vertical = 10.dp, horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (currentThemeMode == mode),
+                                onClick = {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeModeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = mode.label,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = when (mode) {
+                                        ThemeMode.SYSTEM -> "Syncs with system dark/light mode"
+                                        ThemeMode.LIGHT -> "Always light palette"
+                                        ThemeMode.DARK -> "Always dark obsidian palette"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeModeDialog = false }) {
+                    Text("Close")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -155,7 +289,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v2.0.6.0, Google Photos Unlimited Backup, and NoMount VFS transparent redirection.",
+                    text = "All-in-one framework modifier with on-device DynamicInstaller and cloud workflow compilation. Incorporates Kaorios Toolbox v3.0, Google Photos Unlimited Backup, and universal Magisk / KernelSU / APatch module generation.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -163,26 +297,33 @@ fun SettingsScreen(
 
             // Appearance & Navigation Controls
             MiuixCategoryHeader(title = "Appearance & Navigation")
-            val currentThemeEngine by viewModel.themeEngine.collectAsState()
             MiuixGroupCard {
                 MiuixPreferenceItem(
-                    title = "UI Theme Engine",
-                    subtitle = "${currentThemeEngine.label} • ${when (currentThemeEngine) {
-                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO -> "Auto-detects HyperOS or AOSP"
-                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX -> "Xiaomi HyperOS 4 Alive Design"
-                        com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3 -> "Google Material 3 MD3"
+                    title = "Theme Mode",
+                    subtitle = "${currentThemeMode.label} • ${when (currentThemeMode) {
+                        ThemeMode.SYSTEM -> "Follow System"
+                        ThemeMode.LIGHT -> "Always Light"
+                        ThemeMode.DARK -> "Always Dark"
                     }}",
-                    icon = Icons.Rounded.FormatPaint,
+                    icon = Icons.Rounded.DarkMode,
                     iconTint = primaryColor,
                     position = MiuixItemPosition.TOP,
                     onClick = {
-                        val next = when (currentThemeEngine) {
-                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX
-                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.HYPEROS_MIUIX -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3
-                            com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AOSP_MATERIAL3 -> com.nothingness.bruhpatcher.ui.theme.ThemeEngine.AUTO
-                        }
-                        viewModel.setThemeEngine(next)
-                        Toast.makeText(context, "Switched Theme Engine to ${next.label}", Toast.LENGTH_SHORT).show()
+                        showThemeModeDialog = true
+                    }
+                )
+                MiuixPreferenceItem(
+                    title = "UI Theme Engine",
+                    subtitle = "${currentThemeEngine.label} • ${when (currentThemeEngine) {
+                        ThemeEngine.AUTO -> "Auto-detects HyperOS or AOSP"
+                        ThemeEngine.HYPEROS_MIUIX -> "Xiaomi HyperOS 4 Alive Design"
+                        ThemeEngine.AOSP_MATERIAL3 -> "Google Material 3 MD3"
+                    }}",
+                    icon = Icons.Rounded.FormatPaint,
+                    iconTint = primaryColor,
+                    position = MiuixItemPosition.MIDDLE,
+                    onClick = {
+                        showThemeEngineDialog = true
                     }
                 )
                 MiuixSwitchPreference(
@@ -239,175 +380,23 @@ fun SettingsScreen(
                     position = MiuixItemPosition.MIDDLE,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/compose-miuix-ui/miuix"))
-                        Toast.makeText(context, "Copied compose-miuix-ui GitHub URL!", Toast.LENGTH_SHORT).show()
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/yukonga/compose-miuix-ui"))
+                        Toast.makeText(context, "Copied yukonga GitHub URL!", Toast.LENGTH_SHORT).show()
                     }
                 )
                 MiuixPreferenceItem(
-                    title = "SukiSU-Ultra (SukiSU Manager)",
-                    subtitle = "Production FloatingBottomBar with AGSL InteractiveHighlight bloom, DampedDragAnimation & MIUIX Alive Design.",
+                    title = "Keybox Hub Integration",
+                    subtitle = "Hardware attestation certificates provided by keybox.hzzmonet.io.vn and KaoriOS Toolbox ecosystem.",
                     icon = Icons.Rounded.Hub,
                     iconTint = primaryColor,
                     iconBackground = primaryColor.copy(alpha = 0.15f),
                     position = MiuixItemPosition.BOTTOM,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://github.com/SukiSU-Ultra/SukiSU-Ultra"))
-                        Toast.makeText(context, "Copied SukiSU-Ultra GitHub URL!", Toast.LENGTH_SHORT).show()
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Source", "https://keybox.hzzmonet.io.vn"))
+                        Toast.makeText(context, "Copied Keybox Hub URL!", Toast.LENGTH_SHORT).show()
                     }
                 )
-            }
-
-            // Diagnostics & Feedback
-            MiuixCategoryHeader(title = "Diagnostics & Troubleshooting")
-            MiuixCard {
-                Text(
-                    text = "Diagnostics & Live Reporting",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Generate and copy a diagnostic dump (device build props, root status, keybox hub, and recent terminal logs) to your clipboard for easy debugging and GitHub issues.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val report = viewModel.copyDiagnosticReport(context)
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("BruhPatcher Diagnostics", report))
-                            Toast.makeText(context, "Diagnostic report copied to clipboard!", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                    ) {
-                        Text("Copy Report")
-                    }
-
-                    OutlinedButton(
-                        onClick = { viewModel.syncLatestKeybox() },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isSyncingKeybox
-                    ) {
-                        if (isSyncingKeybox) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = primaryColor
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Syncing...")
-                        } else {
-                            Text("Sync Keybox")
-                        }
-                    }
-                }
-
-                if (keyboxStatus != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "Keybox Hub: ${keyboxStatus?.status?.uppercase()} (${keyboxStatus?.strongCount} Strong / ${keyboxStatus?.totalKeys} Keys)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = primaryColor
-                    )
-                }
-            }
-
-            // NoMount VFS Engine Status
-            MiuixCategoryHeader(title = "Virtual Filesystem (NoMount)")
-            MiuixCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "NoMount VFS Engine",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    val statusText = when {
-                        !isNoMountInstalled -> "Not Detected"
-                        isNoMountGuardTripped -> "Tripped"
-                        else -> "Active"
-                    }
-                    val statusColor = when {
-                        !isNoMountInstalled -> AppColors.TextMuted
-                        isNoMountGuardTripped -> AppColors.Error
-                        else -> AppColors.Success
-                    }
-
-                    MiuixStatusBadge(
-                        text = statusText,
-                        contentColor = statusColor,
-                        containerColor = statusColor.copy(alpha = 0.15f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Modules are built with full NoMount (maxsteeel/nomount & Bouteillepleine/NoMount-Suite) compatibility using transparent VFS path redirection. Bind-mount collisions are completely avoided.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (isNoMountGuardTripped) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "⚠️ Bootloop protection triggered. Tap 'Re-arm Guard' below to reset the counter and re-enable mounting.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppColors.Error,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = { viewModel.resetNoMountGuard() },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isResettingNoMount,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isNoMountGuardTripped) AppColors.Error else primaryColor
-                        )
-                    ) {
-                        if (isResettingNoMount) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Re-arming...")
-                        } else {
-                            Text("Re-arm Guard")
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = { viewModel.refreshNoMountStatus() },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Refresh Status")
-                    }
-                }
             }
 
             // Project Credits
@@ -415,21 +404,21 @@ fun SettingsScreen(
             MiuixGroupCard {
                 MiuixPreferenceItem(
                     title = "Bruh Patcher Maintainer",
-                    subtitle = "nothingnesscore",
+                    subtitle = "nothingnesscore (Lead Developer & Maintainer)",
                     icon = Icons.Rounded.Code,
                     iconTint = primaryColor,
                     position = MiuixItemPosition.TOP
                 )
                 MiuixPreferenceItem(
-                    title = "Kaorios Toolbox v3.0",
-                    subtitle = "hzzmonetvn (Hardware Keybox attestation, stealth isolation)",
+                    title = "Kaorios Toolbox Framework",
+                    subtitle = "hzzmonetvn (Hardware Keybox attestation, stealth isolation & Android 17 smali engine)",
                     icon = Icons.Rounded.Security,
                     iconTint = primaryColor,
                     position = MiuixItemPosition.MIDDLE
                 )
                 MiuixPreferenceItem(
-                    title = "FrameworkPatcher Base",
-                    subtitle = "Jefino9488",
+                    title = "Kaorios Toolbox Upstream Base",
+                    subtitle = "Wuang26 (Original Toolbox Architecture & Utilities)",
                     icon = Icons.Rounded.DataObject,
                     iconTint = primaryColor,
                     position = MiuixItemPosition.BOTTOM

@@ -177,6 +177,10 @@ fun LiquidGlassFloatingBar(
         }
     }
 
+    // Keep track of recent position for real-time liquid velocity & directional stretch calculation
+    var lastPosition by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
+    var rawDisplacement by remember { mutableFloatStateOf(0f) }
+
     // Derive continuous position from navbar drag, page swipe, or animated position
     val currentBubblePosition = when {
         isNavbarDragging && tabWidthPx > 0f -> {
@@ -191,23 +195,48 @@ fun LiquidGlassFloatingBar(
         else -> animatedPosition.value
     }
 
-    // Zoom in liquid bubble animation (iOS style dynamic bubble expansion on touch/drag)
-    val isBubbleExpanding = isNavbarDragging || (targetPosition != null && abs(targetPosition - selectedIndex) > 0.05f)
+    LaunchedEffect(currentBubblePosition) {
+        val delta = currentBubblePosition - lastPosition
+        rawDisplacement = delta
+        lastPosition = currentBubblePosition
+    }
+
+    // Dynamic liquid stretch: when moving left/right (by dragging, swiping or tap navigation),
+    // the bubble elongates along the travel axis up to 1.30x and shrinks in Y to preserve droplet volume.
+    val motionDisplacement = abs(currentBubblePosition - selectedIndex.toFloat()).coerceAtMost(1.5f)
+    val isMoving = isNavbarDragging || abs(rawDisplacement) > 0.005f || motionDisplacement > 0.03f
+
+    val targetStretchX = if (isMoving) {
+        1.0f + (motionDisplacement * 0.28f).coerceAtMost(0.32f)
+    } else {
+        1.0f
+    }
+
+    val bubbleStretchX by animateFloatAsState(
+        targetValue = targetStretchX,
+        animationSpec = spring(
+            dampingRatio = 0.68f,
+            stiffness = 450f
+        ),
+        label = "bubbleStretchX"
+    )
+
+    // Dynamic zoom scale: expands fluidly when tapped or moving
+    val targetZoomScale = if (isNavbarDragging) {
+        1.10f
+    } else if (isMoving) {
+        1.06f
+    } else {
+        1.0f
+    }
+
     val bubbleZoomScale by animateFloatAsState(
-        targetValue = if (isNavbarDragging) 1.10f else if (isBubbleExpanding) 1.05f else 1.0f,
+        targetValue = targetZoomScale,
         animationSpec = spring(
             dampingRatio = 0.65f,
             stiffness = 420f
         ),
         label = "bubbleZoomScale"
-    )
-    val bubbleStretchX by animateFloatAsState(
-        targetValue = if (isNavbarDragging) 1.12f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = 0.70f,
-            stiffness = 450f
-        ),
-        label = "bubbleStretchX"
     )
 
     val pillShape = CircleShape

@@ -58,23 +58,29 @@ for ce in $(find "$SVC_DIR" -name "ComputerEngine*.smali" -type f 2>/dev/null); 
             in_target = 1
             hook_id++
             is_pkg_state = 0
-            if ($0 ~ /shouldFilterApplication\(.*Ljava\/lang\/Object;.*PackageStateInternal.*\)Z/) {
-                uid_reg = "p1"
-                pkg_reg = "p3"
-                user_reg = "p4"
+            if ($0 ~ /shouldFilterApplication\(Lcom\/android\/server\/pm\/pkg\/PackageStateInternal;ILandroid\/content\/ComponentName;IIZZ\)Z/) {
+                pkg_reg = "p1"
+                uid_reg = "p2"
+                user_reg = "p5"
                 is_pkg_state = 1
-                param_count = 5
-            } else if ($0 ~ /shouldFilterApplication\(.*PackageStateInternal.*\)Z/) {
+                param_count = 7
+            } else if ($0 ~ /shouldFilterApplication\(Lcom\/android\/server\/pm\/pkg\/PackageStateInternal;II\)Z/) {
+                pkg_reg = "p1"
+                uid_reg = "p2"
+                user_reg = "p3"
+                is_pkg_state = 1
+                param_count = 4
+            } else if ($0 ~ /shouldFilterApplication\(ILcom\/android\/server\/pm\/pkg\/PackageStateInternal;I\)Z/) {
                 uid_reg = "p1"
                 pkg_reg = "p2"
                 user_reg = "p3"
                 is_pkg_state = 1
                 param_count = 4
-            } else if ($0 ~ /shouldFilterApplication\(.*Ljava\/lang\/Object;.*Ljava\/lang\/String;.*\)Z/) {
+            } else if ($0 ~ /shouldFilterApplication\(.*Ljava\/lang\/Object;.*PackageStateInternal.*\)Z/) {
                 uid_reg = "p1"
                 pkg_reg = "p3"
                 user_reg = "p4"
-                is_pkg_state = 0
+                is_pkg_state = 1
                 param_count = 5
             } else {
                 uid_reg = "p1"
