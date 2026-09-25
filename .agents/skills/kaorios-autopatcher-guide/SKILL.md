@@ -38,3 +38,19 @@ Always maintain the 5-point dynamic interception:
 - Ensure `action.sh` is present in the module root for on-demand KernelSU/APatch action triggering.
 - Always include `SKIP_BOOT_WAIT=1` when sourcing `service.sh` from `customize.sh` or `action.sh`.
 - Set `ro.control_privapp_permissions=` in `system.prop` to allow `com.kousei.kaorios` to acquire privileged permissions.
+
+## 4. Multi-DEX Recompilation & Extra Options Isolation
+When enabling patches beyond Step 1 (Step 2 DSV, Step 3 Privacy, Step 4 Identity):
+1. **Isolate Target Workspaces**:
+   - Verify which JARs are modified by each step:
+     - Step 1: `framework.jar` (classes7.dex staging + KeyGen hooks), `services.jar` (SystemServer).
+     - Step 2: `framework.jar` (PackageParser, SigningDetails, ApkSignature*Verifier), `services.jar` (InstallPackageHelper), `miui-services.jar` (canBeUpdate).
+     - Step 3: `services.jar` (AppsFilter, ComputerEngine, WindowManager*).
+     - Step 4: `services.jar` (SettingsProvider).
+2. **Recompilation Resource Guardrails**:
+   - `framework.jar` contains 6+ DEXes. Recompiling with `-j 2` causes `app_process` to be killed by LMKD (`line 2885: Killed`).
+   - Recompile `framework.jar` strictly with `-j 1`.
+   - Ensure `echo -1000 > /proc/$$/oom_score_adj` is executed before launching `app_process`.
+3. **Smali Awk Script Scoping**:
+   - In all feature awk scripts, state variables must reset on `/\.end method/ { state=0 }`.
+   - Never assume line ordering between string constants and conditional branches (e.g. `if-nez` can precede the string constant).
