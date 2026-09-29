@@ -578,6 +578,22 @@ class PatchScriptValidationTest {
     }
 
     @Test
+    fun testKaoriosCoreApplicationPackageManagerRegisterSafety() {
+        val awk = extractAwkScript("kaorios_core.sh", "hasSystemFeature")
+        val mockSmali = """
+            .method public hasSystemFeature(Ljava/lang/String;I)Z
+                .registers 6
+                const/4 v0, 0x0
+                return v0
+            .end method
+        """.trimIndent()
+        val result = runAwk(awk, mockSmali)
+        // 3 parameters: p0=this, p1=name, p2=version
+        assertRegisterSafety(result, paramCount = 3, fallbackLabel = ":cond_kaorios_feature_stock")
+    }
+
+
+    @Test
     fun testHideDeveloperAdbRegisterSafety_WithRegisters() {
         val awk = extractAwkScript("hide_developer_adb.sh", "shouldHideDevStatusFromNameValueCache")
         val mockSmali = """

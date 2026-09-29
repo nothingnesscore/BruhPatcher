@@ -274,7 +274,7 @@ fun SettingsScreen(
                         }
                     }
                     MiuixStatusBadge(
-                        text = "v2.4.0",
+                        text = "v3.0.0",
                         containerColor = primaryColor.copy(alpha = 0.15f),
                         contentColor = primaryColor,
                         showDot = true

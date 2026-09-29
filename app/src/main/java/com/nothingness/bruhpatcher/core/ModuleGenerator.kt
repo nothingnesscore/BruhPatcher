@@ -273,6 +273,7 @@ object ModuleGenerator {
         Shell.cmd("chmod 755 ${workDir.absolutePath}/post-fs-data.sh").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/customize.sh").exec()
         Shell.cmd("chmod 755 ${workDir.absolutePath}/uninstall.sh").exec()
+        Shell.cmd("[ -f ${workDir.absolutePath}/update_pif.sh ] && chmod 755 ${workDir.absolutePath}/update_pif.sh").exec()
     }
 
     /**
@@ -291,7 +292,7 @@ object ModuleGenerator {
         val moduleProp = """
             id=$MODULE_ID
             name=Bruh Patcher Patched Framework
-            version=v2.4.0_$timestamp
+            version=v3.0.0_$timestamp
             versionCode=$versionCode
             author=Bruh Patcher (nothingnesscore)
             description=Universal patched framework for $deviceCodename (Android $androidVersion) with Kaorios v3.0 & Google Photos Unlimited

@@ -1,9 +1,9 @@
 id=bruhpatcher_mod
 name=Bruh Patcher Framework Mod
-version=2.0.0
-versionCode=200
+version=3.0.0
+versionCode=300
 author=nothingnesscore
-description=Universal Framework patcher with Kaorios v2.0.6.0, CorePatch, HyperOS & Android 8-17 support. Compatible with Magisk, KernelSU, APatch, and SUFS.
+description=Universal Framework patcher with Kaorios v3.0 / v2.0.6.0+, CorePatch, HyperOS 4 & Android 8-17 support. Compatible with Magisk, KernelSU, APatch, and SUSFS.
 minMagisk=20400
 ksu=1
 minKsu=10904
